@@ -1,0 +1,494 @@
+{
+ "ok": true,
+ "sample": true,
+ "member": {
+  "id": "ZA-001",
+  "name": "Rakoto Jean",
+  "commission": "Hira sy mozika",
+  "office_role": "Filoha",
+  "is_office": true
+ },
+ "fees": {
+  "year": 2026,
+  "monthly_amount": 2000,
+  "months": [
+   {
+    "month": "2026-01",
+    "paid": true,
+    "on_time": true,
+    "date": "2026-01-06",
+    "amount": 2000,
+    "future": false,
+    "not_member": false
+   },
+   {
+    "month": "2026-02",
+    "paid": true,
+    "on_time": true,
+    "date": "2026-02-09",
+    "amount": 2000,
+    "future": false,
+    "not_member": false
+   },
+   {
+    "month": "2026-03",
+    "paid": true,
+    "on_time": false,
+    "date": "2026-04-02",
+    "amount": 2000,
+    "future": false,
+    "not_member": false
+   },
+   {
+    "month": "2026-04",
+    "paid": true,
+    "on_time": true,
+    "date": "2026-04-28",
+    "amount": 2000,
+    "future": false,
+    "not_member": false
+   },
+   {
+    "month": "2026-05",
+    "paid": true,
+    "on_time": true,
+    "date": "2026-05-30",
+    "amount": 2000,
+    "future": false,
+    "not_member": false
+   },
+   {
+    "month": "2026-06",
+    "paid": false,
+    "on_time": false,
+    "date": "",
+    "amount": 0,
+    "future": false,
+    "not_member": false
+   },
+   {
+    "month": "2026-07",
+    "paid": true,
+    "on_time": true,
+    "date": "2026-07-31",
+    "amount": 2000,
+    "future": false,
+    "not_member": false
+   },
+   {
+    "month": "2026-08",
+    "paid": true,
+    "on_time": true,
+    "date": "2026-08-25",
+    "amount": 2000,
+    "future": false,
+    "not_member": false
+   },
+   {
+    "month": "2026-09",
+    "paid": true,
+    "on_time": false,
+    "date": "2026-10-15",
+    "amount": 2000,
+    "future": false,
+    "not_member": false
+   },
+   {
+    "month": "2026-10",
+    "paid": false,
+    "on_time": false,
+    "date": "",
+    "amount": 0,
+    "future": true,
+    "not_member": false
+   },
+   {
+    "month": "2026-11",
+    "paid": false,
+    "on_time": false,
+    "date": "",
+    "amount": 0,
+    "future": true,
+    "not_member": false
+   },
+   {
+    "month": "2026-12",
+    "paid": false,
+    "on_time": false,
+    "date": "",
+    "amount": 0,
+    "future": true,
+    "not_member": false
+   }
+  ]
+ },
+ "loans": [
+  {
+   "material_id": "ZE-01",
+   "type": "Akanjo",
+   "desc": "Akanjo manga sy fotsy (lehilahy)",
+   "date": "2026-03-15",
+   "returned": false,
+   "return_date": ""
+  },
+  {
+   "material_id": "MK-03",
+   "type": "Mikrô",
+   "desc": "Mikrô tsy misy tariby",
+   "date": "2026-08-02",
+   "returned": true,
+   "return_date": "2026-08-04"
+  }
+ ],
+ "tasks": [
+  {
+   "id": "A1",
+   "goal": "Akanjo vaovao ho an'ny mpihira rehetra",
+   "title": "Fifidianana ny modely sy ny loko",
+   "assignee": "Fitaovana",
+   "assignee_label": "Fitaovana",
+   "due": "2026-08-15",
+   "status": "done",
+   "done_date": "2026-08-12",
+   "mine": false,
+   "can_edit": true
+  },
+  {
+   "id": "A2",
+   "goal": "Fitaovana mozika",
+   "title": "Fangatahana tolotra amin'ny mpivarotra",
+   "assignee": "ZA-001",
+   "assignee_label": "Rakoto Jean",
+   "due": "2026-11-05",
+   "status": "todo",
+   "done_date": "",
+   "mine": true,
+   "can_edit": true
+  },
+  {
+   "id": "A3",
+   "goal": "Fandraisam-peo rakikira voalohany",
+   "title": "Lisitry ny hira 10",
+   "assignee": "Hira sy mozika",
+   "assignee_label": "Hira sy mozika",
+   "due": "2026-11-20",
+   "status": "in_progress",
+   "done_date": "",
+   "mine": true,
+   "can_edit": true
+  },
+  {
+   "id": "A4",
+   "goal": "Akanjo vaovao ho an'ny mpihira rehetra",
+   "title": "Fanangonam-bola",
+   "assignee": "Fampandrosoana",
+   "assignee_label": "Fampandrosoana",
+   "due": "2026-12-31",
+   "status": "in_progress",
+   "done_date": "",
+   "mine": false,
+   "can_edit": true
+  },
+  {
+   "id": "A5",
+   "goal": "Fandraisam-peo rakikira voalohany",
+   "title": "Fifanarahana amin'ny studio",
+   "assignee": "ZA-003",
+   "assignee_label": "Randria Faly",
+   "due": "2027-05-31",
+   "status": "todo",
+   "done_date": "",
+   "mine": false,
+   "can_edit": true
+  }
+ ],
+ "top": {
+  "fees": [
+   {
+    "name": "Ravao Hanta",
+    "count": 9
+   },
+   {
+    "name": "Rahary Zo",
+    "count": 8
+   },
+   {
+    "name": "Rakoto Jean",
+    "count": 6
+   }
+  ],
+  "attendance": [
+   {
+    "name": "Rasoa Noro",
+    "count": 38
+   },
+   {
+    "name": "Rakoto Jean",
+    "count": 35
+   },
+   {
+    "name": "Ravao Hanta",
+    "count": 33
+   }
+  ]
+ },
+ "finance": {
+  "opening": 0,
+  "income": 319000,
+  "expense": 95000,
+  "donations": 150000,
+  "fees": 4000,
+  "balance": 224000,
+  "total_count": 12,
+  "recent": [
+   {
+    "date": "2026-11-08",
+    "type": "in",
+    "amount": 50000,
+    "reason": "Fanomezana",
+    "category": "donation"
+   },
+   {
+    "date": "2026-11-05",
+    "type": "out",
+    "amount": 35000,
+    "reason": "Fanamboarana keyboard",
+    "category": ""
+   },
+   {
+    "date": "2026-11-03",
+    "type": "in",
+    "amount": 20000,
+    "reason": "Fanomezana",
+    "category": "donation"
+   },
+   {
+    "date": "2026-10-31",
+    "type": "in",
+    "amount": 2000,
+    "reason": "Latsakemboka 2026-10",
+    "category": "fee"
+   },
+   {
+    "date": "2026-10-25",
+    "type": "in",
+    "amount": 150000,
+    "reason": "Fampisehoana tao amin'ny fiangonana",
+    "category": ""
+   },
+   {
+    "date": "2026-10-20",
+    "type": "out",
+    "amount": 12000,
+    "reason": "Fandikana taratasy hira",
+    "category": ""
+   },
+   {
+    "date": "2026-10-15",
+    "type": "in",
+    "amount": 2000,
+    "reason": "Latsakemboka 2026-09",
+    "category": "fee"
+   },
+   {
+    "date": "2026-10-10",
+    "type": "out",
+    "amount": 40000,
+    "reason": "Fitaterana fampisehoana",
+    "category": ""
+   },
+   {
+    "date": "2026-10-02",
+    "type": "in",
+    "amount": 15000,
+    "reason": "Fanomezana",
+    "category": "donation"
+   },
+   {
+    "date": "2026-09-28",
+    "type": "out",
+    "amount": 8000,
+    "reason": "Rano sy sakafo maivana",
+    "category": ""
+   }
+  ]
+ },
+ "finance_all": [
+  {
+   "date": "2026-11-08",
+   "type": "in",
+   "amount": 50000,
+   "reason": "Fanomezana",
+   "category": "donation"
+  },
+  {
+   "date": "2026-11-05",
+   "type": "out",
+   "amount": 35000,
+   "reason": "Fanamboarana keyboard",
+   "category": ""
+  },
+  {
+   "date": "2026-11-03",
+   "type": "in",
+   "amount": 20000,
+   "reason": "Fanomezana",
+   "category": "donation"
+  },
+  {
+   "date": "2026-10-31",
+   "type": "in",
+   "amount": 2000,
+   "reason": "Latsakemboka 2026-10",
+   "category": "fee"
+  },
+  {
+   "date": "2026-10-25",
+   "type": "in",
+   "amount": 150000,
+   "reason": "Fampisehoana tao amin'ny fiangonana",
+   "category": ""
+  },
+  {
+   "date": "2026-10-20",
+   "type": "out",
+   "amount": 12000,
+   "reason": "Fandikana taratasy hira",
+   "category": ""
+  },
+  {
+   "date": "2026-10-15",
+   "type": "in",
+   "amount": 2000,
+   "reason": "Latsakemboka 2026-09",
+   "category": "fee"
+  },
+  {
+   "date": "2026-10-10",
+   "type": "out",
+   "amount": 40000,
+   "reason": "Fitaterana fampisehoana",
+   "category": ""
+  },
+  {
+   "date": "2026-10-02",
+   "type": "in",
+   "amount": 15000,
+   "reason": "Fanomezana",
+   "category": "donation"
+  },
+  {
+   "date": "2026-09-28",
+   "type": "out",
+   "amount": 8000,
+   "reason": "Rano sy sakafo maivana",
+   "category": ""
+  },
+  {
+   "date": "2026-09-14",
+   "type": "in",
+   "amount": 25000,
+   "reason": "Fanomezana",
+   "category": "donation"
+  },
+  {
+   "date": "2026-09-01",
+   "type": "in",
+   "amount": 40000,
+   "reason": "Fanomezana",
+   "category": "donation"
+  }
+ ],
+ "fees_all": [
+  {
+   "id": "ZA-001",
+   "name": "Rakoto Jean",
+   "months": [
+    "on_time",
+    "on_time",
+    "late",
+    "on_time",
+    "on_time",
+    "unpaid",
+    "on_time",
+    "on_time",
+    "late",
+    "future",
+    "future",
+    "future"
+   ]
+  },
+  {
+   "id": "ZA-002",
+   "name": "Ravao Hanta",
+   "months": [
+    "on_time",
+    "on_time",
+    "on_time",
+    "on_time",
+    "on_time",
+    "on_time",
+    "on_time",
+    "on_time",
+    "on_time",
+    "future",
+    "future",
+    "future"
+   ]
+  },
+  {
+   "id": "ZA-003",
+   "name": "Randria Faly",
+   "months": [
+    "unpaid",
+    "on_time",
+    "on_time",
+    "unpaid",
+    "unpaid",
+    "late",
+    "on_time",
+    "unpaid",
+    "unpaid",
+    "future",
+    "future",
+    "future"
+   ]
+  },
+  {
+   "id": "ZA-004",
+   "name": "Rasoa Noro",
+   "months": [
+    "na",
+    "na",
+    "na",
+    "on_time",
+    "on_time",
+    "on_time",
+    "late",
+    "on_time",
+    "on_time",
+    "future",
+    "future",
+    "future"
+   ]
+  },
+  {
+   "id": "ZA-005",
+   "name": "Rahary Zo",
+   "months": [
+    "on_time",
+    "on_time",
+    "on_time",
+    "on_time",
+    "on_time",
+    "on_time",
+    "on_time",
+    "on_time",
+    "late",
+    "future",
+    "future",
+    "future"
+   ]
+  }
+ ]
+}

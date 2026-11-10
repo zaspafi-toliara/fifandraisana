@@ -1,0 +1,198 @@
+{
+ "sample": true,
+ "updated": "2026-11-10",
+ "goals": [
+  {
+   "id": "G1",
+   "title": "Akanjo vaovao ho an'ny mpihira rehetra",
+   "description": "Hanana akanjo mitovy sy madio ny mpihira rehetra amin'ny fotoam-pivavahana sy fampisehoana.",
+   "target_date": "2027-03-31",
+   "steps": [
+    {
+     "title": "Fifidianana ny modely sy ny loko",
+     "status": "done",
+     "date": "2026-08-15"
+    },
+    {
+     "title": "Fanombanana ny vidiny",
+     "status": "done",
+     "date": "2026-09-10"
+    },
+    {
+     "title": "Fanangonam-bola",
+     "status": "in_progress",
+     "date": "2026-12-31"
+    },
+    {
+     "title": "Fividianana lamba",
+     "status": "todo",
+     "date": "2027-01-31"
+    },
+    {
+     "title": "Fanjairana",
+     "status": "todo",
+     "date": "2027-03-01"
+    },
+    {
+     "title": "Fizarana ny akanjo",
+     "status": "todo",
+     "date": "2027-03-31"
+    }
+   ]
+  },
+  {
+   "id": "G2",
+   "title": "Fandraisam-peo rakikira voalohany",
+   "description": "Handrakitra hira 10 ho fitoriana ny Filazantsara.",
+   "target_date": "2027-08-31",
+   "steps": [
+    {
+     "title": "Fisafidianana ireo hira",
+     "status": "done",
+     "date": "2026-07-20"
+    },
+    {
+     "title": "Fanazaran-tena",
+     "status": "in_progress",
+     "date": "2027-04-30"
+    },
+    {
+     "title": "Fifanarahana amin'ny studio",
+     "status": "todo",
+     "date": "2027-05-31"
+    },
+    {
+     "title": "Fandraisam-peo",
+     "status": "todo",
+     "date": "2027-07-15"
+    },
+    {
+     "title": "Famoahana ny rakikira",
+     "status": "todo",
+     "date": "2027-08-31"
+    }
+   ]
+  },
+  {
+   "id": "G3",
+   "title": "Fitaovana mozika",
+   "description": "Hividy feo fanamafisam-peo sy keyboard vaovao.",
+   "target_date": "2027-06-30",
+   "steps": [
+    {
+     "title": "Lisitry ny fitaovana ilaina",
+     "status": "done",
+     "date": "2026-10-01"
+    },
+    {
+     "title": "Fangatahana tolotra amin'ny mpivarotra",
+     "status": "done",
+     "date": "2026-10-25"
+    },
+    {
+     "title": "Fividianana",
+     "status": "todo",
+     "date": "2027-06-30"
+    }
+   ]
+  }
+ ],
+ "donations": [
+  {
+   "date": "2026-11-08",
+   "name": "Rakoto Jean",
+   "amount": 50000
+  },
+  {
+   "date": "2026-11-03",
+   "name": "Ravao Hanta",
+   "amount": 20000
+  },
+  {
+   "date": "2026-10-29",
+   "name": null,
+   "amount": 100000
+  },
+  {
+   "date": "2026-10-20",
+   "name": "Fianakaviana Rabe",
+   "amount": 250000
+  },
+  {
+   "date": "2026-10-18",
+   "name": null,
+   "amount": 10000
+  },
+  {
+   "date": "2026-10-10",
+   "name": "Randria Faly",
+   "amount": 30000
+  },
+  {
+   "date": "2026-10-02",
+   "name": "Razafy Lalao",
+   "amount": 15000
+  },
+  {
+   "date": "2026-09-25",
+   "name": null,
+   "amount": 500000
+  },
+  {
+   "date": "2026-09-14",
+   "name": "Rasoa Noro",
+   "amount": 25000
+  },
+  {
+   "date": "2026-09-01",
+   "name": "Andry & Mialy",
+   "amount": 40000
+  },
+  {
+   "date": "2026-08-27",
+   "name": null,
+   "amount": 5000
+  },
+  {
+   "date": "2026-08-15",
+   "name": "Rabemanana Tiana",
+   "amount": 60000
+  },
+  {
+   "date": "2026-08-02",
+   "name": "Rahary Zo",
+   "amount": 20000
+  },
+  {
+   "date": "2026-07-21",
+   "name": null,
+   "amount": 75000
+  }
+ ],
+ "office": [
+  {
+   "role": "Filoha",
+   "name": "[Anarana]"
+  },
+  {
+   "role": "Filoha lefitra",
+   "name": "[Anarana]"
+  },
+  {
+   "role": "Sekretera voalohany",
+   "name": "[Anarana]"
+  },
+  {
+   "role": "Sekretera faharoa",
+   "name": "[Anarana]"
+  },
+  {
+   "role": "Mpitahiry vola",
+   "name": "[Anarana]"
+  },
+  {
+   "role": "Mpanolon-tsaina",
+   "name": "[Anarana]"
+  }
+ ]
+}
