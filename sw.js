@@ -1,8 +1,8 @@
-/* ZA SPaFI Toliara – service worker
+/* ZA SPaFi Toliara – service worker
    Keeps the site's own files on the phone so the entry app opens offline.
    Network first (always the latest version when online), cache as fallback.
    Requests to Google (Apps Script, fonts) are not touched. */
-const CACHE = "zaspafi-v1";
+const CACHE = "zaspafi-v3";
 const SHELL = [
   "fampidirana.html", "karatra.html", "mpikambana.html", "index.html",
   "assets/css/style.css",

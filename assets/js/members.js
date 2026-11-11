@@ -1,5 +1,5 @@
 /* ==========================================================
-   ZA SPaFI Toliara – members' area (mpikambana.html)
+   ZA SPaFi Toliara – members' area (mpikambana.html)
    Uses the helpers exposed by app.js as window.ZA.
    Without API_URL it runs in test mode with data/sample-member.json
    (login: ZA-001 / PIN 1234).
@@ -11,12 +11,13 @@
   let token = readToken();
   let data = null;          // dashboard data from the API
   let fullFinance = null;   // full transaction list (loaded on demand)
-  let tab = "me";
+  const openGoals = new Set();   // goals whose steps are shown
   let taskFilter = "mine";
   let confirmTask = null;   // id of the task waiting for confirmation
   let busy = false;
   let message = "";         // error message on the login form
   let lastIdent = "";       // keeps the typed phone/ID when the form is redrawn
+  let photoMsg = "";        // result of "change my photo"
 
   function readToken() { try { return sessionStorage.getItem(TOKEN_KEY); } catch (e) { return null; } }
   function saveToken(t) { try { t ? sessionStorage.setItem(TOKEN_KEY, t) : sessionStorage.removeItem(TOKEN_KEY); } catch (e) { /* ignore */ } }
@@ -45,6 +46,7 @@
         if (t) { t.status = "done"; t.done_date = new Date().toISOString().slice(0, 10); }
         return { ok: true };
       }
+      case "my_photo": return { ok: true, photo: "" };
       default: return { ok: true };
     }
   }
@@ -79,6 +81,19 @@
     } catch (e) { /* keep the list as is */ }
     confirmTask = null; busy = false; render();
   }
+  async function changePhoto(file) {
+    photoMsg = "";
+    if (!navigator.onLine) { photoMsg = "m.photo_online"; render(); return; }
+    busy = true; render();
+    try {
+      const image = await window.ZACard.processPhoto(file);
+      const r = await api("my_photo", { image });
+      if (r.ok) { data.member.photo = r.photo || ""; data.member.photo_data = image; photoMsg = "m.photo_saved"; }
+      else if (r.error === "session_expired") return logout("m.session_expired");
+      else photoMsg = "m.error";
+    } catch (e) { photoMsg = "m.error"; }
+    busy = false; render();
+  }
   async function loadFullFinance() {
     busy = true; render();
     try {
@@ -103,36 +118,47 @@
       });
       return;
     }
-    const tabs = [["me", "m.tab_me"], ["tasks", "m.tab_tasks"], ["finance", "m.tab_finance"], ["ranking", "m.tab_ranking"]];
-    if (data.member.is_office) tabs.push(["fees_all", "m.tab_fees_all"]);
-    if (!tabs.some(x => x[0] === tab)) tab = "me";
+    const esc = window.ZA.esc;
+    const can = data.member.can || {};
+    const sections = [["m-finance", "m.tab_finance"], ["m-goals", "home.goals_title"], ["m-tasks", "m.tab_tasks"], ["m-ranking", "m.tab_ranking"]];
+    if (data.member.is_office) sections.push(["m-feesall", "m.tab_fees_all"]);
     root.innerHTML = `
       ${data.sample ? `<p class="demo-note">${t("m.demo_hint")}</p>` : ""}
-      <div class="member-head card">
-        <div>
-          <h2>${t("m.hello", { name: window.ZA.esc(data.member.name) })}</h2>
-          <div class="member-meta">
-            <span class="chip chip--small">${window.ZA.esc(data.member.id)}</span>
-            ${data.member.commission ? `<span>${t("m.commission")}: <strong>${window.ZA.esc(data.member.commission)}</strong></span>` : ""}
-            ${data.member.office_role ? `<span>${t("m.role")}: <strong>${window.ZA.esc(data.member.office_role)}</strong></span>` : ""}
+      <div class="m-layout">
+        <aside class="m-side">
+          <div class="card member-head">
+            <h2>${t("m.hello", { name: esc(data.member.name) })}</h2>
+            <div class="member-meta">
+              <span class="chip chip--small">${esc(data.member.id)}</span>
+              ${data.member.commission ? `<span>${t("m.commission")}: <strong>${esc(data.member.commission)}</strong></span>` : ""}
+              ${data.member.office_role ? `<span>${t("m.role")}: <strong>${esc(data.member.office_role)}</strong></span>` : ""}
+            </div>
+            <div class="inline mt-s">
+              ${can.finance || can.materials || can.attendance ? `<a class="btn btn--gold btn--small" href="fampidirana.html">${t("nav.entry")}</a>` : ""}
+              <button class="btn btn--outline btn--small" id="logout">${t("m.logout")}</button>
+            </div>
           </div>
+          ${meHTML()}
+        </aside>
+        <div class="m-main">
+          <nav class="m-nav">${sections.map(([id, k]) => `<a href="#${id}">${t(k)}</a>`).join("")}</nav>
+          <section id="m-finance" class="m-sec"><h2>${t("m.tab_finance")}</h2>${financeHTML()}</section>
+          <section id="m-goals" class="m-sec"><h2>${t("home.goals_title")}</h2><p class="muted">${t("m.goals_intro")}</p>${goalsHTML()}</section>
+          <section id="m-tasks" class="m-sec"><h2>${t("m.tab_tasks")}</h2>${tasksHTML()}</section>
+          <section id="m-ranking" class="m-sec"><h2>${t("m.tab_ranking")}</h2>${rankingHTML()}</section>
+          ${data.member.is_office ? `<section id="m-feesall" class="m-sec">${feesAllHTML()}</section>` : ""}
         </div>
-        <div class="inline">
-          ${data.member.can && (data.member.can.finance || data.member.can.materials || data.member.can.attendance)
-            ? `<a class="btn btn--gold btn--small" href="fampidirana.html">${t("nav.entry")}</a>` : ""}
-          <button class="btn btn--outline btn--small" id="logout">${t("m.logout")}</button>
-        </div>
-      </div>
-      <div class="tabs" role="tablist">
-        ${tabs.map(([k, l]) => `<button role="tab" class="tab ${k === tab ? "is-active" : ""}" aria-selected="${k === tab}" data-tab="${k}">${t(l)}</button>`).join("")}
-      </div>
-      <div class="tab-panel">${panelHTML()}</div>`;
+      </div>`;
+    root.querySelectorAll("[data-goal]").forEach(b => b.addEventListener("click", () => {
+      const id = b.dataset.goal; openGoals.has(id) ? openGoals.delete(id) : openGoals.add(id); render();
+    }));
     root.querySelector("#logout").addEventListener("click", () => logout());
-    root.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => { tab = b.dataset.tab; render(); }));
     root.querySelectorAll("[data-filter]").forEach(b => b.addEventListener("click", () => { taskFilter = b.dataset.filter; render(); }));
     root.querySelectorAll("[data-done]").forEach(b => b.addEventListener("click", () => { confirmTask = b.dataset.done; render(); }));
     root.querySelectorAll("[data-confirm]").forEach(b => b.addEventListener("click", () => markDone(b.dataset.confirm)));
     root.querySelectorAll("[data-cancel]").forEach(b => b.addEventListener("click", () => { confirmTask = null; render(); }));
+    const myPhoto = root.querySelector("#my-photo");
+    if (myPhoto) myPhoto.addEventListener("change", () => changePhoto(myPhoto.files[0]));
     const all = root.querySelector("#fin-all");
     if (all) all.addEventListener("click", loadFullFinance);
   }
@@ -155,15 +181,6 @@
         <p class="hint">${t("m.forgot")}</p>
         ${demo ? `<p class="demo-note">${t("m.demo_hint")}</p>` : ""}
       </div>`;
-  }
-
-  function panelHTML() {
-    if (tab === "me") return meHTML();
-    if (tab === "tasks") return tasksHTML();
-    if (tab === "finance") return financeHTML();
-    if (tab === "ranking") return rankingHTML();
-    if (tab === "fees_all") return feesAllHTML();
-    return "";
   }
 
   const STATUS_KEY = { on_time: "m.fee_on_time", late: "m.fee_late", unpaid: "m.fee_unpaid", future: "m.fee_future", na: "m.fee_na" };
@@ -210,8 +227,52 @@
       ${window.ZACard ? `<div class="card mt my-card">
         <h3>${t("m.my_card")}</h3>
         <p class="muted">${t("m.my_card_hint")}</p>
-        ${window.ZACard.card({ id: data.member.id, name: data.member.name, commission: data.member.commission, role: data.member.office_role })}
+        ${window.ZACard.card({ id: data.member.id, name: data.member.name, commission: data.member.commission, role: data.member.office_role, photo: data.member.photo, photo_data: data.member.photo_data })}
+        <div class="center mt-s">
+          <label class="btn btn--outline btn--small file-btn">${t("m.photo_change")}<input type="file" accept="image/*" id="my-photo" hidden></label>
+          <p class="hint">${t("e.photo_hint")}</p>
+          ${photoMsg ? `<div class="alert ${photoMsg === "m.photo_saved" ? "alert--ok" : "alert--err"}">${t(photoMsg)}</div>` : ""}
+        </div>
       </div>` : ""}`;
+  }
+
+  /* Goals and their steps, like on the home page, plus the ones not shown publicly */
+  function goalsHTML() {
+    const { t, esc, fmtDate } = window.ZA;
+    const goals = data.goals || [];
+    if (!goals.length) return `<p class="muted">${t("goals.empty")}</p>`;
+    return `<div class="goals goals--members">${goals.map(g => {
+      const total = g.steps.length;
+      const done = g.steps.filter(x => x.status === "done").length;
+      const pct = total ? Math.round(done / total * 100) : 0;
+      const open = openGoals.has(g.id);
+      const steps = g.steps.map(x => `
+        <li class="step step--${esc(x.status)}">
+          <div class="step__title">${esc(x.title)}<span class="badge badge--${esc(x.status)}">${t("goals." + x.status)}</span>
+            ${x.visible === false ? `<span class="badge badge--hidden">${t("m.hidden")}</span>` : ""}</div>
+          <div class="step__info">${esc(x.assignee_label || "–")} · ${x.status === "done" ? t("m.task_done_on") + " " + fmtDate(x.done_date || x.due) : (x.due ? t("m.task_due") + ": " + fmtDate(x.due) : "")}</div>
+          ${x.status !== "done" && x.can_edit ? `<div class="mt-xs">${doneButton(x)}</div>` : ""}
+        </li>`).join("");
+      return `
+        <article class="goal ${g.visible ? "" : "goal--hidden"}">
+          <h3>${esc(g.title)} ${g.visible ? "" : `<span class="badge badge--hidden">${t("m.hidden")}</span>`}</h3>
+          ${g.description ? `<p class="goal__desc">${esc(g.description)}</p>` : ""}
+          <div class="goal__meta"><strong>${t("goals.progress", { done, total })}</strong>
+            ${g.target_date ? `<span>${t("goals.target")}: ${fmtDate(g.target_date)}</span>` : ""}</div>
+          <div class="progress"><div class="progress__bar" style="width:${pct}%"></div></div>
+          ${total ? `<button class="goal__toggle" data-goal="${esc(g.id)}" aria-expanded="${open}">${t(open ? "goals.hide_steps" : "goals.show_steps")}</button>` : ""}
+          ${open ? `<ol class="steps">${steps}</ol>` : ""}
+        </article>`;
+    }).join("")}</div>`;
+  }
+
+  function doneButton(x) {
+    const { t, esc } = window.ZA;
+    return confirmTask === x.id
+      ? `<div class="confirm"><span>${t("m.confirm_done")}</span>
+           <button class="btn btn--gold btn--small" data-confirm="${esc(x.id)}" ${busy ? "disabled" : ""}>${t("m.confirm_yes")}</button>
+           <button class="btn btn--outline btn--small" data-cancel>${t("m.confirm_no")}</button></div>`
+      : `<button class="btn btn--navy btn--small" data-done="${esc(x.id)}">${t("m.task_mark_done")}</button>`;
   }
 
   function tasksHTML() {
@@ -221,19 +282,13 @@
       .sort((a, b) => (a.status === "done") - (b.status === "done") || ((a.due || "9") < (b.due || "9") ? -1 : 1));
     const items = list.length ? list.map(x => {
       const overdue = x.status !== "done" && x.due && x.due < today;
-      let action = "";
-      if (x.status !== "done" && x.can_edit) {
-        action = confirmTask === x.id
-          ? `<div class="confirm"><span>${t("m.confirm_done")}</span>
-               <button class="btn btn--gold btn--small" data-confirm="${esc(x.id)}" ${busy ? "disabled" : ""}>${t("m.confirm_yes")}</button>
-               <button class="btn btn--outline btn--small" data-cancel>${t("m.confirm_no")}</button></div>`
-          : `<button class="btn btn--navy btn--small" data-done="${esc(x.id)}">${t("m.task_mark_done")}</button>`;
-      }
+      const action = x.status !== "done" && x.can_edit ? doneButton(x) : "";
       return `
         <li class="task task--${x.status}">
           <div class="task__main">
             <div class="task__title">${esc(x.title)}
               <span class="badge badge--${x.status}">${t("goals." + x.status)}</span>
+              ${x.visible === false ? `<span class="badge badge--hidden">${t("m.hidden")}</span>` : ""}
               ${overdue ? `<span class="badge badge--late">${t("m.task_overdue")}</span>` : ""}</div>
             <div class="task__meta">
               ${x.goal ? `<span>${t("m.task_goal")}: ${esc(x.goal)}</span>` : ""}

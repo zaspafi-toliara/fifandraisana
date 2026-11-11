@@ -1,5 +1,5 @@
 /* ==========================================================
-   ZA SPaFI Toliara – member cards and material labels
+   ZA SPaFi Toliara – member cards and material labels
    - window.ZACard.card(member) / .label(material): HTML with a QR code
    - karatra.html: choose members/materials and print on A4
    The QR code contains only the ID (e.g. ZA-001, ZE-01).
@@ -17,18 +17,35 @@
   const esc = s => (window.ZA ? window.ZA.esc(s) : String(s));
   const t = (k, v) => (window.ZA ? window.ZA.t(k, v) : k);
 
+  /* Photo of a member: a local picture not yet sent (photo_data) or the Drive file */
+  function photoSrc(m) {
+    if (m.photo_data) return m.photo_data;
+    if (m.photo) return "https://drive.google.com/thumbnail?id=" + encodeURIComponent(m.photo) + "&sz=w400";
+    return "";
+  }
+  function initials(name) {
+    return String(name || "").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
+  }
+  function photoHTML(m, cls) {
+    const src = photoSrc(m);
+    return `<div class="${cls}">${src
+      ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://lh3.googleusercontent.com/d/${esc(m.photo || "")}=w400'">`
+      : `<span>${esc(initials(m.name))}</span>`}</div>`;
+  }
+
   function card(m) {
     return `
       <div class="idcard">
         <div class="idcard__band">
           <img src="assets/img/logo-192.png" alt="">
-          <div><strong>ZA SPaFI Toliara</strong><span>${esc(t("site.kind"))}</span></div>
+          <div><strong>ZA SPaFi Toliara</strong><span>Zanaka Ampielezana Synodam-Paritany Fisakana eto Toliara</span></div>
         </div>
         <div class="idcard__body">
+          ${photoHTML(m, "idcard__photo")}
           <div class="idcard__info">
             <div class="idcard__label">${esc(t("c.card_member"))}</div>
             <div class="idcard__name">${esc(m.name)}</div>
-            ${m.commission ? `<div class="idcard__line">${esc(t("m.commission"))}: ${esc(m.commission)}</div>` : ""}
+            ${m.commission ? `<div class="idcard__line">${esc(m.commission)}</div>` : ""}
             ${m.role ? `<div class="idcard__line">${esc(m.role)}</div>` : ""}
             <div class="idcard__id">${esc(m.id)}</div>
           </div>
@@ -38,17 +55,41 @@
       </div>`;
   }
 
+  /* Reads a picture chosen or taken on the phone, crops it to a 3:4 portrait
+     (centre) and resizes it to 300 × 400 px JPEG (~30–50 KB). */
+  function processPhoto(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !/^image\//.test(file.type)) { reject(new Error("not_image")); return; }
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const W = 300, H = 400, ratio = W / H;
+        let sw = img.naturalWidth, sh = img.naturalHeight, sx = 0, sy = 0;
+        if (sw / sh > ratio) { const nw = sh * ratio; sx = (sw - nw) / 2; sw = nw; }
+        else { const nh = sw / ratio; sy = Math.max(0, (sh - nh) * 0.35); sh = nh; }   // keep a bit more of the top (head)
+        const c = document.createElement("canvas"); c.width = W; c.height = H;
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H);
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL("image/jpeg", 0.8));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("bad_image")); };
+      img.src = url;
+    });
+  }
+
   function label(x) {
     return `
       <div class="mlabel">
         <div class="mlabel__qr">${qrSvg(x.id)}</div>
         <div class="mlabel__txt"><div class="mlabel__id">${esc(x.id)}</div>
           <div>${esc(x.type)}${x.size ? " · " + esc(x.size) : ""}</div>
-          <div class="mlabel__org">ZA SPaFI Toliara</div></div>
+          <div class="mlabel__org">ZA SPaFi Toliara</div></div>
       </div>`;
   }
 
-  window.ZACard = { card, label, qrSvg };
+  window.ZACard = { card, label, qrSvg, processPhoto, photoSrc, photoHTML };
 
   /* ---------- karatra.html ---------- */
   let lists = null, tab = "members", selected = new Set(), commission = "", loaded = false, error = "";

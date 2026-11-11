@@ -1,8 +1,8 @@
 /* ==========================================================================
-   ZA SPaFI Toliara – Google Apps Script back end
+   ZA SPaFi Toliara – Google Apps Script back end
    --------------------------------------------------------------------------
    The Google Sheet is the database. This script:
-     1. creates the tabs (menu "ZA SPaFI" > "Hamorona ny takelaka")
+     1. creates the tabs (menu "ZA SPaFi" > "Hamorona ny takelaka")
      2. fills missing member IDs and PINs
      3. serves the website (web app): public data, donation declarations,
         members' login and members' dashboard, marking tasks as done.
@@ -19,8 +19,8 @@ const S = {
   members: {
     name: "Mpikambana",
     headers: ["ID", "Anarana feno", "Daty nahaterahana", "Finday", "Vaomiera", "Birao",
-              "Andraikitra Birao", "Daty niditra", "Sata", "Zo", "PIN"],
-    widths:  [80, 220, 130, 130, 150, 70, 170, 110, 110, 130, 70]
+              "Andraikitra Birao", "Daty niditra", "Sata", "Zo", "PIN", "Sary"],
+    widths:  [80, 220, 130, 130, 150, 70, 170, 110, 110, 130, 70, 160]
   },
   fees: {
     name: "Latsakemboka",
@@ -55,8 +55,8 @@ const S = {
   },
   tasks: {
     name: "Asa",
-    headers: ["ID", "ID tanjona", "Asa", "Tompon'andraikitra", "Fe-potoana", "Sata", "Daty vita", "Fanamarihana"],
-    widths:  [70, 90, 300, 170, 110, 170, 110, 220]
+    headers: ["ID", "ID tanjona", "Asa", "Tompon'andraikitra", "Fe-potoana", "Sata", "Daty vita", "Fanamarihana", "Aseho"],
+    widths:  [70, 90, 300, 170, 110, 170, 110, 220, 80]
   },
   attendance: {
     name: "Fanatrehana",
@@ -106,7 +106,7 @@ const SESSIONS = ["Fanazaran-tena", "Fotoam-pivavahana", "Fivoriana", "Fampiseho
    Menu and setup
    ========================================================================== */
 function onOpen() {
-  SpreadsheetApp.getUi().createMenu("ZA SPaFI")
+  SpreadsheetApp.getUi().createMenu("ZA SPaFi")
     .addItem("Hamorona ny takelaka (setup)", "setup")
     .addItem("Hameno ID sy PIN tsy ampy", "fillIdsAndPins")
     .addSeparator()
@@ -162,7 +162,7 @@ function setup() {
   dateCol("donations", "Daty nandefasana"); dateCol("donations", "Daty voamarina"); textCol("donations", "Finday");
   dateCol("loans", "Daty nindramana"); dateCol("loans", "Daty naverina");
   dd("goals", "Aseho", V.yesNo); dateCol("goals", "Fe-potoana");
-  dd("tasks", "Sata", V.taskStatus); dateCol("tasks", "Fe-potoana"); dateCol("tasks", "Daty vita");
+  dd("tasks", "Sata", V.taskStatus); dd("tasks", "Aseho", V.yesNo); dateCol("tasks", "Fe-potoana"); dateCol("tasks", "Daty vita");
   dateCol("attendance", "Daty");
   dd("attendance", "Fotoana", SESSIONS);
   dateCol("log", "Daty");
@@ -175,7 +175,7 @@ function setup() {
   const def = ss.getSheetByName("Sheet1") || ss.getSheetByName("Feuille 1") || ss.getSheetByName("Feuille1");
   if (def && ss.getSheets().length > 1 && def.getLastRow() === 0) ss.deleteSheet(def);
 
-  SpreadsheetApp.getActive().toast("Vita ny fanomanana ny takelaka.", "ZA SPaFI", 5);
+  SpreadsheetApp.getActive().toast("Vita ny fanomanana ny takelaka.", "ZA SPaFi", 5);
 }
 
 /* Gives an ID (ZA-001…) and a 4-digit PIN to members who have none */
@@ -199,7 +199,7 @@ function fillIdsAndPins() {
       sh.getRange(i + 1, cPin + 1).setValue(String(Math.floor(1000 + Math.random() * 9000))); n++;
     }
   }
-  SpreadsheetApp.getActive().toast(n + " sela nofenoina.", "ZA SPaFI", 5);
+  SpreadsheetApp.getActive().toast(n + " sela nofenoina.", "ZA SPaFi", 5);
 }
 
 /* ==========================================================================
@@ -228,6 +228,10 @@ function doPost(e) {
       case "task_done":   return json_(withMember_(body, taskDone_));
       case "staff_lists": return json_(withMember_(body, staffLists_));
       case "sync":        return json_(withMember_(body, sync_));
+      case "my_photo":    return json_(withMember_(body, (m, b) => {
+                            const id = savePhoto_(m["ID"], b.image);
+                            return id ? { ok: true, photo: id } : { ok: false, error: "bad_image" };
+                          }));
       case "logout":      logout_(body.token); return json_({ ok: true });
       default:            return json_({ ok: false, error: "unknown_action" });
     }
@@ -243,7 +247,7 @@ function publicData_() {
   const goals = rows_("goals").filter(g => g["ID"] && g["Aseho"] !== "Tsia");
   const tasks = rows_("tasks");
   const outGoals = goals.map(g => {
-    const steps = tasks.filter(t => String(t["ID tanjona"]) === String(g["ID"]) && t["Asa"])
+    const steps = tasks.filter(t => String(t["ID tanjona"]) === String(g["ID"]) && t["Asa"] && t["Aseho"] !== "Tsia")
       .sort((a, b) => iso_(a["Fe-potoana"]) < iso_(b["Fe-potoana"]) ? -1 : 1)
       .map(t => {
         const status = TASK_CODE[t["Sata"]] || "todo";
@@ -391,9 +395,17 @@ function me_(m) {
       id: t["ID"], goal: g ? g["Lohateny"] : "", title: t["Asa"],
       assignee: who, assignee_label: /^ZA-\d+$/i.test(who) ? nameOf(who) : who,
       due: iso_(t["Fe-potoana"]), status: TASK_CODE[t["Sata"]] || "todo", done_date: iso_(t["Daty vita"]),
-      mine: canEditTask_(m, who, false), can_edit: canEditTask_(m, who, true)
+      mine: canEditTask_(m, who, false), can_edit: canEditTask_(m, who, true),
+      goal_id: String(t["ID tanjona"] || ""), visible: t["Aseho"] !== "Tsia"
     };
   }).sort((a, b) => (a.due || "9999") < (b.due || "9999") ? -1 : 1);
+
+  /* --- all goals with their steps (also those not shown publicly) --- */
+  const goalsOut = goals.filter(g => g["ID"] && g["Lohateny"]).map(g => ({
+    id: String(g["ID"]), title: g["Lohateny"], description: g["Famaritana"] || "",
+    target_date: iso_(g["Fe-potoana"]), visible: g["Aseho"] !== "Tsia",
+    steps: tasks.filter(x => x.goal_id === String(g["ID"]))
+  }));
 
   /* --- rankings (current year) --- */
   const active = members.filter(r => r["ID"] && r["Sata"] !== "Tsy mavitrika");
@@ -408,9 +420,9 @@ function me_(m) {
   const out = {
     ok: true,
     member: { id: m["ID"], name: m["Anarana feno"], commission: m["Vaomiera"], office_role: m["Andraikitra Birao"] || "",
-              is_office: isOffice_(m), can: rights_(m) },
+              is_office: isOffice_(m), can: rights_(m), photo: String(m["Sary"] || "") },
     fees: { year, monthly_amount: set.monthly, months },
-    loans, tasks,
+    loans, tasks, goals: goalsOut,
     top: { fees: feeTop, attendance: attTop },
     finance: financeSummary_(10)
   };
@@ -570,7 +582,8 @@ function staffLists_(m) {
     monthly_fee: settings_().monthly,
     sessions: SESSIONS,
     members: members.map(x => ({ id: String(x["ID"]), name: x["Anarana feno"], commission: x["Vaomiera"] || "",
-                                 role: x["Andraikitra Birao"] || "", paid: paid[String(x["ID"])] || [] })),
+                                 role: x["Andraikitra Birao"] || "", photo: String(x["Sary"] || ""),
+                                 paid: paid[String(x["ID"])] || [] })),
     materials
   };
   if (r.finance) {
@@ -603,7 +616,8 @@ function sync_(m, b) {
       try { res = applyOp_(m, op.type, op.data || {}); }
       catch (err) { res = { ok: false, error: String(err) }; }
       if (res.ok) {
-        logSh.appendRow([new Date(), m["Anarana feno"], op.type, JSON.stringify(op.data || {}).slice(0, 500), op.op_id]);
+        const logged = Object.assign({}, op.data || {}); if (logged.image) logged.image = "(sary)";
+        logSh.appendRow([new Date(), m["Anarana feno"], op.type, JSON.stringify(logged).slice(0, 500), op.op_id]);
         done[op.op_id] = true;
       }
       return Object.assign({ op_id: op.op_id }, res);
@@ -692,6 +706,12 @@ function applyOp_(m, type, d) {
       }
       return { ok: false, error: "not_found" };
     }
+    case "photo": {
+      if (!r.attendance) return { ok: false, error: "forbidden" };
+      if (!memberExists(d.member_id)) return { ok: false, error: "unknown_member" };
+      const id = savePhoto_(d.member_id, d.image);
+      return id ? { ok: true, photo: id } : { ok: false, error: "bad_image" };
+    }
     default:
       return { ok: false, error: "unknown_op" };
   }
@@ -708,9 +728,9 @@ function safe_(s, n) { const t = String(s || "").slice(0, n); return /^[=+\-@]/.
    SMS reminders – "SMS Gateway for Android" (https://sms-gate.app), cloud mode
    1. Install the app on the spare Android phone, switch on "Cloud server",
       note the username and password it shows.
-   2. Menu ZA SPaFI > SMS: ampidiro ny kaonty SMS Gateway
-   3. Menu ZA SPaFI > SMS: andramo   (test)
-   4. Menu ZA SPaFI > SMS: alefaso isan'andro ny fampahatsiahivana (daily, ~8:00)
+   2. Menu ZA SPaFi > SMS: ampidiro ny kaonty SMS Gateway
+   3. Menu ZA SPaFi > SMS: andramo   (test)
+   4. Menu ZA SPaFi > SMS: alefaso isan'andro ny fampahatsiahivana (daily, ~8:00)
    ========================================================================== */
 const SMS_URL = "https://api.sms-gate.app/3rdparty/v1/messages";
 const SMS_MAX_PER_RUN = 60;
@@ -729,14 +749,14 @@ function smsTest() {
   const ui = SpreadsheetApp.getUi();
   const r = ui.prompt("SMS fanandramana", "Laharana handefasana (oh: 034 12 345 67):", ui.ButtonSet.OK_CANCEL);
   if (r.getSelectedButton() !== ui.Button.OK) return;
-  const res = smsSend_([r.getResponseText()], "ZA SPaFI Toliara: SMS fanandramana. Mandeha tsara ny fampahatsiahivana.");
+  const res = smsSend_([r.getResponseText()], "ZA SPaFi Toliara: SMS fanandramana. Mandeha tsara ny fampahatsiahivana.");
   ui.alert(res.ok ? "Lasa ny SMS." : "Tsy lasa: " + res.error);
 }
 
 function smsSend_(phones, text) {
   const props = PropertiesService.getScriptProperties();
   const user = props.getProperty("SMS_USER"), pass = props.getProperty("SMS_PASS");
-  if (!user || !pass) return { ok: false, error: "Tsy mbola misy kaonty SMS (menu ZA SPaFI > SMS)" };
+  if (!user || !pass) return { ok: false, error: "Tsy mbola misy kaonty SMS (menu ZA SPaFi > SMS)" };
   const numbers = phones.map(phoneIntl_).filter(Boolean);
   if (!numbers.length) return { ok: false, error: "Tsy misy laharana mety" };
   const res = UrlFetchApp.fetch(SMS_URL, {
@@ -800,10 +820,10 @@ function sendReminders() {
 
     const title = String(t["Asa"]).slice(0, 60);
     const text = kind === "before"
-      ? "ZA SPaFI: Fampahatsiahivana. Asa: " + title + ". Fe-potoana: " + fmt(due) + " (" + days + " andro sisa). Rehefa vita, mariho ao amin'ny tranonkala. Misaotra!"
+      ? "ZA SPaFi: Fampahatsiahivana. Asa: " + title + ". Fe-potoana: " + fmt(due) + " (" + days + " andro sisa). Rehefa vita, mariho ao amin'ny tranonkala. Misaotra!"
       : kind === "today"
-        ? "ZA SPaFI: Androany no fe-potoan'ny asa: " + title + ". Rehefa vita, mariho ao amin'ny tranonkala. Misaotra!"
-        : "ZA SPaFI: Tara ny asa: " + title + " (fe-potoana " + fmt(due) + "). Mariho ao amin'ny tranonkala raha efa vita. Misaotra!";
+        ? "ZA SPaFi: Androany no fe-potoan'ny asa: " + title + ". Rehefa vita, mariho ao amin'ny tranonkala. Misaotra!"
+        : "ZA SPaFi: Tara ny asa: " + title + " (fe-potoana " + fmt(due) + "). Mariho ao amin'ny tranonkala raha efa vita. Misaotra!";
     const res = smsSend_(phones, text);
     if (res.ok) {
       logSh.appendRow([new Date(), "SMS", "reminder", title + " → " + targets.map(x => x["ID"]).join(", "), key]);
@@ -812,4 +832,47 @@ function sendReminders() {
       console.error("SMS failed for task " + t["ID"] + ": " + res.error);
     }
   });
+}
+
+/* ==========================================================================
+   Member photos (head shots for the cards)
+   Saved as small JPEG files in a Google Drive folder of the choir account,
+   readable by anyone who has the link (needed to show them on the website).
+   The file ID is written in the "Sary" column of Mpikambana.
+   ========================================================================== */
+const PHOTO_FOLDER_NAME = "ZA SPaFi Toliara – Sary mpikambana";
+
+function photoFolder_() {
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty("PHOTO_FOLDER");
+  if (id) { try { return DriveApp.getFolderById(id); } catch (e) { /* deleted: create again */ } }
+  const f = DriveApp.createFolder(PHOTO_FOLDER_NAME);
+  props.setProperty("PHOTO_FOLDER", f.getId());
+  return f;
+}
+
+function savePhoto_(memberId, dataUrl) {
+  const m = String(dataUrl || "").match(/^data:image\/(jpeg|png|webp);base64,(.+)$/);
+  if (!m) return "";
+  const bytes = Utilities.base64Decode(m[2]);
+  if (bytes.length > 400000) return "";                     // the app sends ~40 KB; refuse huge files
+  const blob = Utilities.newBlob(bytes, "image/" + m[1], memberId + ".jpg");
+  const file = photoFolder_().createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  const sh = sheet_("members");
+  const data = sh.getDataRange().getValues();
+  const h = data[0];
+  const cId = h.indexOf("ID"), cPhoto = h.indexOf("Sary");
+  if (cPhoto < 0) throw new Error("Missing column Sary (run setup)");
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][cId]) === String(memberId)) {
+      const old = String(data[i][cPhoto] || "");
+      if (old) { try { DriveApp.getFileById(old).setTrashed(true); } catch (e) { /* already gone */ } }
+      sh.getRange(i + 1, cPhoto + 1).setValue(file.getId());
+      return file.getId();
+    }
+  }
+  file.setTrashed(true);
+  return "";
 }

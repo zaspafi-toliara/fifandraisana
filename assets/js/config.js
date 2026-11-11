@@ -1,5 +1,5 @@
 /* ==========================================================
-   ZA SPaFI Toliara – site settings
+   ZA SPaFi Toliara – site settings
    Edit the values below. Text in [brackets] must be completed.
    ========================================================== */
 window.SITE_CONFIG = {
@@ -12,9 +12,8 @@ window.SITE_CONFIG = {
 
   // Mobile money (owned by the treasurer)
   MOBILE_MONEY: [
-    { operator: "MVola", number: "+261 34 94 150 05", holder: "Manampitahiana Aroniaina" }
-    // Add more if needed, e.g.:
-    // { operator: "Orange Money", number: "032 00 000 00", holder: "[...]" }
+    { operator: "MVola", number: "+261 34 94 150 05", holder: "Manampitahiana Aroniaina" },
+    { operator: "Orange Money", number: "032 60 608 15", holder: "Manampitahiana Aroniaina" }
   ],
 
   // Official information shown on the "About us" page

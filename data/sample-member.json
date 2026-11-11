@@ -156,7 +156,8 @@
    "status": "done",
    "done_date": "2026-08-12",
    "mine": false,
-   "can_edit": true
+   "can_edit": true,
+   "visible": true
   },
   {
    "id": "A2",
@@ -168,7 +169,8 @@
    "status": "todo",
    "done_date": "",
    "mine": true,
-   "can_edit": true
+   "can_edit": true,
+   "visible": true
   },
   {
    "id": "A3",
@@ -180,7 +182,8 @@
    "status": "in_progress",
    "done_date": "",
    "mine": true,
-   "can_edit": true
+   "can_edit": true,
+   "visible": true
   },
   {
    "id": "A4",
@@ -192,7 +195,8 @@
    "status": "in_progress",
    "done_date": "",
    "mine": false,
-   "can_edit": true
+   "can_edit": true,
+   "visible": true
   },
   {
    "id": "A5",
@@ -204,7 +208,8 @@
    "status": "todo",
    "done_date": "",
    "mine": false,
-   "can_edit": true
+   "can_edit": true,
+   "visible": true
   }
  ],
  "top": {
@@ -493,6 +498,231 @@
     "future",
     "future",
     "future"
+   ]
+  }
+ ],
+ "goals": [
+  {
+   "id": "G1",
+   "title": "Akanjo vaovao ho an'ny mpihira rehetra",
+   "description": "Hanana akanjo mitovy sy madio ny mpihira rehetra amin'ny fotoam-pivavahana sy fampisehoana.",
+   "target_date": "2027-03-31",
+   "visible": true,
+   "steps": [
+    {
+     "id": "G1S1",
+     "title": "Fifidianana ny modely sy ny loko",
+     "status": "done",
+     "due": "2026-08-15",
+     "done_date": "2026-08-15",
+     "assignee_label": "Hira sy mozika",
+     "mine": false,
+     "can_edit": true,
+     "visible": true
+    },
+    {
+     "id": "G1S2",
+     "title": "Fanombanana ny vidiny",
+     "status": "done",
+     "due": "2026-09-10",
+     "done_date": "2026-09-10",
+     "assignee_label": "Fampandrosoana",
+     "mine": false,
+     "can_edit": true,
+     "visible": true
+    },
+    {
+     "id": "G1S3",
+     "title": "Fanangonam-bola",
+     "status": "in_progress",
+     "due": "2026-12-31",
+     "done_date": "",
+     "assignee_label": "Rakoto Jean",
+     "mine": false,
+     "can_edit": true,
+     "visible": true
+    },
+    {
+     "id": "G1S4",
+     "title": "Fividianana lamba",
+     "status": "todo",
+     "due": "2027-01-31",
+     "done_date": "",
+     "assignee_label": "Randria Faly",
+     "mine": false,
+     "can_edit": true,
+     "visible": true
+    },
+    {
+     "id": "G1S5",
+     "title": "Fanjairana",
+     "status": "todo",
+     "due": "2027-03-01",
+     "done_date": "",
+     "assignee_label": "Fifandraisana",
+     "mine": false,
+     "can_edit": true,
+     "visible": true
+    },
+    {
+     "id": "G1S6",
+     "title": "Fizarana ny akanjo",
+     "status": "todo",
+     "due": "2027-03-31",
+     "done_date": "",
+     "assignee_label": "Fitaovana",
+     "mine": false,
+     "can_edit": true,
+     "visible": true
+    },
+    {
+     "id": "G1S7",
+     "title": "Fifanarahana amin'ny mpanjaitra",
+     "status": "todo",
+     "due": "2026-12-15",
+     "done_date": "",
+     "assignee_label": "Rakoto Jean",
+     "mine": true,
+     "can_edit": true,
+     "visible": false
+    }
+   ]
+  },
+  {
+   "id": "G2",
+   "title": "Fandraisam-peo rakikira voalohany",
+   "description": "Handrakitra hira 10 ho fitoriana ny Filazantsara.",
+   "target_date": "2027-08-31",
+   "visible": true,
+   "steps": [
+    {
+     "id": "G2S1",
+     "title": "Fisafidianana ireo hira",
+     "status": "done",
+     "due": "2026-07-20",
+     "done_date": "2026-07-20",
+     "assignee_label": "Hira sy mozika",
+     "mine": false,
+     "can_edit": true,
+     "visible": true
+    },
+    {
+     "id": "G2S2",
+     "title": "Fanazaran-tena",
+     "status": "in_progress",
+     "due": "2027-04-30",
+     "done_date": "",
+     "assignee_label": "Fampandrosoana",
+     "mine": false,
+     "can_edit": true,
+     "visible": true
+    },
+    {
+     "id": "G2S3",
+     "title": "Fifanarahana amin'ny studio",
+     "status": "todo",
+     "due": "2027-05-31",
+     "done_date": "",
+     "assignee_label": "Rakoto Jean",
+     "mine": false,
+     "can_edit": true,
+     "visible": true
+    },
+    {
+     "id": "G2S4",
+     "title": "Fandraisam-peo",
+     "status": "todo",
+     "due": "2027-07-15",
+     "done_date": "",
+     "assignee_label": "Randria Faly",
+     "mine": false,
+     "can_edit": true,
+     "visible": true
+    },
+    {
+     "id": "G2S5",
+     "title": "Famoahana ny rakikira",
+     "status": "todo",
+     "due": "2027-08-31",
+     "done_date": "",
+     "assignee_label": "Fifandraisana",
+     "mine": false,
+     "can_edit": true,
+     "visible": true
+    }
+   ]
+  },
+  {
+   "id": "G3",
+   "title": "Fitaovana mozika",
+   "description": "Hividy feo fanamafisam-peo sy keyboard vaovao.",
+   "target_date": "2027-06-30",
+   "visible": true,
+   "steps": [
+    {
+     "id": "G3S1",
+     "title": "Lisitry ny fitaovana ilaina",
+     "status": "done",
+     "due": "2026-10-01",
+     "done_date": "2026-10-01",
+     "assignee_label": "Hira sy mozika",
+     "mine": false,
+     "can_edit": true,
+     "visible": true
+    },
+    {
+     "id": "G3S2",
+     "title": "Fangatahana tolotra amin'ny mpivarotra",
+     "status": "done",
+     "due": "2026-10-25",
+     "done_date": "2026-10-25",
+     "assignee_label": "Fampandrosoana",
+     "mine": true,
+     "can_edit": true,
+     "visible": true
+    },
+    {
+     "id": "G3S3",
+     "title": "Fividianana",
+     "status": "todo",
+     "due": "2027-06-30",
+     "done_date": "",
+     "assignee_label": "Rakoto Jean",
+     "mine": false,
+     "can_edit": true,
+     "visible": true
+    }
+   ]
+  },
+  {
+   "id": "G4",
+   "title": "Fety faha-10 taona",
+   "description": "Fikarakarana anatiny, tsy mbola aseho ampahibemaso.",
+   "target_date": "2027-10-01",
+   "visible": false,
+   "steps": [
+    {
+     "id": "G4S1",
+     "title": "Fanomanana tetibola",
+     "status": "in_progress",
+     "due": "2026-12-20",
+     "done_date": "",
+     "assignee_label": "Fampandrosoana",
+     "mine": false,
+     "can_edit": true,
+     "visible": false
+    },
+    {
+     "id": "G4S2",
+     "title": "Fifidianana toerana",
+     "status": "todo",
+     "due": "2027-02-28",
+     "done_date": "",
+     "assignee_label": "Rakoto Jean",
+     "mine": true,
+     "can_edit": true,
+     "visible": false
+    }
    ]
   }
  ]

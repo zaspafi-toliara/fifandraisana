@@ -1,6 +1,6 @@
-# ZA SPaFI Toliara – website
+# ZA SPaFi Toliara – website
 
-Website of **ZA SPaFI Toliara** (Zanaka Ampielezana Synodam-Paritany Fisakana eto Toliara), a Lutheran choir association.
+Website of **ZA SPaFi Toliara** (Zanaka Ampielezana Synodam-Paritany Fisakana eto Toliara), a Lutheran choir association.
 Static site hosted on GitHub Pages; data will come from a Google Sheet through Google Apps Script (phase 2).
 
 ## Structure
@@ -11,6 +11,10 @@ Static site hosted on GitHub Pages; data will come from a Google Sheet through G
 | `mombamomba.html` | About us, Lutheran identity, board, official information, statutes |
 | `fanomezana.html` | Donation instructions, declaration form, donor list, share button |
 | `mpikambana.html` + `assets/js/members.js` | Members' area: login (phone/ID + PIN), my fees, my materials, tasks, finances, rankings, all fees (board) |
+| `fampidirana.html` + `assets/js/entry.js` | Phone entry app (staff): QR scan, fees, income/expenses, loans, attendance, donation confirmation, works offline |
+| `karatra.html` + `assets/js/cards.js` | Print member cards and material QR labels |
+| `sw.js`, `manifest.webmanifest` | Offline cache and "Add to Home screen" for the entry app |
+| `assets/vendor/` | QR libraries (html5-qrcode, qrcode-generator), kept locally so they work offline |
 | `apps-script/Code.gs` | Google Apps Script back end (paste into the Google Sheet) – see `apps-script/SETUP.md` |
 | `data/sample-member.json` | Sample members' data for test mode (login ZA-001 / PIN 1234) |
 | `assets/js/config.js` | **Settings to edit**: mobile money number, official info, API URL |

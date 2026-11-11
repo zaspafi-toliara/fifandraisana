@@ -1,5 +1,5 @@
 /* ==========================================================
-   ZA SPaFI Toliara – phone entry app (fampidirana.html)
+   ZA SPaFi Toliara – phone entry app (fampidirana.html)
    For the treasurer, secretaries and the Fitaovana commission.
    - Login once per phone (30 days)
    - Scan member cards / material labels (QR)
@@ -27,6 +27,7 @@
   let search = "";
   let scanner = null;        // Html5Qrcode instance
   let attendance = null;     // { session, date, ids: [] } while in attendance mode
+  let newPhoto = null;       // { id, data } photo taken but not yet saved
 
   const today = () => new Date().toISOString().slice(0, 10);
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2));
@@ -94,6 +95,7 @@
     if (type === "fee" && mem(d.member_id)) mem(d.member_id).paid = Array.from(new Set(mem(d.member_id).paid.concat(d.months)));
     if (type === "loan" && mat(d.material_id)) Object.assign(mat(d.material_id), { holder_id: d.member_id, holder_name: (mem(d.member_id) || {}).name || d.member_id, since: d.date });
     if (type === "return" && mat(d.material_id)) Object.assign(mat(d.material_id), { holder_id: "", holder_name: "", since: "" });
+    if (type === "photo" && mem(d.member_id)) mem(d.member_id).photo_data = d.image;
     if (type === "donation_status" && lists.pending_donations) lists.pending_donations = lists.pending_donations.filter(x => x.key !== d.key);
     store.set(K.lists, lists);
   }
@@ -259,6 +261,20 @@
     let html = backHTML() + `
       <div class="card e-head"><h2>${esc(m.name)}</h2>
         <div class="member-meta"><span class="chip chip--small">${esc(m.id)}</span><span>${esc(m.commission)}</span>${m.role ? `<span>${esc(m.role)}</span>` : ""}</div></div>`;
+    if (can.attendance && window.ZACard) {
+      const pending = newPhoto && newPhoto.id === m.id;
+      const shown = pending ? Object.assign({}, m, { photo_data: newPhoto.data }) : m;
+      html += `
+        <div class="card mt photo-box">
+          ${window.ZACard.photoHTML(shown, "photo-prev")}
+          <div>
+            <h3>${t("e.photo")}</h3>
+            <p class="hint">${t("e.photo_hint")}</p>
+            <label class="btn btn--outline btn--small file-btn">${t("e.photo_take")}<input type="file" accept="image/*" id="photo-input" hidden></label>
+            ${pending ? `<button class="btn btn--gold btn--small" data-act="photo-save">${t("e.photo_save")}</button>` : ""}
+          </div>
+        </div>`;
+    }
     if (can.finance) {
       const chips = Array.from({ length: 12 }, (_, i) => {
         const k = year + "-" + String(i + 1).padStart(2, "0");
@@ -460,6 +476,20 @@
       enqueue("loan", { material_id: view.id, member_id: code, date: today() }, `${view.id} → ${code}`);
       render();
     }, false));
+
+    // photo
+    const pin = root.querySelector("#photo-input");
+    if (pin) pin.addEventListener("change", async () => {
+      try { newPhoto = { id: view.id, data: await window.ZACard.processPhoto(pin.files[0]) }; }
+      catch (e) { flash = t("m.error"); }
+      render();
+    });
+    on("[data-act=photo-save]", "click", () => {
+      if (!newPhoto) return;
+      const m = lists.members.find(x => x.id === newPhoto.id);
+      enqueue("photo", { member_id: newPhoto.id, image: newPhoto.data }, `${t("e.photo")}: ${m ? m.name : newPhoto.id}`);
+      newPhoto = null; render();
+    });
 
     // money
     const mon = root.querySelector("#f-money");

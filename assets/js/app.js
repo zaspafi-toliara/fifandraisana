@@ -1,5 +1,5 @@
 /* ==========================================================
-   ZA SPaFI Toliara – site script
+   ZA SPaFi Toliara – site script
    - loads the translations (i18n/strings.csv)
    - loads the data (Apps Script API, or sample JSON while API_URL is empty)
    - builds the header/footer and each page's content
@@ -159,7 +159,7 @@
             </ul>
           </div>
         </div>
-        <div class="footer-bottom">© ${new Date().getFullYear()} ZA SPaFI Toliara · <span data-i18n="footer.rights"></span></div>
+        <div class="footer-bottom">© ${new Date().getFullYear()} ZA SPaFi Toliara · <span data-i18n="footer.rights"></span></div>
       </div>`;
     document.body.append(footer);
 
@@ -246,21 +246,17 @@
   function renderDonationSummary() {
     const box = $("#donation-summary"); if (!box) return;
     const list = donations();
-    const total = list.reduce((s, d) => s + Number(d.amount || 0), 0);
     box.innerHTML = `
-      <div class="stat">
-        <div class="stat__label">${t("home.donations_total")}</div>
-        <div class="stat__value">${money(total)}</div>
-        <div class="stat__sub">${list.length} ${t("home.donations_count")}</div>
-        <a class="btn btn--gold" href="fanomezana.html">${t("home.cta_btn")}</a>
-      </div>
       <div class="card">
         <h3>${t("home.donations_recent")}</h3>
         <div class="table-wrap"><table>
           <thead><tr><th>${t("donors.col_date")}</th><th>${t("donors.col_donor")}</th><th class="num">${t("donors.col_amount")}</th></tr></thead>
           <tbody>${list.length ? donationRows(list.slice(0, 5)) : `<tr><td colspan="3" class="muted">${t("donors.empty")}</td></tr>`}</tbody>
         </table></div>
-        <div class="list-actions"><a class="btn btn--outline btn--small" href="fanomezana.html#donors">${t("common.see_all")}</a></div>
+        <div class="list-actions btn-row">
+          <a class="btn btn--outline btn--small" href="fanomezana.html#donors">${t("common.see_all")}</a>
+          <a class="btn btn--gold btn--small" href="fanomezana.html">${t("home.cta_btn")}</a>
+        </div>
       </div>`;
   }
   let showAll = false;
@@ -269,12 +265,10 @@
     const list = donations();
     const n = CFG.DONATIONS_PREVIEW || 10;
     const shown = showAll ? list : list.slice(0, n);
-    const total = list.reduce((s, d) => s + Number(d.amount || 0), 0);
     box.innerHTML = `
       <div class="table-wrap"><table>
         <thead><tr><th>${t("donors.col_date")}</th><th>${t("donors.col_donor")}</th><th class="num">${t("donors.col_amount")}</th></tr></thead>
         <tbody>${list.length ? donationRows(shown) : `<tr><td colspan="3" class="muted">${t("donors.empty")}</td></tr>`}</tbody>
-        <tfoot><tr><td colspan="2">${t("donors.total")} (${list.length})</td><td class="num">${money(total)}</td></tr></tfoot>
       </table></div>
       ${list.length > n ? `<div class="list-actions"><button class="btn btn--outline btn--small" id="toggle-donors">${t(showAll ? "common.show_less" : "common.see_all")}</button></div>` : ""}`;
     const btn = $("#toggle-donors");
@@ -343,7 +337,7 @@
     const share = $("#share-btn");
     if (share) share.addEventListener("click", () => {
       const url = location.href.split("#")[0];
-      if (navigator.share) navigator.share({ title: "ZA SPaFI Toliara", text: t("home.cta_title"), url }).catch(() => {});
+      if (navigator.share) navigator.share({ title: "ZA SPaFi Toliara", text: t("home.cta_title"), url }).catch(() => {});
       else copy(url, share, "share.copied", "share.btn");
     });
   }
