@@ -6,6 +6,9 @@
      2. fills missing member IDs and PINs
      3. serves the website (web app): public data, donation declarations,
         members' login and members' dashboard, marking tasks as done.
+     4. serves the phone entry app (fampidirana.html): QR scans, fees,
+        transactions, loans, attendance, donation confirmation (offline queue).
+     5. sends SMS task reminders through "SMS Gateway for Android" (daily trigger).
    Deploy: Deploy > New deployment > Web app
            Execute as: Me   |   Who has access: Anyone
    Paste the web-app URL in assets/js/config.js (API_URL).
@@ -60,6 +63,11 @@ const S = {
     headers: ["Daty", "ID mpikambana", "Fotoana"],
     widths:  [110, 120, 200]
   },
+  log: {
+    name: "Tantara",
+    headers: ["Daty", "Nampiditra", "Asa", "Antsipiriany", "op_id"],
+    widths:  [150, 180, 140, 420, 260]
+  },
   settings: {
     name: "Fikirana",
     headers: ["Fikirana", "Sanda", "Fanazavana"],
@@ -89,7 +97,10 @@ const DEFAULT_SETTINGS = [
 ];
 
 const TZ = "Indian/Antananarivo";
-const SESSION_SECONDS = 6 * 60 * 60;   // 6 hours
+const SESSION_SECONDS = 6 * 60 * 60;   // 6 hours (members' area)
+const DEVICE_DAYS = 30;                 // "remember this phone" for the entry app (staff only)
+const STAFF_RIGHTS = ["Sekretera", "Mpitahiry vola", "Mpandrindra"];
+const SESSIONS = ["Fanazaran-tena", "Fotoam-pivavahana", "Fivoriana", "Fampisehoana", "Hafa"];
 
 /* ==========================================================================
    Menu and setup
@@ -98,6 +109,11 @@ function onOpen() {
   SpreadsheetApp.getUi().createMenu("ZA SPaFI")
     .addItem("Hamorona ny takelaka (setup)", "setup")
     .addItem("Hameno ID sy PIN tsy ampy", "fillIdsAndPins")
+    .addSeparator()
+    .addItem("SMS: ampidiro ny kaonty SMS Gateway", "smsSetCredentials")
+    .addItem("SMS: andramo (alefa SMS iray)", "smsTest")
+    .addItem("SMS: alefaso isan'andro ny fampahatsiahivana", "installReminderTrigger")
+    .addItem("SMS: ajanony ny fampahatsiahivana", "removeReminderTrigger")
     .addToUi();
 }
 
@@ -148,6 +164,8 @@ function setup() {
   dd("goals", "Aseho", V.yesNo); dateCol("goals", "Fe-potoana");
   dd("tasks", "Sata", V.taskStatus); dateCol("tasks", "Fe-potoana"); dateCol("tasks", "Daty vita");
   dateCol("attendance", "Daty");
+  dd("attendance", "Fotoana", SESSIONS);
+  dateCol("log", "Daty");
 
   // "Tompon'andraikitra" accepts a member ID (ZA-001) or a commission name: no strict list.
   const setSh = ss.getSheetByName(S.settings.name);
@@ -208,7 +226,9 @@ function doPost(e) {
       case "me":          return json_(withMember_(body, me_));
       case "finance_all": return json_(withMember_(body, financeAll_));
       case "task_done":   return json_(withMember_(body, taskDone_));
-      case "logout":      CacheService.getScriptCache().remove("tok_" + body.token); return json_({ ok: true });
+      case "staff_lists": return json_(withMember_(body, staffLists_));
+      case "sync":        return json_(withMember_(body, sync_));
+      case "logout":      logout_(body.token); return json_({ ok: true });
       default:            return json_({ ok: false, error: "unknown_action" });
     }
   } catch (err) {
@@ -282,7 +302,14 @@ function login_(b) {
   }
   cache.remove(failKey);
   const token = Utilities.getUuid();
-  cache.put("tok_" + token, String(m["ID"]), SESSION_SECONDS);
+  if (b.remember) {
+    // long session for the entry app, only for people allowed to enter data
+    if (!canAny_(m)) return { ok: false, error: "not_staff" };
+    PropertiesService.getScriptProperties().setProperty("dev_" + token,
+      JSON.stringify({ id: String(m["ID"]), exp: Date.now() + DEVICE_DAYS * 86400000 }));
+  } else {
+    cache.put("tok_" + token, String(m["ID"]), SESSION_SECONDS);
+  }
   return { ok: true, token };
 }
 
@@ -297,14 +324,39 @@ function findMember_(ident) {
 }
 
 function withMember_(b, fn) {
-  const id = CacheService.getScriptCache().get("tok_" + b.token);
+  let id = b.token ? CacheService.getScriptCache().get("tok_" + b.token) : null;
+  if (!id && b.token) {
+    const raw = PropertiesService.getScriptProperties().getProperty("dev_" + b.token);
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (d.exp > Date.now()) id = d.id;
+      else PropertiesService.getScriptProperties().deleteProperty("dev_" + b.token);
+    }
+  }
   if (!id) return { ok: false, error: "session_expired" };
   const m = rows_("members").find(r => String(r["ID"]) === id);
   if (!m) return { ok: false, error: "session_expired" };
   return fn(m, b);
 }
 
+function logout_(token) {
+  if (!token) return;
+  CacheService.getScriptCache().remove("tok_" + token);
+  PropertiesService.getScriptProperties().deleteProperty("dev_" + token);
+}
+
 function isOffice_(m) { return m["Birao"] === "Eny" || m["Zo"] === "Mpandrindra"; }
+
+/* What a person may enter in the phone app */
+function rights_(m) {
+  const staff = STAFF_RIGHTS.indexOf(m["Zo"]) >= 0;
+  return {
+    finance: staff,                                     // transactions, fees, donation confirmation
+    materials: staff || m["Vaomiera"] === "Fitaovana",  // loans and returns
+    attendance: staff
+  };
+}
+function canAny_(m) { const r = rights_(m); return r.finance || r.materials || r.attendance; }
 
 /* ==========================================================================
    Members: dashboard data
@@ -356,7 +408,7 @@ function me_(m) {
   const out = {
     ok: true,
     member: { id: m["ID"], name: m["Anarana feno"], commission: m["Vaomiera"], office_role: m["Andraikitra Birao"] || "",
-              is_office: isOffice_(m) },
+              is_office: isOffice_(m), can: rights_(m) },
     fees: { year, monthly_amount: set.monthly, months },
     loans, tasks,
     top: { fees: feeTop, attendance: attTop },
@@ -484,4 +536,280 @@ function monthKey_(v) {
 function num_(v) { return Number(String(v).replace(/[^\d.-]/g, "")) || 0; }
 function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ==========================================================================
+   Phone entry app (fampidirana.html) – staff only
+   ========================================================================== */
+function staffLists_(m) {
+  if (!canAny_(m)) return { ok: false, error: "forbidden" };
+  const r = rights_(m);
+  const now = new Date();
+  const members = rows_("members").filter(x => x["ID"] && x["Sata"] !== "Tsy mavitrika");
+  const nameOf = id => { const x = members.find(y => String(y["ID"]) === String(id)); return x ? x["Anarana feno"] : ""; };
+
+  const paid = {};
+  rows_("fees").forEach(f => {
+    const id = String(f["ID mpikambana"]); const k = monthKey_(f["Volana"]);
+    if (!id || !k) return;
+    (paid[id] = paid[id] || []).push(k);
+  });
+
+  const loans = rows_("loans");
+  const materials = rows_("materials").filter(x => x["ID"]).map(x => {
+    const open = loans.filter(l => String(l["ID fitaovana"]) === String(x["ID"]) && !l["Daty naverina"]).pop();
+    return { id: String(x["ID"]), type: x["Karazany"] || "", desc: x["Famaritana"] || "", size: x["Habe"] || "",
+             holder_id: open ? String(open["ID mpikambana"]) : "", holder_name: open ? nameOf(open["ID mpikambana"]) : "",
+             since: open ? iso_(open["Daty nindramana"]) : "" };
+  });
+
+  const out = {
+    ok: true,
+    me: { id: m["ID"], name: m["Anarana feno"], can: r },
+    year: now.getFullYear(),
+    monthly_fee: settings_().monthly,
+    sessions: SESSIONS,
+    members: members.map(x => ({ id: String(x["ID"]), name: x["Anarana feno"], commission: x["Vaomiera"] || "",
+                                 role: x["Andraikitra Birao"] || "", paid: paid[String(x["ID"])] || [] })),
+    materials
+  };
+  if (r.finance) {
+    out.pending_donations = rows_("donations").filter(d => d["Sata"] === "Miandry").map(d => ({
+      key: donationKey_(d), date: iso_(d["Daty nandefasana"]), name: d["Anarana"], phone: String(d["Finday"] || ""),
+      amount: num_(d["Vola"]), operator: d["Tambajotra"] || "", reference: String(d["Référence"] || ""),
+      show_name: d["Aseho anarana"] === "Eny", message: d["Hafatra"] || "" }));
+  }
+  return out;
+}
+
+function donationKey_(d) {
+  const t = d["Voaray tamin'ny"] instanceof Date ? Utilities.formatDate(d["Voaray tamin'ny"], TZ, "yyyy-MM-dd'T'HH:mm:ss") : String(d["Voaray tamin'ny"]);
+  return String(d["Référence"] || "") + "|" + t;
+}
+
+/* Receives the queue of operations saved on the phone (possibly offline) */
+function sync_(m, b) {
+  if (!canAny_(m)) return { ok: false, error: "forbidden" };
+  const ops = Array.isArray(b.ops) ? b.ops.slice(0, 200) : [];
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const logSh = sheet_("log");
+    const done = {};
+    rows_("log").forEach(l => { if (l["op_id"]) done[String(l["op_id"])] = true; });
+    const results = ops.map(op => {
+      if (!op || !op.op_id) return { op_id: "", ok: false, error: "bad_op" };
+      if (done[op.op_id]) return { op_id: op.op_id, ok: true, dup: true };
+      let res;
+      try { res = applyOp_(m, op.type, op.data || {}); }
+      catch (err) { res = { ok: false, error: String(err) }; }
+      if (res.ok) {
+        logSh.appendRow([new Date(), m["Anarana feno"], op.type, JSON.stringify(op.data || {}).slice(0, 500), op.op_id]);
+        done[op.op_id] = true;
+      }
+      return Object.assign({ op_id: op.op_id }, res);
+    });
+    return { ok: true, results };
+  } finally { lock.releaseLock(); }
+}
+
+function applyOp_(m, type, d) {
+  const r = rights_(m);
+  const who = m["Anarana feno"];
+  const date = dateFrom_(d.date);
+  const memberExists = id => rows_("members").some(x => String(x["ID"]) === String(id));
+
+  switch (type) {
+    case "tx": {
+      if (!r.finance) return { ok: false, error: "forbidden" };
+      const amount = num_(d.amount);
+      if (!(amount > 0) || !d.reason || (d.kind !== "in" && d.kind !== "out")) return { ok: false, error: "missing_fields" };
+      sheet_("transactions").appendRow([date, d.kind === "in" ? "Miditra" : "Mivoaka", amount, safe_(d.reason, 200), safe_(d.category, 60), who]);
+      return { ok: true };
+    }
+    case "fee": {
+      if (!r.finance) return { ok: false, error: "forbidden" };
+      if (!memberExists(d.member_id)) return { ok: false, error: "unknown_member" };
+      const amount = num_(d.amount);
+      const months = (d.months || []).filter(k => /^\d{4}-\d{2}$/.test(k));
+      if (!(amount > 0) || !months.length) return { ok: false, error: "missing_fields" };
+      const existing = rows_("fees").filter(f => String(f["ID mpikambana"]) === String(d.member_id)).map(f => monthKey_(f["Volana"]));
+      const sh = sheet_("fees");
+      const added = [], skipped = [];
+      months.forEach(k => {
+        if (existing.indexOf(k) >= 0) { skipped.push(k); return; }
+        sh.appendRow([date, String(d.member_id), "'" + k, amount, who, ""]);
+        added.push(k);
+      });
+      return { ok: true, added, skipped };
+    }
+    case "loan": {
+      if (!r.materials) return { ok: false, error: "forbidden" };
+      if (!rows_("materials").some(x => String(x["ID"]) === String(d.material_id))) return { ok: false, error: "unknown_material" };
+      if (!memberExists(d.member_id)) return { ok: false, error: "unknown_member" };
+      const open = rows_("loans").some(l => String(l["ID fitaovana"]) === String(d.material_id) && !l["Daty naverina"]);
+      if (open) return { ok: false, error: "already_out" };
+      sheet_("loans").appendRow([date, String(d.material_id), String(d.member_id), "", safe_(d.note, 200)]);
+      return { ok: true };
+    }
+    case "return": {
+      if (!r.materials) return { ok: false, error: "forbidden" };
+      const sh = sheet_("loans");
+      const data = sh.getDataRange().getValues();
+      const h = data[0];
+      const cMat = h.indexOf("ID fitaovana"), cRet = h.indexOf("Daty naverina");
+      for (let i = data.length - 1; i >= 1; i--) {
+        if (String(data[i][cMat]) === String(d.material_id) && !data[i][cRet]) {
+          sh.getRange(i + 1, cRet + 1).setValue(date);
+          return { ok: true };
+        }
+      }
+      return { ok: false, error: "not_out" };
+    }
+    case "attendance": {
+      if (!r.attendance) return { ok: false, error: "forbidden" };
+      if (!memberExists(d.member_id)) return { ok: false, error: "unknown_member" };
+      const session = SESSIONS.indexOf(d.session) >= 0 ? d.session : "Hafa";
+      const day = iso_(date);
+      const dup = rows_("attendance").some(a => iso_(a["Daty"]) === day && String(a["ID mpikambana"]) === String(d.member_id) && a["Fotoana"] === session);
+      if (dup) return { ok: true, dup: true };
+      sheet_("attendance").appendRow([date, String(d.member_id), session]);
+      return { ok: true };
+    }
+    case "donation_status": {
+      if (!r.finance) return { ok: false, error: "forbidden" };
+      if (d.status !== "Voamarina" && d.status !== "Nolavina") return { ok: false, error: "missing_fields" };
+      const sh = sheet_("donations");
+      const data = sh.getDataRange().getValues();
+      const h = data[0];
+      const cSt = h.indexOf("Sata"), cDate = h.indexOf("Daty voamarina");
+      for (let i = 1; i < data.length; i++) {
+        const row = {}; h.forEach((k, j) => { row[k] = data[i][j]; });
+        if (donationKey_(row) === d.key) {
+          sh.getRange(i + 1, cSt + 1).setValue(d.status);
+          sh.getRange(i + 1, cDate + 1).setValue(new Date());
+          return { ok: true };
+        }
+      }
+      return { ok: false, error: "not_found" };
+    }
+    default:
+      return { ok: false, error: "unknown_op" };
+  }
+}
+
+function dateFrom_(s) {
+  const m = String(s || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date();
+}
+/* Text from the phone: limit length and stop it being read as a formula */
+function safe_(s, n) { const t = String(s || "").slice(0, n); return /^[=+\-@]/.test(t) ? "'" + t : t; }
+
+/* ==========================================================================
+   SMS reminders – "SMS Gateway for Android" (https://sms-gate.app), cloud mode
+   1. Install the app on the spare Android phone, switch on "Cloud server",
+      note the username and password it shows.
+   2. Menu ZA SPaFI > SMS: ampidiro ny kaonty SMS Gateway
+   3. Menu ZA SPaFI > SMS: andramo   (test)
+   4. Menu ZA SPaFI > SMS: alefaso isan'andro ny fampahatsiahivana (daily, ~8:00)
+   ========================================================================== */
+const SMS_URL = "https://api.sms-gate.app/3rdparty/v1/messages";
+const SMS_MAX_PER_RUN = 60;
+
+function smsSetCredentials() {
+  const ui = SpreadsheetApp.getUi();
+  const u = ui.prompt("SMS Gateway", "Username (hita ao amin'ny application, Cloud server):", ui.ButtonSet.OK_CANCEL);
+  if (u.getSelectedButton() !== ui.Button.OK) return;
+  const p = ui.prompt("SMS Gateway", "Password:", ui.ButtonSet.OK_CANCEL);
+  if (p.getSelectedButton() !== ui.Button.OK) return;
+  PropertiesService.getScriptProperties().setProperties({ SMS_USER: u.getResponseText().trim(), SMS_PASS: p.getResponseText().trim() });
+  ui.alert("Voatahiry ny kaonty SMS.");
+}
+
+function smsTest() {
+  const ui = SpreadsheetApp.getUi();
+  const r = ui.prompt("SMS fanandramana", "Laharana handefasana (oh: 034 12 345 67):", ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  const res = smsSend_([r.getResponseText()], "ZA SPaFI Toliara: SMS fanandramana. Mandeha tsara ny fampahatsiahivana.");
+  ui.alert(res.ok ? "Lasa ny SMS." : "Tsy lasa: " + res.error);
+}
+
+function smsSend_(phones, text) {
+  const props = PropertiesService.getScriptProperties();
+  const user = props.getProperty("SMS_USER"), pass = props.getProperty("SMS_PASS");
+  if (!user || !pass) return { ok: false, error: "Tsy mbola misy kaonty SMS (menu ZA SPaFI > SMS)" };
+  const numbers = phones.map(phoneIntl_).filter(Boolean);
+  if (!numbers.length) return { ok: false, error: "Tsy misy laharana mety" };
+  const res = UrlFetchApp.fetch(SMS_URL, {
+    method: "post", contentType: "application/json", muteHttpExceptions: true,
+    headers: { Authorization: "Basic " + Utilities.base64Encode(user + ":" + pass) },
+    payload: JSON.stringify({ textMessage: { text: text }, phoneNumbers: numbers })
+  });
+  const code = res.getResponseCode();
+  return code >= 200 && code < 300 ? { ok: true } : { ok: false, error: "HTTP " + code + " " + res.getContentText().slice(0, 200) };
+}
+
+/* "034 12 345 67" / "0341234567" / "+261 34..." -> "+261341234567" */
+function phoneIntl_(p) {
+  const d = String(p || "").replace(/\D/g, "");
+  if (/^261\d{9}$/.test(d)) return "+" + d;
+  if (/^0\d{9}$/.test(d)) return "+261" + d.slice(1);
+  if (/^\d{9}$/.test(d)) return "+261" + d;
+  return "";
+}
+
+function installReminderTrigger() {
+  removeReminderTrigger(true);
+  ScriptApp.newTrigger("sendReminders").timeBased().everyDays(1).atHour(8).create();
+  SpreadsheetApp.getUi().alert("Hisy fampahatsiahivana SMS alefa isan'andro amin'ny 8 ora maraina eo ho eo.");
+}
+function removeReminderTrigger(silent) {
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === "sendReminders").forEach(t => ScriptApp.deleteTrigger(t));
+  if (silent !== true) SpreadsheetApp.getUi().alert("Najanona ny fampahatsiahivana SMS.");
+}
+
+/* Runs every day: N days before the deadline, on the day, and the day after (if not done) */
+function sendReminders() {
+  const set = settings_();
+  const members = rows_("members").filter(x => x["ID"] && x["Sata"] !== "Tsy mavitrika");
+  const sent = {};
+  rows_("log").forEach(l => { if (String(l["op_id"]).indexOf("rem|") === 0) sent[l["op_id"]] = true; });
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const fmt = d => Utilities.formatDate(d, TZ, "dd/MM");
+  const logSh = sheet_("log");
+  let count = 0;
+
+  rows_("tasks").forEach(t => {
+    if (count >= SMS_MAX_PER_RUN) return;
+    if (!t["Asa"] || t["Sata"] === "Vita" || !(t["Fe-potoana"] instanceof Date)) return;
+    const due = new Date(t["Fe-potoana"]); due.setHours(0, 0, 0, 0);
+    const days = Math.round((due - today) / 86400000);
+    let kind = "";
+    if (days === set.reminderDays) kind = "before";
+    else if (days === 0) kind = "today";
+    else if (days === -1) kind = "late";
+    if (!kind) return;
+    const key = "rem|" + t["ID"] + "|" + kind + "|" + iso_(due);
+    if (sent[key]) return;
+
+    const who = String(t["Tompon'andraikitra"] || "").trim();
+    const targets = /^ZA-\d+$/i.test(who)
+      ? members.filter(x => String(x["ID"]).toUpperCase() === who.toUpperCase())
+      : members.filter(x => String(x["Vaomiera"]).toLowerCase() === who.toLowerCase());
+    const phones = targets.map(x => x["Finday"]).filter(Boolean);
+    if (!phones.length) return;
+
+    const title = String(t["Asa"]).slice(0, 60);
+    const text = kind === "before"
+      ? "ZA SPaFI: Fampahatsiahivana. Asa: " + title + ". Fe-potoana: " + fmt(due) + " (" + days + " andro sisa). Rehefa vita, mariho ao amin'ny tranonkala. Misaotra!"
+      : kind === "today"
+        ? "ZA SPaFI: Androany no fe-potoan'ny asa: " + title + ". Rehefa vita, mariho ao amin'ny tranonkala. Misaotra!"
+        : "ZA SPaFI: Tara ny asa: " + title + " (fe-potoana " + fmt(due) + "). Mariho ao amin'ny tranonkala raha efa vita. Misaotra!";
+    const res = smsSend_(phones, text);
+    if (res.ok) {
+      logSh.appendRow([new Date(), "SMS", "reminder", title + " → " + targets.map(x => x["ID"]).join(", "), key]);
+      count += phones.length;
+    } else {
+      console.error("SMS failed for task " + t["ID"] + ": " + res.error);
+    }
+  });
 }

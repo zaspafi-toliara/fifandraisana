@@ -117,7 +117,11 @@
             ${data.member.office_role ? `<span>${t("m.role")}: <strong>${window.ZA.esc(data.member.office_role)}</strong></span>` : ""}
           </div>
         </div>
-        <button class="btn btn--outline btn--small" id="logout">${t("m.logout")}</button>
+        <div class="inline">
+          ${data.member.can && (data.member.can.finance || data.member.can.materials || data.member.can.attendance)
+            ? `<a class="btn btn--gold btn--small" href="fampidirana.html">${t("nav.entry")}</a>` : ""}
+          <button class="btn btn--outline btn--small" id="logout">${t("m.logout")}</button>
+        </div>
       </div>
       <div class="tabs" role="tablist">
         ${tabs.map(([k, l]) => `<button role="tab" class="tab ${k === tab ? "is-active" : ""}" aria-selected="${k === tab}" data-tab="${k}">${t(l)}</button>`).join("")}
@@ -202,7 +206,12 @@
       <div class="card mt">
         <h3>${t("m.loans_title")}</h3>
         <ul class="loans">${loans}</ul>
-      </div>`;
+      </div>
+      ${window.ZACard ? `<div class="card mt my-card">
+        <h3>${t("m.my_card")}</h3>
+        <p class="muted">${t("m.my_card_hint")}</p>
+        ${window.ZACard.card({ id: data.member.id, name: data.member.name, commission: data.member.commission, role: data.member.office_role })}
+      </div>` : ""}`;
   }
 
   function tasksHTML() {

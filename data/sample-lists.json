@@ -1,0 +1,137 @@
+{
+ "ok": true,
+ "sample": true,
+ "me": {
+  "id": "ZA-003",
+  "name": "Manampitahiana Aroniaina",
+  "can": {
+   "finance": true,
+   "materials": true,
+   "attendance": true
+  }
+ },
+ "year": 2026,
+ "monthly_fee": 2000,
+ "sessions": [
+  "Fanazaran-tena",
+  "Fotoam-pivavahana",
+  "Fivoriana",
+  "Fampisehoana",
+  "Hafa"
+ ],
+ "members": [
+  {
+   "id": "ZA-001",
+   "name": "Rakoto Jean",
+   "commission": "Hira sy mozika",
+   "role": "Filoha",
+   "paid": [
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-07",
+    "2026-08",
+    "2026-09"
+   ]
+  },
+  {
+   "id": "ZA-002",
+   "name": "Ravao Hanta",
+   "commission": "Soratra Masina",
+   "role": "",
+   "paid": [
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08",
+    "2026-09"
+   ]
+  },
+  {
+   "id": "ZA-003",
+   "name": "Manampitahiana Aroniaina",
+   "commission": "Fampandrosoana",
+   "role": "Mpitahiry vola",
+   "paid": [
+    "2026-01",
+    "2026-02",
+    "2026-03"
+   ]
+  },
+  {
+   "id": "ZA-004",
+   "name": "Rasoa Noro",
+   "commission": "Fitaovana",
+   "role": "",
+   "paid": [
+    "2026-04",
+    "2026-05",
+    "2026-06"
+   ]
+  },
+  {
+   "id": "ZA-005",
+   "name": "Rahary Zo",
+   "commission": "Fifandraisana",
+   "role": "Sekretera voalohany",
+   "paid": []
+  }
+ ],
+ "materials": [
+  {
+   "id": "ZE-01",
+   "type": "Akanjo",
+   "desc": "Akanjo manga sy fotsy",
+   "size": "M",
+   "holder_id": "ZA-001",
+   "holder_name": "Rakoto Jean",
+   "since": "2026-03-15"
+  },
+  {
+   "id": "ZE-02",
+   "type": "Akanjo",
+   "desc": "Akanjo manga sy fotsy",
+   "size": "L",
+   "holder_id": "",
+   "holder_name": "",
+   "since": ""
+  },
+  {
+   "id": "ZE-03",
+   "type": "Akanjo",
+   "desc": "Akanjo manga sy fotsy",
+   "size": "S",
+   "holder_id": "ZA-004",
+   "holder_name": "Rasoa Noro",
+   "since": "2026-06-01"
+  },
+  {
+   "id": "MK-01",
+   "type": "Mikrô",
+   "desc": "Mikrô tsy misy tariby",
+   "size": "",
+   "holder_id": "",
+   "holder_name": "",
+   "since": ""
+  }
+ ],
+ "pending_donations": [
+  {
+   "key": "MP2611.1234|2026-11-10T14:02:11",
+   "date": "2026-11-10",
+   "name": "Randria Faly",
+   "phone": "034 55 666 77",
+   "amount": 25000,
+   "operator": "MVola",
+   "reference": "MP2611.1234",
+   "show_name": true,
+   "message": "Ho an'ny akanjo vaovao"
+  }
+ ]
+}

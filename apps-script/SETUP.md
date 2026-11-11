@@ -54,8 +54,56 @@ Do all steps while logged in to the **choir's Google account** (zaspafi.toliara6
 - A login lasts 6 hours, or until the member clicks **Hivoaka** or closes the browser.
 - The public site only shows: goals and their steps (no names), confirmed donations (name hidden if the donor asked), and the Birao names. Birth dates and phone numbers are never sent to the website.
 
-## Coming next (phase 3)
+## 5. Phase 3 – phone entry app, cards, SMS reminders
 
-- Phone entry app for the Mpitahiry vola and Sekretera: QR scan of member cards and materials, transactions, fees, attendance, donation confirmation, offline mode
-- Member cards with QR code
-- Automatic SMS reminders via the Android gateway phone
+### 5.1 Update the script (once)
+
+1. Open the Sheet → **Extensions → Apps Script**. Replace the whole content of `Code.gs` with the new `apps-script/Code.gs`. Save.
+2. **Project Settings** (⚙️) → Time zone: **(GMT+03:00) Antananarivo**.
+3. Run **`setup`** again. It adds the **Tantara** tab (history of every entry made from the phone) and the meeting list in **Fanatrehana**. Nothing already entered is changed. Accept the new permissions (sending SMS through the internet, daily trigger).
+4. **Deploy → Manage deployments → ✏️ → Version: New version → Deploy.** The URL stays the same.
+
+### 5.2 Who can use the phone app (`fampidirana.html`)
+
+Set the **Zo** column in **Mpikambana**:
+
+| Zo | Fees, income/expenses, confirm donations | Loans & returns | Attendance |
+|---|---|---|---|
+| Mpitahiry vola, Sekretera, Mpandrindra | ✓ | ✓ | ✓ |
+| Members of Vaomiera **Fitaovana** | | ✓ | |
+| Others | – | – | – |
+
+On the phone: open `https://…/fampidirana.html`, log in once (phone/ID + PIN). The phone stays logged in for 30 days.
+In Chrome, menu ⋮ → **Add to Home screen**: it then opens like an app, even without internet.
+
+**Without internet**: entries are kept on the phone ("Fampidirana X miandry halefa") and sent automatically when the connection comes back. Do not log out while entries are waiting.
+
+### 5.3 Cards and labels (`karatra.html`)
+
+1. Log in on `fampidirana.html` first (same browser).
+2. Open **Hanonta karatra** → choose members (or a commission) → **Hanonta**. A4, 10 cards per page (85.6 × 54 mm, bank-card size).
+3. Tab **Etikety fitaovana** prints QR labels for uniforms and materials (stick them inside the uniform or on a sewn tag).
+4. Tip: print on thick paper (200–250 g) and laminate.
+
+Each member also sees their own card with its QR code in the members' area (**Ny momba ahy**).
+
+### 5.4 SMS reminders (spare Android phone)
+
+1. On the spare phone (with the dedicated SIM and an SMS bundle): install **SMS Gateway for Android** (https://sms-gate.app).
+2. In the app: switch on **Cloud server**, then **Online**. Note the **Username** and **Password** it shows.
+3. Android settings → Apps → SMS Gateway → Battery: **Unrestricted** (otherwise Android stops it at night). Keep the phone charged and connected to the internet (mobile data or Wi-Fi).
+4. In the Sheet: menu **ZA SPaFI → SMS: ampidiro ny kaonty SMS Gateway** → enter the username and password.
+5. **ZA SPaFI → SMS: andramo** → enter your number → you should receive a test SMS.
+6. **ZA SPaFI → SMS: alefaso isan'andro ny fampahatsiahivana** → every day around 8:00 the script checks the **Asa** tab.
+
+Who receives what (tasks not marked **Vita**):
+
+| When | Message |
+|---|---|
+| *N* days before the deadline (*N* = "Fampahatsiahivana (andro mialoha)" in **Fikirana**, default 3) | Reminder with the deadline |
+| On the deadline day | "Androany no fe-potoana…" |
+| The day after | "Tara ny asa…" |
+
+If the person in charge is a member ID (`ZA-004`), only that member receives it. If it is a commission (`Fitaovana`), every active member of that commission receives it. Each reminder is sent only once (recorded in **Tantara**). Maximum 60 SMS per day.
+
+The SMS cost is the normal cost of the SIM card in the gateway phone.

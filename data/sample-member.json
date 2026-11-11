@@ -6,7 +6,12 @@
   "name": "Rakoto Jean",
   "commission": "Hira sy mozika",
   "office_role": "Filoha",
-  "is_office": true
+  "is_office": true,
+  "can": {
+   "finance": true,
+   "materials": true,
+   "attendance": true
+  }
  },
  "fees": {
   "year": 2026,

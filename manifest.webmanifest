@@ -1,0 +1,14 @@
+{
+  "name": "ZA SPaFI Toliara – Fampidirana",
+  "short_name": "ZA SPaFI",
+  "description": "Fampidirana angona: latsakemboka, vola, fitaovana, fanatrehana",
+  "start_url": "fampidirana.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf7f0",
+  "theme_color": "#1b3a8a",
+  "icons": [
+    { "src": "assets/img/logo-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/img/logo.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

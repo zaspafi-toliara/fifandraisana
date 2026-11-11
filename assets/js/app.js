@@ -381,10 +381,13 @@
     renderAbout();
     initDonationForm();
     if (window.renderMembersPage) window.renderMembersPage();
+    if (window.renderEntryPage) window.renderEntryPage();
+    if (window.renderCardsPage) window.renderCardsPage();
   }
 
   // helpers shared with members.js
-  window.ZA = { t, esc, money, fmtDate, fetchText };
+  const num = v => Number(String(v == null ? "" : v).replace(/\D/g, "")) || 0;   // Ariary: whole numbers
+  window.ZA = { t, esc, money, fmtDate, fetchText, num, lang: () => LANG };
 
   async function init() {
     document.documentElement.lang = LANG;
@@ -392,7 +395,9 @@
     try { await loadStrings(); } catch (e) { console.error("strings", e); }
     applyStrings();
     await loadVerses();
-    try { await loadData(); }
+    // public data is not needed on the staff/members pages
+    const needsPublic = ["home", "about", "donate"].indexOf(PAGE) >= 0;
+    try { if (needsPublic) await loadData(); }
     catch (e) {
       console.error("data", e);
       document.querySelectorAll("[data-needs-data]").forEach(el => { el.innerHTML = `<p class="alert alert--err">${t("common.error_load")}</p>`; });

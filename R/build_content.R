@@ -11,7 +11,8 @@ content <- list(
   strings = read_txt("i18n/strings.csv"),
   verses  = read_txt("data/verses.csv"),
   sample  = read_txt("data/sample-public.json"),
-  member  = read_txt("data/sample-member.json")
+  member  = read_txt("data/sample-member.json"),
+  lists   = read_txt("data/sample-lists.json")
 )
 
 # install.packages("jsonlite")   # once
