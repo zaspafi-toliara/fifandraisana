@@ -120,8 +120,8 @@
     }
     const esc = window.ZA.esc;
     const can = data.member.can || {};
-    const sections = [["m-finance", "m.tab_finance"], ["m-goals", "home.goals_title"], ["m-tasks", "m.tab_tasks"], ["m-ranking", "m.tab_ranking"]];
-    if (data.member.is_office) sections.push(["m-feesall", "m.tab_fees_all"]);
+    const sections = [["m-finance", "m.tab_finance"], ["m-goals", "m.goals_title"], ["m-tasks", "m.tab_tasks"], ["m-ranking", "m.tab_ranking"]];
+    if (data.member.is_office) sections.push(["m-feesall", "m.tab_fees_all"], ["m-attall", "e.attendance"]);
     root.innerHTML = `
       ${data.sample ? `<p class="demo-note">${t("m.demo_hint")}</p>` : ""}
       <div class="m-layout">
@@ -143,10 +143,11 @@
         <div class="m-main">
           <nav class="m-nav">${sections.map(([id, k]) => `<a href="#${id}">${t(k)}</a>`).join("")}</nav>
           <section id="m-finance" class="m-sec"><h2>${t("m.tab_finance")}</h2>${financeHTML()}</section>
-          <section id="m-goals" class="m-sec"><h2>${t("home.goals_title")}</h2><p class="muted">${t("m.goals_intro")}</p>${goalsHTML()}</section>
+          <section id="m-goals" class="m-sec"><h2>${t("m.goals_title")}</h2><p class="muted">${t("m.goals_intro")}</p>${goalsHTML()}</section>
           <section id="m-tasks" class="m-sec"><h2>${t("m.tab_tasks")}</h2>${tasksHTML()}</section>
           <section id="m-ranking" class="m-sec"><h2>${t("m.tab_ranking")}</h2>${rankingHTML()}</section>
-          ${data.member.is_office ? `<section id="m-feesall" class="m-sec">${feesAllHTML()}</section>` : ""}
+          ${data.member.is_office ? `<section id="m-feesall" class="m-sec">${feesAllHTML()}</section>
+            <section id="m-attall" class="m-sec">${attendanceAllHTML()}</section>` : ""}
         </div>
       </div>`;
     root.querySelectorAll("[data-goal]").forEach(b => b.addEventListener("click", () => {
@@ -157,8 +158,7 @@
     root.querySelectorAll("[data-done]").forEach(b => b.addEventListener("click", () => { confirmTask = b.dataset.done; render(); }));
     root.querySelectorAll("[data-confirm]").forEach(b => b.addEventListener("click", () => markDone(b.dataset.confirm)));
     root.querySelectorAll("[data-cancel]").forEach(b => b.addEventListener("click", () => { confirmTask = null; render(); }));
-    const myPhoto = root.querySelector("#my-photo");
-    if (myPhoto) myPhoto.addEventListener("change", () => changePhoto(myPhoto.files[0]));
+    root.querySelectorAll(".my-photo").forEach(i => i.addEventListener("change", () => changePhoto(i.files[0])));
     const all = root.querySelector("#fin-all");
     if (all) all.addEventListener("click", loadFullFinance);
   }
@@ -199,10 +199,10 @@
     const { t, esc, money, fmtDate } = window.ZA;
     const f = data.fees;
     const paid = f.months.filter(x => x.paid).length;
-    const cells = f.months.map((x, i) => {
+    const cells = f.months.map(x => {
       const s = feeStatus(x);
       return `<div class="fee-cell fee-cell--${s}" title="${t(STATUS_KEY[s])}${x.date ? " · " + fmtDate(x.date) : ""}">
-        <span class="fee-cell__m">${t("month_short." + (i + 1))}</span>
+        <span class="fee-cell__m">${t("month_short." + Number(x.month.slice(5)))}</span>
         <span class="fee-cell__s">${x.paid ? "✓" : s === "unpaid" ? "✕" : "·"}</span></div>`;
     }).join("");
     const loans = data.loans.length ? data.loans.map(l => `
@@ -229,10 +229,19 @@
         <p class="muted">${t("m.my_card_hint")}</p>
         ${window.ZACard.card({ id: data.member.id, name: data.member.name, commission: data.member.commission, role: data.member.office_role, photo: data.member.photo, photo_data: data.member.photo_data })}
         <div class="center mt-s">
-          <label class="btn btn--outline btn--small file-btn">${t("m.photo_change")}<input type="file" accept="image/*" id="my-photo" hidden></label>
+          <div class="small muted">${t("m.photo_change")}</div>
+          <label class="btn btn--outline btn--small file-btn">📷 ${t("e.photo_camera")}<input type="file" accept="image/*" capture="user" class="my-photo" hidden></label>
+          <label class="btn btn--outline btn--small file-btn">🖼 ${t("e.photo_gallery")}<input type="file" accept="image/*" class="my-photo" hidden></label>
           <p class="hint">${t("e.photo_hint")}</p>
           ${photoMsg ? `<div class="alert ${photoMsg === "m.photo_saved" ? "alert--ok" : "alert--err"}">${t(photoMsg)}</div>` : ""}
         </div>
+      </div>` : ""}
+      ${myAttendanceHTML()}
+      ${(window.SITE_CONFIG || {}).DOCS && window.SITE_CONFIG.DOCS.rules ? `
+      <div class="card about-rules">
+        <h3>${t("m.rules_title")}</h3>
+        <p class="muted small">${t("m.rules_text")}</p>
+        <a class="btn btn--navy btn--small" href="${esc(window.SITE_CONFIG.DOCS.rules)}" target="_blank" rel="noopener">${t("about.rules_btn")}</a>
       </div>` : ""}`;
   }
 
@@ -260,7 +269,7 @@
           <div class="goal__meta"><strong>${t("goals.progress", { done, total })}</strong>
             ${g.target_date ? `<span>${t("goals.target")}: ${fmtDate(g.target_date)}</span>` : ""}</div>
           <div class="progress"><div class="progress__bar" style="width:${pct}%"></div></div>
-          ${total ? `<button class="goal__toggle" data-goal="${esc(g.id)}" aria-expanded="${open}">${t(open ? "goals.hide_steps" : "goals.show_steps")}</button>` : ""}
+          ${total ? `<button class="btn btn--outline btn--small goal__toggle" data-goal="${esc(g.id)}" aria-expanded="${open}">${t(open ? "goals.hide_steps" : "goals.show_steps")}</button>` : ""}
           ${open ? `<ol class="steps">${steps}</ol>` : ""}
         </article>`;
     }).join("")}</div>`;
@@ -345,9 +354,59 @@
       </div>`;
   }
 
+  /* Arrivals at meetings: my own summary (side column) */
+  function myAttendanceHTML() {
+    const { t, esc, fmtDate } = window.ZA;
+    const a = data.attendance;
+    if (!a) return "";
+    const pct = a.meetings ? Math.round(a.present / a.meetings * 100) : 0;
+    return `
+      <div class="card">
+        <h3>${t("m.att_mine")}</h3>
+        ${a.meetings ? `
+          <p><strong>${t("m.att_meetings", { present: a.present, n: a.meetings })}</strong> · ${pct}%</p>
+          <div class="progress"><div class="progress__bar" style="width:${pct}%"></div></div>
+          <div class="att-stats">
+            <span class="badge badge--done">${t("m.att_on_time")}: ${a.on_time}</span>
+            <span class="badge badge--late">${t("m.att_late")}: ${a.late}</span>
+            ${a.avg_time ? `<span class="badge badge--todo">${t("m.att_avg")}: ${esc(a.avg_time)}</span>` : ""}
+          </div>
+          ${a.last.length ? `<p class="small muted mt-s">${t("m.att_last")}</p><ul class="att-last">${a.last.map(x =>
+            `<li><span>${fmtDate(x.date)}</span><strong class="${x.late ? "amt-out" : x.late === false ? "amt-in" : ""}">${esc(x.time || "–")}</strong></li>`).join("")}</ul>` : ""}
+          <p class="hint">${t("m.att_start", { time: esc(data.meeting.start), tol: data.meeting.tolerance })}</p>`
+        : `<p class="muted">${t("m.att_none")}</p>`}
+      </div>`;
+  }
+
+  /* Arrivals at meetings: everybody (Birao only) */
+  function attendanceAllHTML() {
+    const { t, esc } = window.ZA;
+    const list = data.attendance_all || [];
+    const n = list.length ? list[0].meetings : 0;
+    const rows = list.map(r => {
+      const pct = r.meetings ? Math.round(r.present / r.meetings * 100) : 0;
+      return `<tr>
+        <td class="donor"><strong>${esc(r.name)}</strong><div class="muted small">${esc(r.id)}</div></td>
+        <td class="num">${r.present}/${r.meetings}<div class="mini-bar"><i style="width:${pct}%"></i></div></td>
+        <td class="num amt-in">${r.on_time}</td>
+        <td class="num amt-out">${r.late}</td>
+        <td class="num">${esc(r.avg_time || "–")}</td>
+      </tr>`;
+    }).join("");
+    return `
+      <div class="card">
+        <h3>${t("m.att_report")} · ${esc(data.fees.year)}</h3>
+        <p class="hint">${t("m.att_start", { time: esc(data.meeting.start), tol: data.meeting.tolerance })}</p>
+        ${n ? `<div class="table-wrap"><table>
+          <thead><tr><th>${t("m.col_member")}</th><th class="num">${t("m.att_rate")}</th><th class="num">${t("m.att_on_time")}</th>
+            <th class="num">${t("m.att_late")}</th><th class="num">${t("m.att_avg")}</th></tr></thead>
+          <tbody>${rows}</tbody></table></div>` : `<p class="muted">${t("m.att_none")}</p>`}
+      </div>`;
+  }
+
   function feesAllHTML() {
     const { t, esc } = window.ZA;
-    const head = Array.from({ length: 12 }, (_, i) => `<th class="c">${t("month_short." + (i + 1))}</th>`).join("");
+    const head = data.fees.months.map(x => `<th class="c">${t("month_short." + Number(x.month.slice(5)))}</th>`).join("");
     const rows = (data.fees_all || []).map(r => `<tr><td class="donor"><strong>${esc(r.name)}</strong><div class="muted small">${esc(r.id)}</div></td>
       ${r.months.map(s => `<td class="c"><i class="dot dot--${s}" title="${t(STATUS_KEY[s])}"></i></td>`).join("")}</tr>`).join("");
     return `
@@ -360,6 +419,9 @@
 
   /* ---------- start ---------- */
   window.renderMembersPage = async function () {
+    if (!window.__swReg && "serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      window.__swReg = true; navigator.serviceWorker.register("sw.js").catch(() => {});
+    }
     if (token && !data && !busy) {
       busy = true;
       try { await loadMe(); } catch (e) { message = "m.error"; token = null; saveToken(null); }

@@ -26,10 +26,13 @@
   let loginMsg = "";
   let search = "";
   let scanner = null;        // Html5Qrcode instance
-  let attendance = null;     // { session, date, ids: [] } while in attendance mode
+  let attendance = null;     // { items: [{ id, time, op_id }] } while in attendance mode
   let newPhoto = null;       // { id, data } photo taken but not yet saved
 
-  const today = () => new Date().toISOString().slice(0, 10);
+  // local date and time of the phone (Madagascar time)
+  const pad = n => String(n).padStart(2, "0");
+  const today = () => { const d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
+  const nowTime = () => { const d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2));
   const Z = () => window.ZA;
   const CFG = () => window.SITE_CONFIG || {};
@@ -258,6 +261,7 @@
     if (!m) return backHTML();
     const can = lists.me.can;
     const year = lists.year;
+    const months = lists.fee_months || [];
     let html = backHTML() + `
       <div class="card e-head"><h2>${esc(m.name)}</h2>
         <div class="member-meta"><span class="chip chip--small">${esc(m.id)}</span><span>${esc(m.commission)}</span>${m.role ? `<span>${esc(m.role)}</span>` : ""}</div></div>`;
@@ -270,26 +274,25 @@
           <div>
             <h3>${t("e.photo")}</h3>
             <p class="hint">${t("e.photo_hint")}</p>
-            <label class="btn btn--outline btn--small file-btn">${t("e.photo_take")}<input type="file" accept="image/*" id="photo-input" hidden></label>
+            <label class="btn btn--outline btn--small file-btn">📷 ${t("e.photo_camera")}<input type="file" accept="image/*" capture="environment" class="photo-input" hidden></label>
+            <label class="btn btn--outline btn--small file-btn">🖼 ${t("e.photo_gallery")}<input type="file" accept="image/*" class="photo-input" hidden></label>
             ${pending ? `<button class="btn btn--gold btn--small" data-act="photo-save">${t("e.photo_save")}</button>` : ""}
           </div>
         </div>`;
     }
     if (can.finance) {
-      const chips = Array.from({ length: 12 }, (_, i) => {
-        const k = year + "-" + String(i + 1).padStart(2, "0");
+      const chips = months.map(k => {
         const paid = m.paid.includes(k);
-        return `<label class="mchip ${paid ? "is-paid" : ""}"><input type="checkbox" name="month" value="${k}" ${paid ? "disabled checked" : ""}><span>${t("month_short." + (i + 1))}</span></label>`;
+        return `<label class="mchip ${paid ? "is-paid" : ""}"><input type="checkbox" name="month" value="${k}" ${paid ? "disabled checked" : ""}><span>${t("month_short." + Number(k.slice(5)))}<small>${k.slice(2, 4)}</small></span></label>`;
       }).join("");
+      const cat = m.category ? " (" + t("cat." + m.category) + ")" : "";
       html += `
         <form class="card form mt" id="f-fee">
           <h3>${t("e.fee_title", { year })}</h3>
           <p class="hint">${t("e.fee_pick")}</p>
           <div class="mchips">${chips}</div>
-          <div class="row">
-            <div><label>${t("e.fee_amount")}</label><input name="amount" inputmode="numeric" value="${lists.monthly_fee || ""}"></div>
-            <div><label>${t("e.date")}</label><input name="date" type="date" value="${today()}"></div>
-          </div>
+          <p class="fee-note">${t("e.fee_note", { amount: money(m.fee || 0), cat: esc(cat) })}</p>
+          <div><label>${t("e.date")}</label><input name="date" type="date" value="${today()}"></div>
           <p class="fee-total" id="fee-total">${t("e.fee_total", { amount: money(0) })}</p>
           <button class="btn btn--gold" type="submit">${t("e.save")}</button>
         </form>`;
@@ -298,10 +301,7 @@
       html += `
         <form class="card form mt" id="f-present">
           <h3>${t("e.attendance")}</h3>
-          <div class="row">
-            <div><label>${t("e.session")}</label><select name="session">${lists.sessions.map(s => `<option>${esc(s)}</option>`).join("")}</select></div>
-            <div><label>${t("e.date")}</label><input name="date" type="date" value="${today()}"></div>
-          </div>
+          <p class="hint">${t("e.att_auto")}</p>
           <button class="btn btn--navy" type="submit">${t("e.present")}</button>
         </form>`;
     }
@@ -372,22 +372,32 @@
   }
 
   function attendanceHTML() {
-    const { t, esc } = Z();
-    if (!attendance) attendance = { session: lists.sessions[0], date: today(), ids: [] };
-    const names = attendance.ids.map(id => (lists.members.find(m => m.id === id) || { name: id }).name);
+    const { t, esc, fmtDate } = Z();
+    if (!attendance) attendance = { items: [] };
+    const nameOf = id => (lists.members.find(m => m.id === id) || { name: id }).name;
+    const ids = attendance.items.map(x => x.id);
     return backHTML() + `
       <div class="card form">
-        <h3>${t("e.attendance")}</h3>
-        <div class="row">
-          <div><label>${t("e.session")}</label><select id="att-session">${lists.sessions.map(s => `<option ${s === attendance.session ? "selected" : ""}>${esc(s)}</option>`).join("")}</select></div>
-          <div><label>${t("e.date")}</label><input id="att-date" type="date" value="${attendance.date}"></div>
-        </div>
+        <h3>${t("e.attendance")} · ${fmtDate(today())}</h3>
+        <p class="hint">${t("e.att_auto")}</p>
         <button class="btn btn--navy" data-act="att-scan">▣ ${t("e.att_start")}</button>
-        <h3 class="mt-s">${t("e.att_list", { n: attendance.ids.length })}</h3>
-        <ul class="att-list">${attendance.ids.map((id, i) => `<li><span>${esc(names[i])} <span class="muted small">${esc(id)}</span></span><button class="linkbtn" data-unatt="${esc(id)}">✕</button></li>`).join("")}</ul>
-        <div class="inline"><select id="att-add"><option value="">${t("e.choose_member")}</option>${lists.members.filter(m => !attendance.ids.includes(m.id)).map(m => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("")}</select></div>
-        <button class="btn btn--gold mt-s" data-act="att-save" ${attendance.ids.length ? "" : "disabled"}>${t("e.att_save")}</button>
+        <h3 class="mt-s">${t("e.att_list", { n: attendance.items.length })}</h3>
+        <ul class="att-list">${attendance.items.map(x => `<li><span><strong>${esc(x.time)}</strong> · ${esc(nameOf(x.id))} <span class="muted small">${esc(x.id)}</span></span>
+          <button class="linkbtn" data-unatt="${esc(x.op_id)}">✕</button></li>`).join("")}</ul>
+        <div class="inline"><select id="att-add"><option value="">${t("e.choose_member")}</option>${lists.members.filter(m => !ids.includes(m.id)).map(m => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("")}</select></div>
+        <button class="btn btn--gold mt-s" data-act="att-save">${t("e.att_save")}</button>
       </div>`;
+  }
+
+  /* One arrival = one entry saved immediately on the phone, with the time of the scan */
+  function addArrival(id) {
+    const m = lists.members.find(x => x.id === id);
+    const item = { op_id: uid(), id, time: nowTime() };
+    queue.push({ op_id: item.op_id, type: "attendance", data: { member_id: id, date: today(), time: item.time },
+                 label: `${m ? m.name : id}: ${item.time}`, at: new Date().toISOString() });
+    store.set(K.queue, queue);
+    if (attendance) attendance.items.unshift(item);
+    return item;
   }
 
   function donationsHTML() {
@@ -426,17 +436,17 @@
     if (fee) {
       const total = () => {
         const n = fee.querySelectorAll("input[name=month]:checked:not(:disabled)").length;
-        fee.querySelector("#fee-total").textContent = t("e.fee_total", { amount: money(n * Z().num(fee.amount.value)) });
+        const m = lists.members.find(x => x.id === view.id);
+        fee.querySelector("#fee-total").textContent = t("e.fee_total", { amount: money(n * (m.fee || 0)) });
       };
       fee.addEventListener("change", total);
-      fee.amount.addEventListener("input", total);
       fee.addEventListener("submit", e => {
         e.preventDefault();
         const months = Array.from(fee.querySelectorAll("input[name=month]:checked:not(:disabled)")).map(i => i.value);
-        const amount = Z().num(fee.amount.value);
-        if (!months.length || !(amount > 0)) { flash = t("e.fee_none"); render(); return; }
         const m = lists.members.find(x => x.id === view.id);
-        enqueue("fee", { member_id: view.id, months, amount, date: fee.date.value || today() }, `${m.name}: ${months.join(", ")}`);
+        if (!months.length) { flash = t("e.fee_none"); render(); return; }
+        // the amount is fixed by the member's category; the server uses its own value
+        enqueue("fee", { member_id: view.id, months, amount: m.fee || 0, date: fee.date.value || today() }, `${m.name}: ${months.join(", ")}`);
         render();
       });
     }
@@ -444,7 +454,8 @@
     if (pres) pres.addEventListener("submit", e => {
       e.preventDefault();
       const m = lists.members.find(x => x.id === view.id);
-      enqueue("attendance", { member_id: view.id, session: pres.session.value, date: pres.date.value || today() }, `${m.name}: ${pres.session.value}`);
+      const time = nowTime();
+      enqueue("attendance", { member_id: view.id, date: today(), time }, `${m.name}: ${time}`);
       render();
     });
     on("[data-return]", "click", e => {
@@ -478,12 +489,11 @@
     }, false));
 
     // photo
-    const pin = root.querySelector("#photo-input");
-    if (pin) pin.addEventListener("change", async () => {
+    root.querySelectorAll(".photo-input").forEach(pin => pin.addEventListener("change", async () => {
       try { newPhoto = { id: view.id, data: await window.ZACard.processPhoto(pin.files[0]) }; }
       catch (e) { flash = t("m.error"); }
       render();
-    });
+    }));
     on("[data-act=photo-save]", "click", () => {
       if (!newPhoto) return;
       const m = lists.members.find(x => x.id === newPhoto.id);
@@ -504,25 +514,23 @@
     });
 
     // attendance mode
-    const sess = root.querySelector("#att-session"); if (sess) sess.addEventListener("change", () => { attendance.session = sess.value; });
-    const ad = root.querySelector("#att-date"); if (ad) ad.addEventListener("change", () => { attendance.date = ad.value; });
-    const add = root.querySelector("#att-add"); if (add) add.addEventListener("change", () => { if (add.value) { attendance.ids.push(add.value); render(); } });
-    on("[data-unatt]", "click", e => { attendance.ids = attendance.ids.filter(x => x !== e.currentTarget.dataset.unatt); render(); });
+    const add = root.querySelector("#att-add");
+    if (add) add.addEventListener("change", () => { if (add.value) { addArrival(add.value); render(); } });
+    on("[data-unatt]", "click", e => {
+      const opId = e.currentTarget.dataset.unatt;
+      queue = queue.filter(op => op.op_id !== opId); store.set(K.queue, queue);       // only if not sent yet
+      attendance.items = attendance.items.filter(x => x.op_id !== opId); render();
+    });
     on("[data-act=att-scan]", "click", () => openScanner(code => {
       const msg = document.getElementById("scan-msg");
       const m = lists.members.find(x => x.id === code);
       if (!m) { msg.textContent = t("e.unknown_code", { code }); return; }
-      if (attendance.ids.includes(code)) { msg.textContent = m.name + " – " + t("e.att_already"); return; }
-      attendance.ids.push(code);
-      msg.textContent = "✓ " + m.name + " (" + attendance.ids.length + ")";
+      if (attendance.items.some(x => x.id === code)) { msg.textContent = m.name + " – " + t("e.att_already"); return; }
+      const item = addArrival(code);
+      msg.textContent = "✓ " + item.time + " · " + m.name + " (" + attendance.items.length + ")";
     }, true));
     on("[data-act=att-save]", "click", () => {
-      attendance.ids.forEach(id => {
-        const m = lists.members.find(x => x.id === id);
-        queue.push({ op_id: uid(), type: "attendance", data: { member_id: id, session: attendance.session, date: attendance.date }, label: `${m ? m.name : id}: ${attendance.session}`, at: new Date().toISOString() });
-      });
-      store.set(K.queue, queue);
-      flash = t("e.att_list", { n: attendance.ids.length }) + " · " + t("e.saved");
+      flash = t("e.att_list", { n: attendance.items.length }) + " · " + t("e.saved");
       attendance = null; view = { name: "home" }; render(); sync();
     });
 

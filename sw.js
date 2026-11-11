@@ -2,7 +2,7 @@
    Keeps the site's own files on the phone so the entry app opens offline.
    Network first (always the latest version when online), cache as fallback.
    Requests to Google (Apps Script, fonts) are not touched. */
-const CACHE = "zaspafi-v3";
+const CACHE = "zaspafi-v4";
 const SHELL = [
   "fampidirana.html", "karatra.html", "mpikambana.html", "index.html",
   "assets/css/style.css",
@@ -10,7 +10,7 @@ const SHELL = [
   "assets/js/entry.js", "assets/js/cards.js", "assets/js/members.js",
   "assets/vendor/html5-qrcode.min.js", "assets/vendor/qrcode.js",
   "assets/img/logo-192.png", "assets/img/favicon.png",
-  "i18n/strings.csv", "manifest.webmanifest"
+  "i18n/strings.csv", "manifest.webmanifest", "manifest-mpikambana.webmanifest"
 ];
 
 self.addEventListener("install", e => {

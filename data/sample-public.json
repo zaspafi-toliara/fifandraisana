@@ -95,6 +95,29 @@
      "date": "2027-06-30"
     }
    ]
+  },
+  {
+   "id": "G0",
+   "title": "Fandraisana ireo mpikambana vaovao 2026",
+   "description": "Fandraisana sy fanofanana ireo mpihira vaovao.",
+   "target_date": "2026-09-30",
+   "steps": [
+    {
+     "title": "Fanentanana",
+     "status": "done",
+     "date": "2026-06-15"
+    },
+    {
+     "title": "Fisoratana anarana",
+     "status": "done",
+     "date": "2026-07-31"
+    },
+    {
+     "title": "Fanofanana voalohany",
+     "status": "done",
+     "date": "2026-09-20"
+    }
+   ]
   }
  ],
  "donations": [

@@ -198,32 +198,46 @@
   }
 
   /* ---------- goals ---------- */
+  /* A goal is completed when it has steps and all of them are done */
+  const isComplete = g => g.steps.length > 0 && g.steps.every(s => s.status === "done");
+
+  function goalCard(g, gi, complete) {
+    const total = g.steps.length;
+    const done = g.steps.filter(s => s.status === "done").length;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    const last = g.steps.map(s => s.date).filter(Boolean).sort().pop();
+    const steps = g.steps.map(s => `
+      <li class="step step--${esc(s.status)}">
+        <div class="step__title">${esc(s.title)}<span class="badge badge--${esc(s.status)}">${t("goals." + s.status)}</span></div>
+        ${s.date ? `<div class="step__info">${fmtDate(s.date)}</div>` : ""}
+      </li>`).join("");
+    return `
+      <article class="goal ${complete ? "goal--done" : ""}">
+        <h3>${esc(g.title)}${complete ? ` <span class="badge badge--done">${t("goals.done")}</span>` : ""}</h3>
+        ${g.description ? `<p class="goal__desc">${esc(g.description)}</p>` : ""}
+        <div class="goal__meta"><strong>${t("goals.progress", { done, total })}</strong>
+          ${complete && last ? `<span>${t("goals.completed_on")} ${fmtDate(last)}</span>`
+            : g.target_date ? `<span>${t("goals.target")}: ${fmtDate(g.target_date)}</span>` : ""}</div>
+        <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress__bar" style="width:${pct}%"></div></div>
+        ${total ? `<button class="btn btn--outline btn--small goal__toggle" aria-expanded="false" aria-controls="steps-${gi}">${t("goals.show_steps")}</button>` : ""}
+        <ol class="steps" id="steps-${gi}" hidden>${steps}</ol>
+      </article>`;
+  }
+
   function renderGoals() {
     const box = $("#goals"); if (!box) return;
     const goals = (DATA && DATA.goals) || [];
-    if (!goals.length) { box.innerHTML = `<p class="center muted">${t("goals.empty")}</p>`; return; }
-    box.innerHTML = goals.map((g, gi) => {
-      const total = g.steps.length;
-      const done = g.steps.filter(s => s.status === "done").length;
-      const pct = total ? Math.round((done / total) * 100) : 0;
-      const steps = g.steps.map(s => `
-        <li class="step step--${esc(s.status)}">
-          <div class="step__title">${esc(s.title)}<span class="badge badge--${esc(s.status)}">${t("goals." + s.status)}</span></div>
-          ${s.date ? `<div class="step__info">${fmtDate(s.date)}</div>` : ""}
-        </li>`).join("");
-      return `
-        <article class="goal">
-          <h3>${esc(g.title)}</h3>
-          ${g.description ? `<p class="goal__desc">${esc(g.description)}</p>` : ""}
-          <div class="goal__meta"><strong>${t("goals.progress", { done, total })}</strong>
-            ${g.target_date ? `<span>${t("goals.target")}: ${fmtDate(g.target_date)}</span>` : ""}</div>
-          <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
-            <div class="progress__bar" style="width:${pct}%"></div></div>
-          <button class="goal__toggle" aria-expanded="false" aria-controls="steps-${gi}">${t("goals.show_steps")}</button>
-          <ol class="steps" id="steps-${gi}" hidden>${steps}</ol>
-        </article>`;
-    }).join("");
-    box.querySelectorAll(".goal__toggle").forEach(btn => btn.addEventListener("click", () => {
+    const open = goals.filter(g => !isComplete(g));
+    const done = goals.filter(isComplete);
+    box.innerHTML = open.length ? open.map((g, i) => goalCard(g, "o" + i, false)).join("")
+                                : `<p class="center muted">${t("goals.empty")}</p>`;
+    const doneBox = $("#goals-done");
+    if (doneBox) {
+      doneBox.innerHTML = done.map((g, i) => goalCard(g, "d" + i, true)).join("");
+      const sec = $("#vita"); if (sec) sec.hidden = !done.length;
+    }
+    document.querySelectorAll(".goal__toggle").forEach(btn => btn.addEventListener("click", () => {
       const list = document.getElementById(btn.getAttribute("aria-controls"));
       list.hidden = !list.hidden;
       btn.setAttribute("aria-expanded", !list.hidden);

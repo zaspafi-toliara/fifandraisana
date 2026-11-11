@@ -124,3 +124,28 @@ Good photo: face in the centre, plain light background, daylight, no strong shad
 - **Tanjona → Aseho = Tsia**: the goal is not shown on the public site, only in the members' area (marked "Tsy aseho amin'ny besinimaro").
 - **Asa → Aseho = Tsia** (new column at the end, added by running `setup` again): that step is hidden from the public site but visible to members.
 - After replacing `Code.gs`: run `setup` once, then **Manage deployments → New version**.
+
+### 5.7 Fee year, fixed fees, arrival times (update of November 2026)
+
+After replacing `Code.gs`: run **`setup`** once, then **Manage deployments → New version**. `setup` adds:
+
+- **Mpikambana → Sokajy** (last column): choose **Mpianatra** (student) or **Miasa** (employed) for every member.
+- **Fikirana**: new rows (existing values are kept)
+  - `Latsakemboka mpianatra` = 1000, `Latsakemboka miasa` = 2000 → the fee is taken from here according to **Sokajy**. In the phone app the amount is shown but cannot be changed.
+  - `Ora fiandohan'ny fivoriana` = 14:00 → **put the real start time of your meetings**.
+  - `Fahatarana azo leferina (minitra)` = 10 → arrivals after start time + this number of minutes count as late.
+- **Fanatrehana**: the third column becomes **Ora tonga** (arrival time, filled automatically by the scan). Old rows keep their old text; they count as "present" without a time.
+
+**Fee year**: October → August (11 months, no September). September already shows the next year. The fee calendar, the rankings and the attendance report all follow this year.
+
+**Arrivals ("Fahatongavana mivory")**: in the phone app, each scan records the date and the time of the phone. Only the first arrival of the day counts. Members see their own summary; the Birao sees the full report (presence, on time, late, average arrival time) at the bottom of the members' page.
+
+### 5.8 Installing both apps on the same phone
+
+- `fampidirana.html` and `mpikambana.html` are now two separate apps.
+- If you installed **Fampidirana** before this update: remove it from the home screen first (long press → Uninstall), open `fampidirana.html` again in Chrome → ⋮ → **Install app / Add to Home screen**.
+- Then open `mpikambana.html` → ⋮ → **Install app**. Both icons appear: "Fampidirana" and "ZA SPaFi".
+
+### 5.9 Photos
+
+The photo box now has two buttons: **📷 Haka sary** opens the camera directly, **🖼 Hisafidy sary** opens the gallery.

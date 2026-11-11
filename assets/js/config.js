@@ -18,7 +18,7 @@ window.SITE_CONFIG = {
 
   // Official information shown on the "About us" page
   OFFICIAL: {
-    church:   "[Fiangonana Loterana Malagasy – Fitandremana ...]",
+    church:   "Fiangonana Loterana Malagasy – Toliara",
     synod:    "Synodam-Paritany Fisakana",
     reg:      "",   // leave empty until the association has its official récépissé number
     address:  "Toliara",

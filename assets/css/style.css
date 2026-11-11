@@ -458,3 +458,21 @@ body[data-page="entry"] .site-footer { display: none; }
 .badge--hidden { background: #ece8f6; color: #5a4a8a; }
 .mt-xs { margin-top: 6px; }
 .step .confirm { font-size: .85rem; }
+
+/* ---------- Home: completed work ---------- */
+.section--tight { padding-top: 8px; }
+.goal--done { border-color: #9bcfae; background: #f6fbf7; }
+.goal--done .progress__bar { background: var(--green); }
+.goal__toggle.btn { margin-top: 14px; align-self: flex-start; }
+.about-rules .btn { margin-top: 6px; }
+.att-stats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.att-stats .badge { margin-left: 0; }
+.att-last { list-style: none; margin: 4px 0 0; padding: 0; font-size: .9rem; }
+.att-last li { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.mini-bar { height: 5px; background: #edeae1; border-radius: 9px; margin-top: 4px; min-width: 60px; }
+.mini-bar i { display: block; height: 100%; background: var(--green); border-radius: 9px; }
+.mchip small { display: block; font-size: .62rem; font-weight: 600; opacity: .7; line-height: 1; margin-top: 2px; }
+.fee-note { background: #eef2fb; border-radius: 10px; padding: 8px 12px; font-weight: 600; color: var(--navy-dark); margin: 0; }
+.goal__toggle.btn { padding: 7px 16px; border: 2px solid var(--navy); border-radius: 999px; color: var(--navy); background: #fff; font-size: .9rem; }
+.goal__toggle.btn:hover { background: #eef2fb; }
+#goals-done { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }

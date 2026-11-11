@@ -19,8 +19,8 @@ const S = {
   members: {
     name: "Mpikambana",
     headers: ["ID", "Anarana feno", "Daty nahaterahana", "Finday", "Vaomiera", "Birao",
-              "Andraikitra Birao", "Daty niditra", "Sata", "Zo", "PIN", "Sary"],
-    widths:  [80, 220, 130, 130, 150, 70, 170, 110, 110, 130, 70, 160]
+              "Andraikitra Birao", "Daty niditra", "Sata", "Zo", "PIN", "Sary", "Sokajy"],
+    widths:  [80, 220, 130, 130, 150, 70, 170, 110, 110, 130, 70, 160, 110]
   },
   fees: {
     name: "Latsakemboka",
@@ -60,7 +60,7 @@ const S = {
   },
   attendance: {
     name: "Fanatrehana",
-    headers: ["Daty", "ID mpikambana", "Fotoana"],
+    headers: ["Daty", "ID mpikambana", "Ora tonga"],
     widths:  [110, 120, 200]
   },
   log: {
@@ -79,6 +79,7 @@ const S = {
 const V = {
   yesNo: ["Eny", "Tsia"],
   memberStatus: ["Mavitrika", "Tsy mavitrika"],
+  feeCategory: ["Mpianatra", "Miasa"],
   rights: ["Mpikambana", "Sekretera", "Mpitahiry vola", "Mpandrindra"],
   commissions: ["Soratra Masina", "Fifandraisana", "Fitaovana", "Fampandrosoana", "Hira sy mozika"],
   officeRoles: ["Filoha", "Filoha lefitra", "Sekretera voalohany", "Sekretera faharoa", "Mpitahiry vola", "Mpanolon-tsaina"],
@@ -90,17 +91,22 @@ const V = {
 const TASK_CODE = { "Hatao": "todo", "Eo am-panatanterahana": "in_progress", "Vita": "done" };
 
 const DEFAULT_SETTINGS = [
-  ["Latsakemboka isam-bolana", 2000, "Vola aloan'ny mpikambana tsirairay isam-bolana (Ariary)"],
+  ["Latsakemboka isam-bolana", 2000, "Raha tsy voafaritra ny Sokajy an'ilay mpikambana (Ariary)"],
+  ["Latsakemboka mpianatra", 1000, "Latsakemboka isam-bolana ho an'ny Sokajy = Mpianatra (Ariary)"],
+  ["Latsakemboka miasa", 2000, "Latsakemboka isam-bolana ho an'ny Sokajy = Miasa (Ariary)"],
   ["Daty farany handoavana", 10, "Andro amin'ny volana manaraka: aloa alohan'ny/amin'ny io andro io = ara-potoana"],
   ["Vola tany am-boalohany", 0, "Vola teo am-pelatanana talohan'ny nanombohana ny rakitra (Ariary)"],
-  ["Fampahatsiahivana (andro mialoha)", 3, "Andro alohan'ny fe-potoana handefasana fampahatsiahivana (dingana 3)"]
+  ["Fampahatsiahivana (andro mialoha)", 3, "Andro alohan'ny fe-potoana handefasana fampahatsiahivana (dingana 3)"],
+  ["Ora fiandohan'ny fivoriana", "14:00", "Ora anombohan'ny fivoriana (oh: 14:00). Tonga aorian'io + fahatarana azo leferina = tara"],
+  ["Fahatarana azo leferina (minitra)", 10, "Minitra azo leferina aorian'ny ora fiandohana"]
 ];
+/* Fee year of the association: October → August (no fee in September) */
+const FEE_MONTHS = [10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];
 
 const TZ = "Indian/Antananarivo";
 const SESSION_SECONDS = 6 * 60 * 60;   // 6 hours (members' area)
 const DEVICE_DAYS = 30;                 // "remember this phone" for the entry app (staff only)
 const STAFF_RIGHTS = ["Sekretera", "Mpitahiry vola", "Mpandrindra"];
-const SESSIONS = ["Fanazaran-tena", "Fotoam-pivavahana", "Fivoriana", "Fampisehoana", "Hafa"];
 
 /* ==========================================================================
    Menu and setup
@@ -152,6 +158,7 @@ function setup() {
   dd("members", "Andraikitra Birao", V.officeRoles);
   dd("members", "Sata", V.memberStatus);
   dd("members", "Zo", V.rights);
+  dd("members", "Sokajy", V.feeCategory);
   dateCol("members", "Daty nahaterahana"); dateCol("members", "Daty niditra");
   textCol("members", "Finday"); textCol("members", "PIN");
 
@@ -164,12 +171,18 @@ function setup() {
   dd("goals", "Aseho", V.yesNo); dateCol("goals", "Fe-potoana");
   dd("tasks", "Sata", V.taskStatus); dd("tasks", "Aseho", V.yesNo); dateCol("tasks", "Fe-potoana"); dateCol("tasks", "Daty vita");
   dateCol("attendance", "Daty");
-  dd("attendance", "Fotoana", SESSIONS);
+  // arrival time column: free text "HH:mm" (the old meeting-type list is removed)
+  const attSh = ss.getSheetByName(S.attendance.name);
+  attSh.getRange(2, 3, rows, 1).clearDataValidations().setNumberFormat("@");
   dateCol("log", "Daty");
 
   // "Tompon'andraikitra" accepts a member ID (ZA-001) or a commission name: no strict list.
   const setSh = ss.getSheetByName(S.settings.name);
-  if (setSh.getLastRow() < 2) setSh.getRange(2, 1, DEFAULT_SETTINGS.length, 3).setValues(DEFAULT_SETTINGS);
+  // add the settings that are missing (keeps the values already typed)
+  const have = setSh.getLastRow() > 1 ? setSh.getRange(2, 1, setSh.getLastRow() - 1, 1).getValues().map(r => String(r[0])) : [];
+  DEFAULT_SETTINGS.filter(d => have.indexOf(d[0]) < 0).forEach(d => {
+    setSh.appendRow(d[0] === "Ora fiandohan'ny fivoriana" ? [d[0], "'" + d[1], d[2]] : d);
+  });
 
   // remove the empty default sheet if present
   const def = ss.getSheetByName("Sheet1") || ss.getSheetByName("Feuille 1") || ss.getSheetByName("Feuille1");
@@ -366,15 +379,14 @@ function canAny_(m) { const r = rights_(m); return r.finance || r.materials || r
    Members: dashboard data
    ========================================================================== */
 function me_(m) {
-  const now = new Date();
-  const year = now.getFullYear();
   const set = settings_();
+  const fy = feeYear_();
   const members = rows_("members");
   const feeRows = rows_("fees");
   const nameOf = id => { const x = members.find(r => String(r["ID"]) === String(id)); return x ? x["Anarana feno"] : id; };
 
-  /* --- my fees for the current year --- */
-  const months = feeMonths_(m, feeRows, year, set);
+  /* --- my fees for the current fee year (October → August) --- */
+  const months = feeMonths_(m, feeRows, fy, set);
 
   /* --- my loans --- */
   const mats = rows_("materials");
@@ -410,18 +422,20 @@ function me_(m) {
   /* --- rankings (current year) --- */
   const active = members.filter(r => r["ID"] && r["Sata"] !== "Tsy mavitrika");
   const feeTop = active.map(r => ({ name: r["Anarana feno"],
-      count: feeMonths_(r, feeRows, year, set).filter(x => x.on_time).length }))
+      count: feeMonths_(r, feeRows, fy, set).filter(x => x.on_time).length }))
     .filter(x => x.count > 0).sort((a, b) => b.count - a.count).slice(0, 3);
-  const att = rows_("attendance").filter(a => a["Daty"] instanceof Date && a["Daty"].getFullYear() === year);
+  const att = attendanceData_(fy, set);
   const attTop = active.map(r => ({ name: r["Anarana feno"],
-      count: att.filter(a => String(a["ID mpikambana"]) === String(r["ID"])).length }))
+      count: att.list.filter(a => a.id === String(r["ID"])).length }))
     .filter(x => x.count > 0).sort((a, b) => b.count - a.count).slice(0, 3);
 
   const out = {
     ok: true,
     member: { id: m["ID"], name: m["Anarana feno"], commission: m["Vaomiera"], office_role: m["Andraikitra Birao"] || "",
               is_office: isOffice_(m), can: rights_(m), photo: String(m["Sary"] || "") },
-    fees: { year, monthly_amount: set.monthly, months },
+    fees: { year: fy.label, monthly_amount: feeFor_(m, set), category: m["Sokajy"] || "", months },
+    attendance: attendanceStats_(m["ID"], att),
+    meeting: { start: set.meetingStart, tolerance: set.tolerance || 0 },
     loans, tasks, goals: goalsOut,
     top: { fees: feeTop, attendance: attTop },
     finance: financeSummary_(10)
@@ -430,31 +444,58 @@ function me_(m) {
   /* --- office only: everyone's fees --- */
   if (isOffice_(m)) {
     out.fees_all = active.map(r => ({ id: r["ID"], name: r["Anarana feno"],
-      months: feeMonths_(r, feeRows, year, set).map(x => x.paid ? (x.on_time ? "on_time" : "late")
+      months: feeMonths_(r, feeRows, fy, set).map(x => x.paid ? (x.on_time ? "on_time" : "late")
                                                       : x.not_member ? "na" : x.future ? "future" : "unpaid") }));
+    out.attendance_all = active.map(r => Object.assign({ id: r["ID"], name: r["Anarana feno"] }, attendanceStats_(r["ID"], att)))
+      .sort((a, b) => b.present - a.present || a.late - b.late);
   }
   return out;
 }
 
-function feeMonths_(m, feeRows, year, set) {
+function feeMonths_(m, feeRows, fy, set) {
   const now = new Date();
   const joined = m["Daty niditra"] instanceof Date ? m["Daty niditra"] : null;
   const mine = feeRows.filter(f => String(f["ID mpikambana"]) === String(m["ID"]));
-  const res = [];
-  for (let mo = 1; mo <= 12; mo++) {
-    const key = year + "-" + ("0" + mo).slice(-2);
+  return fy.keys.map(key => {
+    const y = Number(key.slice(0, 4)), mo = Number(key.slice(5, 7));
     const f = mine.find(x => monthKey_(x["Volana"]) === key);
-    const beforeJoin = joined && (joined.getFullYear() > year || (joined.getFullYear() === year && joined.getMonth() + 1 > mo));
-    const deadline = new Date(year, mo, set.deadlineDay, 23, 59, 59);   // day X of the following month
-    const future = now <= deadline;                                       // not yet due
+    const beforeJoin = joined && (joined.getFullYear() > y || (joined.getFullYear() === y && joined.getMonth() + 1 > mo));
+    const deadline = new Date(y, mo, set.deadlineDay, 23, 59, 59);   // day X of the following month
+    const future = now <= deadline;                                    // not yet due
     let onTime = false;
-    if (f && f["Daty naloa"] instanceof Date) {
-      onTime = f["Daty naloa"] <= deadline;
-    } else if (f) onTime = true;
-    res.push({ month: key, paid: !!f, on_time: !!f && onTime, date: f ? iso_(f["Daty naloa"]) : "",
-               amount: f ? num_(f["Vola"]) : 0, future, not_member: !!beforeJoin });
-  }
-  return res;
+    if (f && f["Daty naloa"] instanceof Date) onTime = f["Daty naloa"] <= deadline;
+    else if (f) onTime = true;
+    return { month: key, paid: !!f, on_time: !!f && onTime, date: f ? iso_(f["Daty naloa"]) : "",
+             amount: f ? num_(f["Vola"]) : 0, future, not_member: !!beforeJoin };
+  });
+}
+
+/* Arrivals at meetings during the fee year: one row per member and day (earliest time kept) */
+function attendanceData_(fy, set) {
+  const byKey = {};
+  rows_("attendance").forEach(a => {
+    if (!(a["Daty"] instanceof Date) || a["Daty"] < fy.from || a["Daty"] > fy.to || !a["ID mpikambana"]) return;
+    const day = iso_(a["Daty"]), id = String(a["ID mpikambana"]), time = timeText_(a["Ora tonga"]);
+    const k = id + "|" + day;
+    if (!byKey[k] || (time && (!byKey[k].time || time < byKey[k].time))) byKey[k] = { id, day, time };
+  });
+  const list = Object.keys(byKey).map(k => byKey[k]);
+  const limit = minutes_(set.meetingStart) + (set.tolerance || 0);
+  list.forEach(x => { x.late = x.time ? minutes_(x.time) > limit : null; });
+  const days = Array.from(new Set(list.map(x => x.day))).sort();
+  return { list, meetings: days.length };
+}
+
+function attendanceStats_(id, att) {
+  const mine = att.list.filter(x => x.id === String(id)).sort((a, b) => (a.day < b.day ? 1 : -1));
+  const timed = mine.filter(x => x.time);
+  const avg = timed.length ? Math.round(timed.reduce((s, x) => s + minutes_(x.time), 0) / timed.length) : null;
+  return {
+    meetings: att.meetings, present: mine.length,
+    on_time: timed.filter(x => !x.late).length, late: timed.filter(x => x.late).length,
+    avg_time: avg === null ? "" : ("0" + Math.floor(avg / 60)).slice(-2) + ":" + ("0" + (avg % 60)).slice(-2),
+    last: mine.slice(0, 6).map(x => ({ date: x.day, time: x.time, late: x.late }))
+  };
 }
 
 function financeSummary_(limit) {
@@ -529,13 +570,42 @@ function rows_(key) {
 function settings_() {
   const map = {};
   rows_("settings").forEach(r => { map[r["Fikirana"]] = r["Sanda"]; });
+  const monthly = num_(map["Latsakemboka isam-bolana"]) || 0;
   return {
-    monthly: num_(map["Latsakemboka isam-bolana"]) || 0,
+    monthly: monthly,
+    feeStudent: num_(map["Latsakemboka mpianatra"]) || monthly,
+    feeWorker: num_(map["Latsakemboka miasa"]) || monthly,
     deadlineDay: num_(map["Daty farany handoavana"]) || 10,
     opening: num_(map["Vola tany am-boalohany"]) || 0,
-    reminderDays: num_(map["Fampahatsiahivana (andro mialoha)"]) || 3
+    reminderDays: num_(map["Fampahatsiahivana (andro mialoha)"]) || 3,
+    meetingStart: timeText_(map["Ora fiandohan'ny fivoriana"]) || "14:00",
+    tolerance: num_(map["Fahatarana azo leferina (minitra)"])
   };
 }
+
+/* Monthly fee of a member according to the "Sokajy" column */
+function feeFor_(m, set) {
+  if (m["Sokajy"] === "Mpianatra") return set.feeStudent;
+  if (m["Sokajy"] === "Miasa") return set.feeWorker;
+  return set.monthly;
+}
+
+/* Current fee year: October → August. September already belongs to the next year. */
+function feeYear_(now) {
+  now = now || new Date();
+  const start = now.getMonth() + 1 >= 9 ? now.getFullYear() : now.getFullYear() - 1;
+  const keys = FEE_MONTHS.map(mo => (mo >= 10 ? start : start + 1) + "-" + ("0" + mo).slice(-2));
+  return { label: start + "–" + (start + 1), keys: keys,
+           from: new Date(start, 9, 1), to: new Date(start + 1, 7, 31, 23, 59, 59) };
+}
+
+/* "14:05", a Date (time cell) or 14.08… → "14:05" */
+function timeText_(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, TZ, "HH:mm");
+  const m = String(v || "").match(/(\d{1,2})[:h](\d{2})/);
+  return m ? ("0" + m[1]).slice(-2) + ":" + m[2] : "";
+}
+function minutes_(hhmm) { const p = String(hhmm).split(":"); return Number(p[0]) * 60 + Number(p[1]); }
 
 function iso_(v) {
   if (v instanceof Date) return Utilities.formatDate(v, TZ, "yyyy-MM-dd");
@@ -557,6 +627,7 @@ function staffLists_(m) {
   if (!canAny_(m)) return { ok: false, error: "forbidden" };
   const r = rights_(m);
   const now = new Date();
+  const set = settings_();
   const members = rows_("members").filter(x => x["ID"] && x["Sata"] !== "Tsy mavitrika");
   const nameOf = id => { const x = members.find(y => String(y["ID"]) === String(id)); return x ? x["Anarana feno"] : ""; };
 
@@ -578,11 +649,11 @@ function staffLists_(m) {
   const out = {
     ok: true,
     me: { id: m["ID"], name: m["Anarana feno"], can: r },
-    year: now.getFullYear(),
-    monthly_fee: settings_().monthly,
-    sessions: SESSIONS,
+    year: feeYear_(now).label,
+    fee_months: feeYear_(now).keys,
     members: members.map(x => ({ id: String(x["ID"]), name: x["Anarana feno"], commission: x["Vaomiera"] || "",
                                  role: x["Andraikitra Birao"] || "", photo: String(x["Sary"] || ""),
+                                 category: x["Sokajy"] || "", fee: feeFor_(x, set),
                                  paid: paid[String(x["ID"])] || [] })),
     materials
   };
@@ -642,9 +713,10 @@ function applyOp_(m, type, d) {
     }
     case "fee": {
       if (!r.finance) return { ok: false, error: "forbidden" };
-      if (!memberExists(d.member_id)) return { ok: false, error: "unknown_member" };
-      const amount = num_(d.amount);
-      const months = (d.months || []).filter(k => /^\d{4}-\d{2}$/.test(k));
+      const member = rows_("members").find(x => String(x["ID"]) === String(d.member_id));
+      if (!member) return { ok: false, error: "unknown_member" };
+      const amount = feeFor_(member, settings_());                 // fixed by the member's Sokajy
+      const months = (d.months || []).filter(k => /^\d{4}-(0[1-8]|1[0-2])$/.test(k));   // never September
       if (!(amount > 0) || !months.length) return { ok: false, error: "missing_fields" };
       const existing = rows_("fees").filter(f => String(f["ID mpikambana"]) === String(d.member_id)).map(f => monthKey_(f["Volana"]));
       const sh = sheet_("fees");
@@ -654,7 +726,7 @@ function applyOp_(m, type, d) {
         sh.appendRow([date, String(d.member_id), "'" + k, amount, who, ""]);
         added.push(k);
       });
-      return { ok: true, added, skipped };
+      return { ok: true, added, skipped, amount };
     }
     case "loan": {
       if (!r.materials) return { ok: false, error: "forbidden" };
@@ -682,11 +754,11 @@ function applyOp_(m, type, d) {
     case "attendance": {
       if (!r.attendance) return { ok: false, error: "forbidden" };
       if (!memberExists(d.member_id)) return { ok: false, error: "unknown_member" };
-      const session = SESSIONS.indexOf(d.session) >= 0 ? d.session : "Hafa";
       const day = iso_(date);
-      const dup = rows_("attendance").some(a => iso_(a["Daty"]) === day && String(a["ID mpikambana"]) === String(d.member_id) && a["Fotoana"] === session);
-      if (dup) return { ok: true, dup: true };
-      sheet_("attendance").appendRow([date, String(d.member_id), session]);
+      const time = timeText_(d.time) || Utilities.formatDate(new Date(), TZ, "HH:mm");
+      const dup = rows_("attendance").some(a => iso_(a["Daty"]) === day && String(a["ID mpikambana"]) === String(d.member_id));
+      if (dup) return { ok: true, dup: true };                      // first arrival of the day is kept
+      sheet_("attendance").appendRow([date, String(d.member_id), "'" + time]);
       return { ok: true };
     }
     case "donation_status": {

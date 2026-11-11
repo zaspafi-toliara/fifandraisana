@@ -14,97 +14,17 @@
   }
  },
  "fees": {
-  "year": 2026,
+  "year": "2026–2027",
   "monthly_amount": 2000,
+  "category": "Miasa",
   "months": [
    {
-    "month": "2026-01",
-    "paid": true,
-    "on_time": true,
-    "date": "2026-01-06",
-    "amount": 2000,
-    "future": false,
-    "not_member": false
-   },
-   {
-    "month": "2026-02",
-    "paid": true,
-    "on_time": true,
-    "date": "2026-02-09",
-    "amount": 2000,
-    "future": false,
-    "not_member": false
-   },
-   {
-    "month": "2026-03",
-    "paid": true,
-    "on_time": false,
-    "date": "2026-04-02",
-    "amount": 2000,
-    "future": false,
-    "not_member": false
-   },
-   {
-    "month": "2026-04",
-    "paid": true,
-    "on_time": true,
-    "date": "2026-04-28",
-    "amount": 2000,
-    "future": false,
-    "not_member": false
-   },
-   {
-    "month": "2026-05",
-    "paid": true,
-    "on_time": true,
-    "date": "2026-05-30",
-    "amount": 2000,
-    "future": false,
-    "not_member": false
-   },
-   {
-    "month": "2026-06",
-    "paid": false,
-    "on_time": false,
-    "date": "",
-    "amount": 0,
-    "future": false,
-    "not_member": false
-   },
-   {
-    "month": "2026-07",
-    "paid": true,
-    "on_time": true,
-    "date": "2026-07-31",
-    "amount": 2000,
-    "future": false,
-    "not_member": false
-   },
-   {
-    "month": "2026-08",
-    "paid": true,
-    "on_time": true,
-    "date": "2026-08-25",
-    "amount": 2000,
-    "future": false,
-    "not_member": false
-   },
-   {
-    "month": "2026-09",
-    "paid": true,
-    "on_time": false,
-    "date": "2026-10-15",
-    "amount": 2000,
-    "future": false,
-    "not_member": false
-   },
-   {
     "month": "2026-10",
-    "paid": false,
-    "on_time": false,
-    "date": "",
-    "amount": 0,
-    "future": true,
+    "paid": true,
+    "on_time": true,
+    "date": "2026-10-28",
+    "amount": 2000,
+    "future": false,
     "not_member": false
    },
    {
@@ -118,6 +38,78 @@
    },
    {
     "month": "2026-12",
+    "paid": false,
+    "on_time": false,
+    "date": "",
+    "amount": 0,
+    "future": true,
+    "not_member": false
+   },
+   {
+    "month": "2027-01",
+    "paid": false,
+    "on_time": false,
+    "date": "",
+    "amount": 0,
+    "future": true,
+    "not_member": false
+   },
+   {
+    "month": "2027-02",
+    "paid": false,
+    "on_time": false,
+    "date": "",
+    "amount": 0,
+    "future": true,
+    "not_member": false
+   },
+   {
+    "month": "2027-03",
+    "paid": false,
+    "on_time": false,
+    "date": "",
+    "amount": 0,
+    "future": true,
+    "not_member": false
+   },
+   {
+    "month": "2027-04",
+    "paid": false,
+    "on_time": false,
+    "date": "",
+    "amount": 0,
+    "future": true,
+    "not_member": false
+   },
+   {
+    "month": "2027-05",
+    "paid": false,
+    "on_time": false,
+    "date": "",
+    "amount": 0,
+    "future": true,
+    "not_member": false
+   },
+   {
+    "month": "2027-06",
+    "paid": false,
+    "on_time": false,
+    "date": "",
+    "amount": 0,
+    "future": true,
+    "not_member": false
+   },
+   {
+    "month": "2027-07",
+    "paid": false,
+    "on_time": false,
+    "date": "",
+    "amount": 0,
+    "future": true,
+    "not_member": false
+   },
+   {
+    "month": "2027-08",
     "paid": false,
     "on_time": false,
     "date": "",
@@ -215,30 +207,30 @@
  "top": {
   "fees": [
    {
+    "name": "Rakoto Jean",
+    "count": 1
+   },
+   {
     "name": "Ravao Hanta",
-    "count": 9
+    "count": 1
    },
    {
     "name": "Rahary Zo",
-    "count": 8
-   },
-   {
-    "name": "Rakoto Jean",
-    "count": 6
+    "count": 1
    }
   ],
   "attendance": [
    {
     "name": "Rasoa Noro",
-    "count": 38
+    "count": 6
    },
    {
     "name": "Rakoto Jean",
-    "count": 35
+    "count": 5
    },
    {
     "name": "Ravao Hanta",
-    "count": 33
+    "count": 5
    }
   ]
  },
@@ -415,14 +407,13 @@
    "name": "Rakoto Jean",
    "months": [
     "on_time",
-    "on_time",
-    "late",
-    "on_time",
-    "on_time",
-    "unpaid",
-    "on_time",
-    "on_time",
-    "late",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
     "future",
     "future",
     "future"
@@ -433,14 +424,13 @@
    "name": "Ravao Hanta",
    "months": [
     "on_time",
-    "on_time",
-    "on_time",
-    "on_time",
-    "on_time",
-    "on_time",
-    "on_time",
-    "on_time",
-    "on_time",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
     "future",
     "future",
     "future"
@@ -451,14 +441,13 @@
    "name": "Randria Faly",
    "months": [
     "unpaid",
-    "on_time",
-    "on_time",
-    "unpaid",
-    "unpaid",
-    "late",
-    "on_time",
-    "unpaid",
-    "unpaid",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
     "future",
     "future",
     "future"
@@ -468,15 +457,14 @@
    "id": "ZA-004",
    "name": "Rasoa Noro",
    "months": [
-    "na",
-    "na",
-    "na",
-    "on_time",
-    "on_time",
-    "on_time",
     "late",
-    "on_time",
-    "on_time",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
     "future",
     "future",
     "future"
@@ -487,14 +475,13 @@
    "name": "Rahary Zo",
    "months": [
     "on_time",
-    "on_time",
-    "on_time",
-    "on_time",
-    "on_time",
-    "on_time",
-    "on_time",
-    "on_time",
-    "late",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
+    "future",
     "future",
     "future",
     "future"
@@ -724,6 +711,96 @@
      "visible": false
     }
    ]
+  }
+ ],
+ "meeting": {
+  "start": "14:00",
+  "tolerance": 10
+ },
+ "attendance": {
+  "meetings": 6,
+  "present": 5,
+  "on_time": 4,
+  "late": 1,
+  "avg_time": "14:04",
+  "last": [
+   {
+    "date": "2026-11-08",
+    "time": "13:56",
+    "late": false
+   },
+   {
+    "date": "2026-11-01",
+    "time": "14:22",
+    "late": true
+   },
+   {
+    "date": "2026-10-25",
+    "time": "13:58",
+    "late": false
+   },
+   {
+    "date": "2026-10-18",
+    "time": "14:03",
+    "late": false
+   },
+   {
+    "date": "2026-10-04",
+    "time": "14:01",
+    "late": false
+   }
+  ]
+ },
+ "attendance_all": [
+  {
+   "id": "ZA-004",
+   "name": "Rasoa Noro",
+   "meetings": 6,
+   "present": 6,
+   "on_time": 6,
+   "late": 0,
+   "avg_time": "13:52",
+   "last": []
+  },
+  {
+   "id": "ZA-001",
+   "name": "Rakoto Jean",
+   "meetings": 6,
+   "present": 5,
+   "on_time": 4,
+   "late": 1,
+   "avg_time": "14:04",
+   "last": []
+  },
+  {
+   "id": "ZA-002",
+   "name": "Ravao Hanta",
+   "meetings": 6,
+   "present": 5,
+   "on_time": 2,
+   "late": 3,
+   "avg_time": "14:15",
+   "last": []
+  },
+  {
+   "id": "ZA-005",
+   "name": "Rahary Zo",
+   "meetings": 6,
+   "present": 3,
+   "on_time": 1,
+   "late": 2,
+   "avg_time": "14:21",
+   "last": []
+  },
+  {
+   "id": "ZA-003",
+   "name": "Randria Faly",
+   "meetings": 6,
+   "present": 2,
+   "on_time": 2,
+   "late": 0,
+   "avg_time": "13:58",
+   "last": []
   }
  ]
 }
