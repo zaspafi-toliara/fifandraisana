@@ -112,6 +112,7 @@
       try { lists = JSON.parse(localStorage.getItem("za_lists")); } catch (e2) { lists = null; }
       if (!lists) error = "common.error_load";
     }
+    if (lists && !(lists.me && lists.me.can && lists.me.can.cards)) { lists = null; error = "c.no_right"; }
     if (lists) lists.members.forEach(m => selected.add(m.id));
     render();
   }

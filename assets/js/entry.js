@@ -99,6 +99,8 @@
     if (type === "loan" && mat(d.material_id)) Object.assign(mat(d.material_id), { holder_id: d.member_id, holder_name: (mem(d.member_id) || {}).name || d.member_id, since: d.date });
     if (type === "return" && mat(d.material_id)) Object.assign(mat(d.material_id), { holder_id: "", holder_name: "", since: "" });
     if (type === "photo" && mem(d.member_id)) mem(d.member_id).photo_data = d.image;
+    if (type === "fee_status" && lists.pending_fees) lists.pending_fees = lists.pending_fees.filter(x => x.id !== d.id);
+    if (type === "tx_status" && lists.pending_tx) lists.pending_tx = lists.pending_tx.filter(x => x.id !== d.id);
     if (type === "donation_status" && lists.pending_donations) lists.pending_donations = lists.pending_donations.filter(x => x.key !== d.key);
     store.set(K.lists, lists);
   }
@@ -111,7 +113,7 @@
       if (!r.ok) { loginMsg = r.error === "not_staff" ? "e.not_staff" : r.error === "locked" ? "m.locked" : "m.login_error"; render(); return; }
       token = r.token; store.set(K.token, token);
       await refreshLists();
-      view = { name: "home" };
+      view = { name: "home" }; history.replaceState({ za: 1, view }, "");
     } catch (e) { loginMsg = "m.error"; }
     render();
   }
@@ -121,10 +123,33 @@
     loginMsg = msg || ""; render();
   }
 
+  /* ---------- navigation with the phone "back" button ----------
+     Each screen is an entry in the browser history, so "back" returns to
+     the previous screen (or closes the camera) instead of leaving the app. */
+  let scanState = false;           // the camera screen is in the history
+  function nav(v) {
+    if (scanState) { scanState = false; history.replaceState({ za: 1, view: v }, ""); }
+    else history.pushState({ za: 1, view: v }, "");
+    view = v; search = ""; render();
+  }
+  function goBack() {
+    if (history.state && history.state.za && view.name !== "home") history.back();
+    else { view = { name: "home" }; render(); }
+  }
+  window.addEventListener("popstate", e => {
+    if (scanState) { scanState = false; closeScanner(); return; }
+    const box = document.getElementById("scanner");
+    if (box && !box.hidden) { closeScanner(); }
+    view = (e.state && e.state.view) || { name: "home" };
+    if (view.name !== "attendance") attendance = null;
+    render();
+  });
+
   /* ---------- QR scanner ---------- */
   async function openScanner(onCode, continuous) {
     const box = document.getElementById("scanner");
     box.hidden = false;
+    history.pushState({ za: 1, scan: 1, view }, ""); scanState = true;
     document.getElementById("scan-msg").textContent = Z().t("e.scan_hint");
     if (!window.Html5Qrcode) { document.getElementById("scan-msg").textContent = Z().t("e.camera_error"); return; }
     let last = "", lastAt = 0;
@@ -135,7 +160,12 @@
         if (code === last && Date.now() - lastAt < 2500) return;   // same card held in front of the camera
         last = code; lastAt = Date.now();
         if (navigator.vibrate) navigator.vibrate(80);
-        if (!continuous) closeScanner();
+        if (!continuous) {
+          closeScanner();
+          onCode(code);
+          if (scanState) { scanState = false; history.back(); }   // remove the camera screen from the history
+          return;
+        }
         onCode(code);
       });
     } catch (e) {
@@ -150,9 +180,9 @@
   }
   function handleCode(code) {
     if (!lists) return;
-    if (lists.members.some(m => m.id === code)) { view = { name: "member", id: code }; }
-    else if (lists.materials.some(m => m.id === code)) { view = { name: "material", id: code }; }
-    else { flash = Z().t("e.unknown_code", { code }); }
+    if (lists.members.some(m => m.id === code)) { nav({ name: "member", id: code }); return; }
+    if (lists.materials.some(m => m.id === code)) { nav({ name: "material", id: code }); return; }
+    flash = Z().t("e.unknown_code", { code });
     render();
   }
 
@@ -243,15 +273,16 @@
         .map(m => `<li><button class="pick" data-go="material" data-id="${esc(m.id)}"><strong>${esc(m.id)}</strong><span>${esc(m.type)} ${esc(m.size)}</span></button></li>`);
       results = `<ul class="picks">${ms.join("") + mt.join("")}</ul>`;
     }
-    const n = (lists.pending_donations || []).length;
+    const n = (lists.pending_donations || []).length + (lists.pending_tx || []).length + (lists.pending_fees || []).length;
+    const scan = can.materials || can.attendance || can.fees || can.cards;
     return `
-      <button class="e-big e-big--scan" data-act="scan"><span class="e-ico">▣</span>${t("e.scan")}</button>
+      ${scan ? `<button class="e-big e-big--scan" data-act="scan"><span class="e-ico">▣</span>${t("e.scan")}</button>` : ""}
       <div class="e-search"><input id="e-search" type="search" placeholder="${t("e.search")}" value="${esc(search)}" autocomplete="off">${results}</div>
       <div class="e-grid">
         ${can.attendance ? `<button class="e-big" data-go="attendance"><span class="e-ico">✓</span>${t("e.attendance")}</button>` : ""}
-        ${can.finance ? `<button class="e-big" data-go="money"><span class="e-ico">Ar</span>${t("e.money")}</button>` : ""}
-        ${can.finance ? `<button class="e-big" data-go="donations"><span class="e-ico">♥</span>${t("e.donations")}${n ? ` <span class="count">${n}</span>` : ""}</button>` : ""}
-        <a class="e-big" href="karatra.html"><span class="e-ico">▤</span>${t("e.cards")}</a>
+        ${can.tx ? `<button class="e-big" data-go="money"><span class="e-ico">Ar</span>${t("e.money")}</button>` : ""}
+        ${can.confirm ? `<button class="e-big" data-go="donations"><span class="e-ico">✔</span>${t("e.confirm_title")}${n ? ` <span class="count">${n}</span>` : ""}</button>` : ""}
+        ${can.cards ? `<a class="e-big" href="karatra.html"><span class="e-ico">▤</span>${t("e.cards")}</a>` : ""}
       </div>`;
   }
 
@@ -265,7 +296,7 @@
     let html = backHTML() + `
       <div class="card e-head"><h2>${esc(m.name)}</h2>
         <div class="member-meta"><span class="chip chip--small">${esc(m.id)}</span><span>${esc(m.commission)}</span>${m.role ? `<span>${esc(m.role)}</span>` : ""}</div></div>`;
-    if (can.attendance && window.ZACard) {
+    if (can.cards && window.ZACard) {
       const pending = newPhoto && newPhoto.id === m.id;
       const shown = pending ? Object.assign({}, m, { photo_data: newPhoto.data }) : m;
       html += `
@@ -280,7 +311,7 @@
           </div>
         </div>`;
     }
-    if (can.finance) {
+    if (can.fees) {
       const chips = months.map(k => {
         const paid = m.paid.includes(k);
         return `<label class="mchip ${paid ? "is-paid" : ""}"><input type="checkbox" name="month" value="${k}" ${paid ? "disabled checked" : ""}><span>${t("month_short." + Number(k.slice(5)))}<small>${k.slice(2, 4)}</small></span></label>`;
@@ -367,6 +398,7 @@
           <div><label>${t("e.date")}</label><input name="date" type="date" value="${today()}"></div>
         </div>
         <p class="hint">${t("e.money_note")}</p>
+        ${lists.me.can.tx_direct ? "" : `<p class="alert alert--ok small">${t("e.money_pending_note")}</p>`}
         <button class="btn btn--gold" type="submit">${t("e.save")}</button>
       </form>`;
   }
@@ -403,7 +435,33 @@
   function donationsHTML() {
     const { t, esc, money, fmtDate } = Z();
     const list = lists.pending_donations || [];
+    const txs = lists.pending_tx || [];
+    const fees = lists.pending_fees || [];
     return backHTML() + `
+      <h3>${t("e.fees_to_confirm")}</h3>
+      ${fees.length ? fees.map(x => `
+        <div class="card mt-s don">
+          <div class="don__top"><strong class="amt-in">+ ${money(x.amount)}</strong><span class="muted">${fmtDate(x.date)}</span></div>
+          <div><strong>${esc(x.member_name)}</strong> <span class="muted small">${esc(x.member_id)}</span></div>
+          <div class="small">${x.months.map(k => t("month_short." + Number(k.slice(5))) + " " + k.slice(0, 4)).join(", ")}</div>
+          <div class="muted small">${t("e.tx_by", { name: esc(x.by) })}</div>
+          <div class="inline mt-s">
+            <button class="btn btn--gold btn--small" data-fees="${esc(x.id)}" data-status="Voamarina">${t("e.tx_confirm")}</button>
+            <button class="btn btn--outline btn--small" data-fees="${esc(x.id)}" data-status="Nolavina">${t("e.tx_reject")}</button>
+          </div>
+        </div>`).join("") : `<p class="muted">${t("e.none_confirm")}</p>`}
+      <h3 class="mt">${t("e.tx_to_confirm")}</h3>
+      ${txs.length ? txs.map(x => `
+        <div class="card mt-s don">
+          <div class="don__top"><strong class="${x.kind === "in" ? "amt-in" : "amt-out"}">${x.kind === "in" ? "+" : "−"} ${money(x.amount)}</strong><span class="muted">${fmtDate(x.date)}</span></div>
+          <div>${esc(x.reason)}${x.category ? ` <span class="muted small">· ${esc(x.category)}</span>` : ""}</div>
+          <div class="muted small">${t("e.tx_by", { name: esc(x.by) })}</div>
+          <div class="inline mt-s">
+            <button class="btn btn--gold btn--small" data-txs="${esc(x.id)}" data-status="Voamarina">${t("e.tx_confirm")}</button>
+            <button class="btn btn--outline btn--small" data-txs="${esc(x.id)}" data-status="Nolavina">${t("e.tx_reject")}</button>
+          </div>
+        </div>`).join("") : `<p class="muted">${t("e.none_confirm")}</p>`}
+      <h3 class="mt">${t("e.donations_title")}</h3>
       <p class="hint">${t("e.don_check")}</p>
       ${list.length ? list.map(d => `
         <div class="card mt-s don">
@@ -425,9 +483,9 @@
     const { t, money } = Z();
     const on = (sel, ev, fn) => root.querySelectorAll(sel).forEach(el => el.addEventListener(ev, fn));
     on("[data-act=dismiss]", "click", () => { failed = []; store.set(K.failed, failed); render(); });
-    on("[data-act=home]", "click", () => { view = { name: "home" }; render(); });
+    on("[data-act=home]", "click", goBack);
     on("[data-act=scan]", "click", () => openScanner(handleCode, false));
-    on("[data-go]", "click", e => { const b = e.currentTarget; view = { name: b.dataset.go, id: b.dataset.id }; search = ""; render(); });
+    on("[data-go]", "click", e => { const b = e.currentTarget; nav({ name: b.dataset.go, id: b.dataset.id }); });
     const s = root.querySelector("#e-search");
     if (s) s.addEventListener("input", () => { search = s.value; render(); const n = document.getElementById("e-search"); n.focus(); n.setSelectionRange(n.value.length, n.value.length); });
 
@@ -447,6 +505,7 @@
         if (!months.length) { flash = t("e.fee_none"); render(); return; }
         // the amount is fixed by the member's category; the server uses its own value
         enqueue("fee", { member_id: view.id, months, amount: m.fee || 0, date: fee.date.value || today() }, `${m.name}: ${months.join(", ")}`);
+        if (!lists.me.can.tx_direct) flash = t("e.tx_pending");
         render();
       });
     }
@@ -510,7 +569,8 @@
       const kind = mon.querySelector("input[name=kind]:checked").value;
       enqueue("tx", { kind, amount, reason: mon.reason.value.trim(), category: mon.category.value.trim(), date: mon.date.value || today() },
         `${t(kind === "in" ? "e.in" : "e.out")} ${money(amount)}: ${mon.reason.value.trim()}`);
-      view = { name: "home" }; render();
+      if (!lists.me.can.tx_direct) flash = t("e.tx_pending");
+      goBack();
     });
 
     // attendance mode
@@ -531,7 +591,23 @@
     }, true));
     on("[data-act=att-save]", "click", () => {
       flash = t("e.att_list", { n: attendance.items.length }) + " · " + t("e.saved");
-      attendance = null; view = { name: "home" }; render(); sync();
+      attendance = null; goBack(); sync();
+    });
+
+    // fees entered by the secretary
+    on("[data-fees]", "click", e => {
+      const b = e.currentTarget;
+      const x = (lists.pending_fees || []).find(y => y.id === b.dataset.fees);
+      enqueue("fee_status", { id: b.dataset.fees, status: b.dataset.status }, `${x ? x.member_name : ""} ${x ? Z().money(x.amount) : ""}: ${b.dataset.status}`);
+      render();
+    });
+
+    // income/expenses entered by the secretary
+    on("[data-txs]", "click", e => {
+      const b = e.currentTarget;
+      const x = (lists.pending_tx || []).find(y => y.id === b.dataset.txs);
+      enqueue("tx_status", { id: b.dataset.txs, status: b.dataset.status }, `${x ? x.reason : ""} ${x ? Z().money(x.amount) : ""}: ${b.dataset.status}`);
+      render();
     });
 
     // donations
@@ -547,7 +623,8 @@
   window.renderEntryPage = async function () {
     if (!window.__entryInit) {
       window.__entryInit = true;
-      document.getElementById("scan-close").addEventListener("click", closeScanner);
+      document.getElementById("scan-close").addEventListener("click", () => { if (scanState) history.back(); else closeScanner(); });
+      try { history.replaceState({ za: 1, view }, ""); } catch (e) { /* ignore */ }
       window.addEventListener("online", () => { renderStatus(); sync(); refreshLists().then(renderStatus).catch(() => {}); });
       window.addEventListener("offline", renderStatus);
       if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});

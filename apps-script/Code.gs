@@ -24,13 +24,13 @@ const S = {
   },
   fees: {
     name: "Latsakemboka",
-    headers: ["Daty naloa", "ID mpikambana", "Volana", "Vola", "Nampiditra", "Fanamarihana"],
-    widths:  [110, 120, 90, 100, 130, 220]
+    headers: ["Daty naloa", "ID mpikambana", "Volana", "Vola", "Nampiditra", "Fanamarihana", "Sata", "ID"],
+    widths:  [110, 120, 90, 100, 130, 220, 110, 130]
   },
   transactions: {
     name: "Vola",
-    headers: ["Daty", "Karazany", "Vola", "Antony", "Sokajy", "Nampiditra"],
-    widths:  [110, 100, 110, 300, 150, 130]
+    headers: ["Daty", "Karazany", "Vola", "Antony", "Sokajy", "Nampiditra", "Sata", "ID"],
+    widths:  [110, 100, 110, 300, 150, 130, 110, 160]
   },
   donations: {
     name: "Fanomezana",
@@ -55,8 +55,8 @@ const S = {
   },
   tasks: {
     name: "Asa",
-    headers: ["ID", "ID tanjona", "Asa", "Tompon'andraikitra", "Fe-potoana", "Sata", "Daty vita", "Fanamarihana", "Aseho"],
-    widths:  [70, 90, 300, 170, 110, 170, 110, 220, 80]
+    headers: ["ID", "ID tanjona", "Asa", "Tompon'andraikitra", "Fe-potoana", "Sata", "Daty vita", "Fanamarihana", "Aseho", "Vaomiera"],
+    widths:  [70, 90, 300, 170, 110, 170, 110, 220, 80, 150]
   },
   attendance: {
     name: "Fanatrehana",
@@ -80,7 +80,8 @@ const V = {
   yesNo: ["Eny", "Tsia"],
   memberStatus: ["Mavitrika", "Tsy mavitrika"],
   feeCategory: ["Mpianatra", "Miasa"],
-  rights: ["Mpikambana", "Sekretera", "Mpitahiry vola", "Mpandrindra"],
+  rights: ["Mpikambana", "Sekretera", "Mpitahiry vola", "Mpandrindra", "Mpandray fahatongavana"],
+  txStatus: ["Voamarina", "Miandry", "Nolavina"],
   commissions: ["Soratra Masina", "Fifandraisana", "Fitaovana", "Fampandrosoana", "Hira sy mozika"],
   officeRoles: ["Filoha", "Filoha lefitra", "Sekretera voalohany", "Sekretera faharoa", "Mpitahiry vola", "Mpanolon-tsaina"],
   txType: ["Miditra", "Mivoaka"],
@@ -162,14 +163,14 @@ function setup() {
   dateCol("members", "Daty nahaterahana"); dateCol("members", "Daty niditra");
   textCol("members", "Finday"); textCol("members", "PIN");
 
-  dateCol("fees", "Daty naloa"); textCol("fees", "Volana");
-  dd("transactions", "Karazany", V.txType); dateCol("transactions", "Daty");
+  dateCol("fees", "Daty naloa"); textCol("fees", "Volana"); dd("fees", "Sata", V.txStatus);
+  dd("transactions", "Karazany", V.txType); dd("transactions", "Sata", V.txStatus); dateCol("transactions", "Daty");
   dd("donations", "Sata", V.donationStatus); dd("donations", "Aseho anarana", V.yesNo);
   dd("donations", "Tambajotra", V.operators);
   dateCol("donations", "Daty nandefasana"); dateCol("donations", "Daty voamarina"); textCol("donations", "Finday");
   dateCol("loans", "Daty nindramana"); dateCol("loans", "Daty naverina");
   dd("goals", "Aseho", V.yesNo); dateCol("goals", "Fe-potoana");
-  dd("tasks", "Sata", V.taskStatus); dd("tasks", "Aseho", V.yesNo); dateCol("tasks", "Fe-potoana"); dateCol("tasks", "Daty vita");
+  dd("tasks", "Sata", V.taskStatus); dd("tasks", "Aseho", V.yesNo); dd("tasks", "Vaomiera", V.commissions); dateCol("tasks", "Fe-potoana"); dateCol("tasks", "Daty vita");
   dateCol("attendance", "Daty");
   // arrival time column: free text "HH:mm" (the old meeting-type list is removed)
   const attSh = ss.getSheetByName(S.attendance.name);
@@ -239,6 +240,8 @@ function doPost(e) {
       case "me":          return json_(withMember_(body, me_));
       case "finance_all": return json_(withMember_(body, financeAll_));
       case "task_done":   return json_(withMember_(body, taskDone_));
+      case "add_task":    return json_(withMember_(body, addTask_));
+      case "add_goal":    return json_(withMember_(body, addGoal_));
       case "staff_lists": return json_(withMember_(body, staffLists_));
       case "sync":        return json_(withMember_(body, sync_));
       case "my_photo":    return json_(withMember_(body, (m, b) => {
@@ -365,15 +368,30 @@ function logout_(token) {
 function isOffice_(m) { return m["Birao"] === "Eny" || m["Zo"] === "Mpandrindra"; }
 
 /* What a person may enter in the phone app */
+function isTreasurer_(m) { return m["Zo"] === "Mpitahiry vola" || m["Andraikitra Birao"] === "Mpitahiry vola"; }
+function isSecretary_(m) { return m["Zo"] === "Sekretera" || /^Sekretera/.test(String(m["Andraikitra Birao"] || "")); }
+
+/* Who may do what (phone entry app, cards, tasks)
+   - income/expenses: Mpitahiry vola, Sekretera (Sekretera's entries wait for the Mpitahiry vola)
+   - fees: Mpitahiry vola, Sekretera
+   - donation and income/expense confirmation: Mpitahiry vola only
+   - loans/returns: Vaomiera Fitaovana, Birao, Mpandrindra
+   - arrivals at meetings: Birao, Mpandrindra, Zo = "Mpandray fahatongavana"
+   - cards and photos: Birao, Mpandrindra */
 function rights_(m) {
-  const staff = STAFF_RIGHTS.indexOf(m["Zo"]) >= 0;
+  const office = isOffice_(m), treasurer = isTreasurer_(m), secretary = isSecretary_(m);
   return {
-    finance: staff,                                     // transactions, fees, donation confirmation
-    materials: staff || m["Vaomiera"] === "Fitaovana",  // loans and returns
-    attendance: staff
+    tx: treasurer || secretary,
+    tx_direct: treasurer,
+    fees: treasurer || secretary,
+    confirm: treasurer,
+    materials: office || m["Vaomiera"] === "Fitaovana",
+    attendance: office || m["Zo"] === "Mpandray fahatongavana",
+    cards: office,
+    tasks_admin: office
   };
 }
-function canAny_(m) { const r = rights_(m); return r.finance || r.materials || r.attendance; }
+function canAny_(m) { const r = rights_(m); return r.tx || r.fees || r.confirm || r.materials || r.attendance || r.cards; }
 
 /* ==========================================================================
    Members: dashboard data
@@ -382,7 +400,7 @@ function me_(m) {
   const set = settings_();
   const fy = feeYear_();
   const members = rows_("members");
-  const feeRows = rows_("fees");
+  const feeRows = confirmedFees_();
   const nameOf = id => { const x = members.find(r => String(r["ID"]) === String(id)); return x ? x["Anarana feno"] : id; };
 
   /* --- my fees for the current fee year (October → August) --- */
@@ -408,7 +426,8 @@ function me_(m) {
       assignee: who, assignee_label: /^ZA-\d+$/i.test(who) ? nameOf(who) : who,
       due: iso_(t["Fe-potoana"]), status: TASK_CODE[t["Sata"]] || "todo", done_date: iso_(t["Daty vita"]),
       mine: canEditTask_(m, who, false), can_edit: canEditTask_(m, who, true),
-      goal_id: String(t["ID tanjona"] || ""), visible: t["Aseho"] !== "Tsia"
+      goal_id: String(t["ID tanjona"] || ""), visible: t["Aseho"] !== "Tsia",
+      commission: taskCommission_(t, members)
     };
   }).sort((a, b) => (a.due || "9999") < (b.due || "9999") ? -1 : 1);
 
@@ -437,8 +456,12 @@ function me_(m) {
     attendance: attendanceStats_(m["ID"], att),
     meeting: { start: set.meetingStart, tolerance: set.tolerance || 0 },
     loans, tasks, goals: goalsOut,
+    commissions: V.commissions,
+    can_add_tasks: isOffice_(m) ? V.commissions : (m["Vaomiera"] ? [m["Vaomiera"]] : []),
+    people: members.filter(r => r["ID"] && r["Sata"] !== "Tsy mavitrika")
+                   .map(r => ({ id: String(r["ID"]), name: r["Anarana feno"], commission: r["Vaomiera"] || "" })),
     top: { fees: feeTop, attendance: attTop },
-    finance: financeSummary_(10)
+    finance: financeSummary_(5)
   };
 
   /* --- office only: everyone's fees --- */
@@ -500,9 +523,10 @@ function attendanceStats_(id, att) {
 
 function financeSummary_(limit) {
   const set = settings_();
-  const tx = rows_("transactions").filter(t => t["Vola"] !== "" && t["Karazany"]);
+  // entries of the Sekretera count only after the Mpitahiry vola confirmed them
+  const tx = rows_("transactions").filter(t => t["Vola"] !== "" && t["Karazany"] && t["Sata"] !== "Miandry" && t["Sata"] !== "Nolavina");
   const don = rows_("donations").filter(d => d["Sata"] === "Voamarina");
-  const fees = rows_("fees").filter(f => f["Vola"] !== "");
+  const fees = confirmedFees_().filter(f => f["Vola"] !== "");
   const income = tx.filter(t => t["Karazany"] === "Miditra").reduce((s, t) => s + num_(t["Vola"]), 0);
   const expense = tx.filter(t => t["Karazany"] === "Mivoaka").reduce((s, t) => s + num_(t["Vola"]), 0);
   const donations = don.reduce((s, d) => s + num_(d["Vola"]), 0);
@@ -532,6 +556,59 @@ function canEditTask_(m, who, allowOffice) {
   if (who === String(m["ID"]).toLowerCase()) return true;
   if (m["Vaomiera"] && who === String(m["Vaomiera"]).toLowerCase()) return true;
   return allowOffice && isOffice_(m);
+}
+
+/* Commission of a task: the "Vaomiera" column, else the commission in charge, else the member's commission */
+function taskCommission_(t, members) {
+  if (t["Vaomiera"]) return String(t["Vaomiera"]);
+  const who = String(t["Tompon'andraikitra"] || "").trim();
+  const c = V.commissions.find(x => x.toLowerCase() === who.toLowerCase());
+  if (c) return c;
+  const mem = members.find(x => String(x["ID"]).toUpperCase() === who.toUpperCase());
+  return mem ? String(mem["Vaomiera"] || "") : "";
+}
+
+/* Next free ID like A12 / T4 in a sheet */
+function nextId_(key, prefix) {
+  let max = 0;
+  rows_(key).forEach(r => { const mm = String(r["ID"]).match(new RegExp("^" + prefix + "(\\d+)$")); if (mm) max = Math.max(max, Number(mm[1])); });
+  return prefix + (max + 1);
+}
+
+/* A commission adds a task (step) to a goal; Birao/Mpandrindra may add for any commission */
+function addTask_(m, b) {
+  const commission = V.commissions.find(c => c === b.commission);
+  if (!commission) return { ok: false, error: "missing_fields" };
+  if (!isOffice_(m) && m["Vaomiera"] !== commission) return { ok: false, error: "forbidden" };
+  const title = String(b.title || "").trim();
+  if (!title) return { ok: false, error: "missing_fields" };
+  if (!rows_("goals").some(g => String(g["ID"]) === String(b.goal_id))) return { ok: false, error: "not_found" };
+  let assignee = commission;
+  if (b.assignee && b.assignee !== commission) {
+    const mem = rows_("members").find(x => String(x["ID"]) === String(b.assignee));
+    if (!mem) return { ok: false, error: "unknown_member" };
+    assignee = String(mem["ID"]);
+  }
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const id = nextId_("tasks", "A");
+    sheet_("tasks").appendRow([id, String(b.goal_id), safe_(title, 200), assignee, b.due ? dateFrom_(b.due) : "",
+      "Hatao", "", "Nampiditra: " + m["Anarana feno"], b.visible === false ? "Tsia" : "Eny", commission]);
+    return { ok: true, id };
+  } finally { lock.releaseLock(); }
+}
+
+/* Birao/Mpandrindra add a goal */
+function addGoal_(m, b) {
+  if (!isOffice_(m)) return { ok: false, error: "forbidden" };
+  const title = String(b.title || "").trim();
+  if (!title) return { ok: false, error: "missing_fields" };
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const id = nextId_("goals", "T");
+    sheet_("goals").appendRow([id, safe_(title, 200), safe_(b.description, 500), b.due ? dateFrom_(b.due) : "", b.visible === false ? "Tsia" : "Eny"]);
+    return { ok: true, id };
+  } finally { lock.releaseLock(); }
 }
 
 function taskDone_(m, b) {
@@ -583,6 +660,9 @@ function settings_() {
   };
 }
 
+/* Fees counted as paid: not waiting for confirmation, not rejected (old rows without Sata count) */
+function confirmedFees_() { return rows_("fees").filter(f => f["Sata"] !== "Miandry" && f["Sata"] !== "Nolavina"); }
+
 /* Monthly fee of a member according to the "Sokajy" column */
 function feeFor_(m, set) {
   if (m["Sokajy"] === "Mpianatra") return set.feeStudent;
@@ -613,7 +693,7 @@ function iso_(v) {
 }
 function monthKey_(v) {
   if (v instanceof Date) return Utilities.formatDate(v, TZ, "yyyy-MM");
-  return String(v || "").trim().slice(0, 7);
+  return String(v || "").trim().replace(/^'/, "").slice(0, 7);
 }
 function num_(v) { return Number(String(v).replace(/[^\d.-]/g, "")) || 0; }
 function json_(obj) {
@@ -632,7 +712,7 @@ function staffLists_(m) {
   const nameOf = id => { const x = members.find(y => String(y["ID"]) === String(id)); return x ? x["Anarana feno"] : ""; };
 
   const paid = {};
-  rows_("fees").forEach(f => {
+  rows_("fees").filter(f => f["Sata"] !== "Nolavina").forEach(f => {   // pending fees count here to avoid entering them twice
     const id = String(f["ID mpikambana"]); const k = monthKey_(f["Volana"]);
     if (!id || !k) return;
     (paid[id] = paid[id] || []).push(k);
@@ -657,7 +737,21 @@ function staffLists_(m) {
                                  paid: paid[String(x["ID"])] || [] })),
     materials
   };
-  if (r.finance) {
+  if (r.confirm) {
+    out.pending_tx = rows_("transactions").filter(t => t["Sata"] === "Miandry" && t["ID"]).map(t => ({
+      id: String(t["ID"]), date: iso_(t["Daty"]), kind: t["Karazany"] === "Miditra" ? "in" : "out",
+      amount: num_(t["Vola"]), reason: t["Antony"] || "", category: t["Sokajy"] || "", by: t["Nampiditra"] || "" }));
+    const people = rows_("members");
+    const groups = {};
+    rows_("fees").filter(f => f["Sata"] === "Miandry" && f["ID"]).forEach(f => {
+      const id = String(f["ID"]);
+      const g = groups[id] = groups[id] || { id, date: iso_(f["Daty naloa"]), member_id: String(f["ID mpikambana"]), months: [], amount: 0, by: f["Nampiditra"] || "" };
+      g.months.push(monthKey_(f["Volana"])); g.amount += num_(f["Vola"]);
+    });
+    out.pending_fees = Object.keys(groups).map(k => {
+      const g = groups[k]; const p = people.find(x => String(x["ID"]) === g.member_id);
+      return Object.assign(g, { member_name: p ? p["Anarana feno"] : g.member_id });
+    });
     out.pending_donations = rows_("donations").filter(d => d["Sata"] === "Miandry").map(d => ({
       key: donationKey_(d), date: iso_(d["Daty nandefasana"]), name: d["Anarana"], phone: String(d["Finday"] || ""),
       amount: num_(d["Vola"]), operator: d["Tambajotra"] || "", reference: String(d["Référence"] || ""),
@@ -705,28 +799,60 @@ function applyOp_(m, type, d) {
 
   switch (type) {
     case "tx": {
-      if (!r.finance) return { ok: false, error: "forbidden" };
+      if (!r.tx) return { ok: false, error: "forbidden" };
       const amount = num_(d.amount);
       if (!(amount > 0) || !d.reason || (d.kind !== "in" && d.kind !== "out")) return { ok: false, error: "missing_fields" };
-      sheet_("transactions").appendRow([date, d.kind === "in" ? "Miditra" : "Mivoaka", amount, safe_(d.reason, 200), safe_(d.category, 60), who]);
-      return { ok: true };
+      const status = r.tx_direct ? "Voamarina" : "Miandry";
+      sheet_("transactions").appendRow([date, d.kind === "in" ? "Miditra" : "Mivoaka", amount, safe_(d.reason, 200),
+        safe_(d.category, 60), who, status, "TX-" + Utilities.getUuid().slice(0, 8)]);
+      return { ok: true, pending: status === "Miandry" };
+    }
+    case "fee_status": {
+      if (!r.confirm) return { ok: false, error: "forbidden" };
+      if (d.status !== "Voamarina" && d.status !== "Nolavina") return { ok: false, error: "missing_fields" };
+      const sh = sheet_("fees");
+      const data = sh.getDataRange().getValues();
+      const h = data[0];
+      const cId = h.indexOf("ID"), cSt = h.indexOf("Sata");
+      let n = 0;
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][cId]) === String(d.id)) { sh.getRange(i + 1, cSt + 1).setValue(d.status); n++; }
+      }
+      return n ? { ok: true } : { ok: false, error: "not_found" };
+    }
+    case "tx_status": {
+      if (!r.confirm) return { ok: false, error: "forbidden" };
+      if (d.status !== "Voamarina" && d.status !== "Nolavina") return { ok: false, error: "missing_fields" };
+      const sh = sheet_("transactions");
+      const data = sh.getDataRange().getValues();
+      const h = data[0];
+      const cId = h.indexOf("ID"), cSt = h.indexOf("Sata");
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][cId]) === String(d.id)) {
+          sh.getRange(i + 1, cSt + 1).setValue(d.status);
+          return { ok: true };
+        }
+      }
+      return { ok: false, error: "not_found" };
     }
     case "fee": {
-      if (!r.finance) return { ok: false, error: "forbidden" };
+      if (!r.fees) return { ok: false, error: "forbidden" };
       const member = rows_("members").find(x => String(x["ID"]) === String(d.member_id));
       if (!member) return { ok: false, error: "unknown_member" };
       const amount = feeFor_(member, settings_());                 // fixed by the member's Sokajy
       const months = (d.months || []).filter(k => /^\d{4}-(0[1-8]|1[0-2])$/.test(k));   // never September
       if (!(amount > 0) || !months.length) return { ok: false, error: "missing_fields" };
-      const existing = rows_("fees").filter(f => String(f["ID mpikambana"]) === String(d.member_id)).map(f => monthKey_(f["Volana"]));
+      const existing = rows_("fees").filter(f => String(f["ID mpikambana"]) === String(d.member_id) && f["Sata"] !== "Nolavina").map(f => monthKey_(f["Volana"]));
+      const status = r.tx_direct ? "Voamarina" : "Miandry";       // the Sekretera's entries wait for the Mpitahiry vola
+      const batch = "FE-" + Utilities.getUuid().slice(0, 8);
       const sh = sheet_("fees");
       const added = [], skipped = [];
       months.forEach(k => {
         if (existing.indexOf(k) >= 0) { skipped.push(k); return; }
-        sh.appendRow([date, String(d.member_id), "'" + k, amount, who, ""]);
+        sh.appendRow([date, String(d.member_id), "'" + k, amount, who, "", status, batch]);
         added.push(k);
       });
-      return { ok: true, added, skipped, amount };
+      return { ok: true, added, skipped, amount, pending: status === "Miandry" };
     }
     case "loan": {
       if (!r.materials) return { ok: false, error: "forbidden" };
@@ -762,7 +888,7 @@ function applyOp_(m, type, d) {
       return { ok: true };
     }
     case "donation_status": {
-      if (!r.finance) return { ok: false, error: "forbidden" };
+      if (!r.confirm) return { ok: false, error: "forbidden" };
       if (d.status !== "Voamarina" && d.status !== "Nolavina") return { ok: false, error: "missing_fields" };
       const sh = sheet_("donations");
       const data = sh.getDataRange().getValues();
@@ -779,7 +905,7 @@ function applyOp_(m, type, d) {
       return { ok: false, error: "not_found" };
     }
     case "photo": {
-      if (!r.attendance) return { ok: false, error: "forbidden" };
+      if (!r.cards) return { ok: false, error: "forbidden" };
       if (!memberExists(d.member_id)) return { ok: false, error: "unknown_member" };
       const id = savePhoto_(d.member_id, d.image);
       return id ? { ok: true, photo: id } : { ok: false, error: "bad_image" };

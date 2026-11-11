@@ -1,26 +1,37 @@
 /* ==========================================================
    ZA SPaFi Toliara – members' area (mpikambana.html)
-   Uses the helpers exposed by app.js as window.ZA.
-   Without API_URL it runs in test mode with data/sample-member.json
-   (login: ZA-001 / PIN 1234).
+   Home of the logged member:
+     - greeting + quick tiles
+     - finances, goals, commissions (tasks per Vaomiera), rankings
+     - Birao: everybody's fees and arrivals (top 5 + see more)
+   The profile button opens a side panel with the personal information
+   (card, fees, materials, arrivals, internal rules).
+   The phone "back" button closes the panel / form instead of leaving.
+   Test mode (no API_URL): data/sample-member.json, login ZA-001 / PIN 1234.
    ========================================================== */
 (function () {
   "use strict";
 
   const TOKEN_KEY = "za_token";
+  const COMM_ICON = { "Soratra Masina": "📖", "Fifandraisana": "📣", "Fitaovana": "🧰", "Fampandrosoana": "🌱", "Hira sy mozika": "🎵" };
   let token = readToken();
-  let data = null;          // dashboard data from the API
-  let fullFinance = null;   // full transaction list (loaded on demand)
-  const openGoals = new Set();   // goals whose steps are shown
-  let taskFilter = "mine";
-  let confirmTask = null;   // id of the task waiting for confirmation
+  let data = null;            // dashboard data from the API
+  let fullFinance = null;     // full transaction list (loaded on demand)
+  const openGoals = new Set();
+  const expanded = new Set(); // lists shown in full ("see more")
+  let confirmTask = null;
   let busy = false;
-  let message = "";         // error message on the login form
-  let lastIdent = "";       // keeps the typed phone/ID when the form is redrawn
-  let photoMsg = "";        // result of "change my photo"
+  let message = "";
+  let lastIdent = "";
+  let photoMsg = "";
+  let notice = "";            // short confirmation after adding a task/goal
+  let drawer = false;         // profile panel open
+  let comm = null;            // commission shown in the Vaomiera section ("mine" = my tasks)
+  let form = null;            // "task" | "goal" while a form is open
 
   function readToken() { try { return sessionStorage.getItem(TOKEN_KEY); } catch (e) { return null; } }
   function saveToken(t) { try { t ? sessionStorage.setItem(TOKEN_KEY, t) : sessionStorage.removeItem(TOKEN_KEY); } catch (e) { /* ignore */ } }
+  const Z = () => window.ZA;
 
   /* ---------- API (or test mode) ---------- */
   async function api(action, extra) {
@@ -35,21 +46,46 @@
 
   let demoData = null;
   async function demoApi(b) {
-    if (!demoData) demoData = JSON.parse(await window.ZA.fetchText("data/sample-member.json", "member"));
+    if (!demoData) demoData = JSON.parse(await Z().fetchText("data/sample-member.json", "member"));
     switch (b.action) {
       case "login":
         return (b.identifier.trim().toUpperCase() === "ZA-001" && b.pin === "1234") ? { ok: true, token: "demo" } : { ok: false, error: "bad_credentials" };
-      case "me": return b.token === "demo" ? demoData : { ok: false, error: "session_expired" };
+      case "me": return b.token === "demo" ? JSON.parse(JSON.stringify(demoData)) : { ok: false, error: "session_expired" };
       case "finance_all": return { ok: true, finance: Object.assign({}, demoData.finance, { recent: demoData.finance_all }) };
       case "task_done": {
         const t = demoData.tasks.find(x => x.id === b.task_id);
         if (t) { t.status = "done"; t.done_date = new Date().toISOString().slice(0, 10); }
+        demoData.goals.forEach(g => g.steps.forEach(x => { if (x.id === b.task_id) { x.status = "done"; x.done_date = new Date().toISOString().slice(0, 10); } }));
         return { ok: true };
       }
+      case "add_task": {
+        const id = "N" + Date.now();
+        const p = demoData.people.find(x => x.id === b.assignee);
+        const g = demoData.goals.find(x => x.id === b.goal_id);
+        const task = { id, goal: g ? g.title : "", goal_id: b.goal_id, title: b.title, assignee: b.assignee || b.commission,
+          assignee_label: p ? p.name : b.commission, due: b.due || "", status: "todo", done_date: "", mine: true, can_edit: true,
+          visible: b.visible !== false, commission: b.commission };
+        demoData.tasks.push(task); if (g) g.steps.push(task);
+        return { ok: true, id };
+      }
+      case "add_goal":
+        demoData.goals.push({ id: "T" + Date.now(), title: b.title, description: b.description || "", target_date: b.due || "", visible: b.visible !== false, steps: [] });
+        return { ok: true };
       case "my_photo": return { ok: true, photo: "" };
       default: return { ok: true };
     }
   }
+
+  /* ---------- phone back button: close the panel / form first ---------- */
+  function pushNav(state) { try { history.pushState(Object.assign({ za: true }, state), ""); } catch (e) { /* ignore */ } }
+  window.addEventListener("popstate", () => {
+    if (drawer) { drawer = false; render(); return; }
+    if (form) { form = null; render(); }
+  });
+  function openDrawer() { drawer = true; pushNav({ drawer: true }); render(); }
+  function closeDrawer() { if (drawer) history.back(); }
+  function openForm(kind) { form = kind; notice = ""; pushNav({ form: kind }); render(); }
+  function closeForm() { if (form) history.back(); }
 
   /* ---------- actions ---------- */
   async function login(identifier, pin) {
@@ -66,10 +102,11 @@
     const r = await api("me");
     if (!r.ok) { logout(r.error === "session_expired" ? "m.session_expired" : "m.error"); return; }
     data = r; fullFinance = null;
+    if (!comm) comm = data.member.commission && (data.commissions || []).includes(data.member.commission) ? data.member.commission : "mine";
   }
   function logout(msg) {
     if (token && msg === undefined) api("logout").catch(() => {});
-    token = null; data = null; fullFinance = null; saveToken(null);
+    token = null; data = null; fullFinance = null; saveToken(null); drawer = false; form = null;
     message = msg || ""; render();
   }
   async function markDone(id) {
@@ -78,7 +115,7 @@
       const r = await api("task_done", { task_id: id });
       if (r.ok) await loadMe();
       else if (r.error === "session_expired") return logout("m.session_expired");
-    } catch (e) { /* keep the list as is */ }
+    } catch (e) { /* keep the list */ }
     confirmTask = null; busy = false; render();
   }
   async function changePhoto(file) {
@@ -103,77 +140,115 @@
     } catch (e) { /* ignore */ }
     busy = false; render();
   }
+  async function submitForm(kind, f) {
+    const v = n => (f.elements[n] ? f.elements[n].value.trim() : "");
+    const payload = kind === "task"
+      ? { commission: v("commission"), goal_id: v("goal"), title: v("title"), assignee: v("assignee"), due: v("due"), visible: f.elements.visible.checked }
+      : { title: v("title"), description: v("description"), due: v("due"), visible: f.elements.visible.checked };
+    if (!payload.title || (kind === "task" && !payload.goal_id)) { notice = "err.missing_fields"; render(); return; }
+    busy = true; render();
+    try {
+      const r = await api(kind === "task" ? "add_task" : "add_goal", payload);
+      if (r.ok) { await loadMe(); notice = kind === "task" ? "m.task_added" : "m.goal_added"; form = null; history.back(); }
+      else if (r.error === "session_expired") return logout("m.session_expired");
+      else notice = "err." + r.error;
+    } catch (e) { notice = "m.error"; }
+    busy = false; render();
+  }
 
   /* ---------- rendering ---------- */
   function render() {
     const root = document.getElementById("members-app");
-    if (!root || !window.ZA) return;
-    const { t } = window.ZA;
+    if (!root || !Z()) return;
     if (!token || !data) {
       root.innerHTML = loginHTML();
       const f = root.querySelector("form");
-      f.addEventListener("submit", e => {
-        e.preventDefault();
-        login(f.identifier.value, f.pin.value);
-      });
+      f.addEventListener("submit", e => { e.preventDefault(); login(f.identifier.value, f.pin.value); });
       return;
     }
-    const esc = window.ZA.esc;
-    const can = data.member.can || {};
-    const sections = [["m-finance", "m.tab_finance"], ["m-goals", "m.goals_title"], ["m-tasks", "m.tab_tasks"], ["m-ranking", "m.tab_ranking"]];
+    const { t } = Z();
+    const sections = [["m-finance", "m.tab_finance"], ["m-goals", "m.goals_title"], ["m-comm", "about.commissions_title"], ["m-ranking", "m.tab_ranking"]];
     if (data.member.is_office) sections.push(["m-feesall", "m.tab_fees_all"], ["m-attall", "e.attendance"]);
     root.innerHTML = `
       ${data.sample ? `<p class="demo-note">${t("m.demo_hint")}</p>` : ""}
-      <div class="m-layout">
-        <aside class="m-side">
-          <div class="card member-head">
-            <h2>${t("m.hello", { name: esc(data.member.name) })}</h2>
-            <div class="member-meta">
-              <span class="chip chip--small">${esc(data.member.id)}</span>
-              ${data.member.commission ? `<span>${t("m.commission")}: <strong>${esc(data.member.commission)}</strong></span>` : ""}
-              ${data.member.office_role ? `<span>${t("m.role")}: <strong>${esc(data.member.office_role)}</strong></span>` : ""}
-            </div>
-            <div class="inline mt-s">
-              ${can.finance || can.materials || can.attendance ? `<a class="btn btn--gold btn--small" href="fampidirana.html">${t("nav.entry")}</a>` : ""}
-              <button class="btn btn--outline btn--small" id="logout">${t("m.logout")}</button>
-            </div>
+      ${heroHTML()}
+      ${tilesHTML()}
+      <nav class="m-nav">${sections.map(([id, k]) => `<a href="#${id}">${t(k)}</a>`).join("")}</nav>
+      <section id="m-finance" class="m-sec">${secHead("💰", "m.tab_finance")}${financeHTML()}</section>
+      <section id="m-goals" class="m-sec">${secHead("🎯", "m.goals_title")}<p class="muted">${t("m.goals_intro")}</p>${goalFormBlock()}${goalsHTML()}</section>
+      <section id="m-comm" class="m-sec">${secHead("🤝", "about.commissions_title")}<p class="muted">${t("m.vaomiera_intro")}</p>${commHTML()}</section>
+      <section id="m-ranking" class="m-sec">${secHead("🏆", "m.tab_ranking")}${rankingHTML()}</section>
+      ${data.member.is_office ? `
+        <section id="m-feesall" class="m-sec">${feesAllHTML()}</section>
+        <section id="m-attall" class="m-sec">${attendanceAllHTML()}</section>` : ""}
+      <div class="drawer-backdrop ${drawer ? "is-open" : ""}" data-close-drawer></div>
+      <aside class="drawer ${drawer ? "is-open" : ""}" aria-hidden="${!drawer}">
+        <div class="drawer__head"><strong>${t("m.tab_me")}</strong><button class="drawer__close" data-close-drawer aria-label="${t("m.close")}">✕</button></div>
+        <div class="drawer__body">${profileHTML()}</div>
+      </aside>`;
+    bind(root);
+  }
+
+  function secHead(icon, key) { return `<div class="sec-head"><span class="sec-ico">${icon}</span><h2>${Z().t(key)}</h2></div>`; }
+
+  function avatarHTML(cls) {
+    const m = data.member;
+    if (window.ZACard) return window.ZACard.photoHTML({ id: m.id, name: m.name, photo: m.photo, photo_data: m.photo_data }, cls);
+    return `<div class="${cls}"><span>${Z().esc(m.name.slice(0, 1))}</span></div>`;
+  }
+
+  function heroHTML() {
+    const { t, esc, fmtDate } = Z();
+    const m = data.member, can = m.can || {};
+    const d = new Date(); const iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    return `
+      <div class="dash-hero">
+        <div class="dash-hero__text">
+          <div class="dash-hero__date">${fmtDate(iso)}</div>
+          <h2>${t("m.hello", { name: esc(m.name) })}</h2>
+          <div class="dash-hero__chips">
+            <span>${esc(m.id)}</span>
+            ${m.commission ? `<span>${COMM_ICON[m.commission] || ""} ${esc(m.commission)}</span>` : ""}
+            ${m.office_role ? `<span>${esc(m.office_role)}</span>` : ""}
           </div>
-          ${meHTML()}
-        </aside>
-        <div class="m-main">
-          <nav class="m-nav">${sections.map(([id, k]) => `<a href="#${id}">${t(k)}</a>`).join("")}</nav>
-          <section id="m-finance" class="m-sec"><h2>${t("m.tab_finance")}</h2>${financeHTML()}</section>
-          <section id="m-goals" class="m-sec"><h2>${t("m.goals_title")}</h2><p class="muted">${t("m.goals_intro")}</p>${goalsHTML()}</section>
-          <section id="m-tasks" class="m-sec"><h2>${t("m.tab_tasks")}</h2>${tasksHTML()}</section>
-          <section id="m-ranking" class="m-sec"><h2>${t("m.tab_ranking")}</h2>${rankingHTML()}</section>
-          ${data.member.is_office ? `<section id="m-feesall" class="m-sec">${feesAllHTML()}</section>
-            <section id="m-attall" class="m-sec">${attendanceAllHTML()}</section>` : ""}
+          ${can.tx || can.fees || can.confirm || can.materials || can.attendance || can.cards
+            ? `<a class="btn btn--gold btn--small mt-s" href="fampidirana.html">${t("nav.entry")} →</a>` : ""}
         </div>
+        <button class="dash-avatar" data-open-drawer aria-label="${t("m.tab_me")}">
+          ${avatarHTML("dash-avatar__img")}
+          <span>${t("m.tab_me")}</span>
+        </button>
       </div>`;
-    root.querySelectorAll("[data-goal]").forEach(b => b.addEventListener("click", () => {
-      const id = b.dataset.goal; openGoals.has(id) ? openGoals.delete(id) : openGoals.add(id); render();
-    }));
-    root.querySelector("#logout").addEventListener("click", () => logout());
-    root.querySelectorAll("[data-filter]").forEach(b => b.addEventListener("click", () => { taskFilter = b.dataset.filter; render(); }));
-    root.querySelectorAll("[data-done]").forEach(b => b.addEventListener("click", () => { confirmTask = b.dataset.done; render(); }));
-    root.querySelectorAll("[data-confirm]").forEach(b => b.addEventListener("click", () => markDone(b.dataset.confirm)));
-    root.querySelectorAll("[data-cancel]").forEach(b => b.addEventListener("click", () => { confirmTask = null; render(); }));
-    root.querySelectorAll(".my-photo").forEach(i => i.addEventListener("change", () => changePhoto(i.files[0])));
-    const all = root.querySelector("#fin-all");
-    if (all) all.addEventListener("click", loadFullFinance);
+  }
+
+  function tilesHTML() {
+    const { t, money } = Z();
+    const f = data.fees, a = data.attendance || {};
+    const paid = f.months.filter(x => x.paid).length;
+    const due = f.months.filter(x => !x.future && !x.not_member).length;
+    const open = (data.tasks || []).filter(x => x.mine && x.status !== "done").length;
+    return `
+      <div class="tiles">
+        <a class="tile tile--navy" href="#m-finance"><span class="tile__label">${t("m.fin_balance")}</span><strong>${money(data.finance.balance)}</strong></a>
+        <button class="tile" data-open-drawer><span class="tile__label">${t("m.tile_fees")}</span><strong>${paid}/${due || f.months.length}</strong><span class="tile__sub">${Z().esc(f.year)}</span></button>
+        <a class="tile" href="#m-comm" data-comm-jump="mine"><span class="tile__label">${t("m.tile_tasks")}</span><strong>${open}</strong></a>
+        <button class="tile" data-open-drawer><span class="tile__label">${t("m.att_mine")}</span><strong>${a.meetings ? a.present + "/" + a.meetings : "–"}</strong>
+          ${a.meetings ? `<span class="tile__sub">${t("m.att_late")}: ${a.late}</span>` : ""}</button>
+      </div>`;
   }
 
   function loginHTML() {
-    const { t } = window.ZA;
+    const { t } = Z();
     const demo = !(window.SITE_CONFIG || {}).API_URL;
     return `
       <div class="card login-card">
+        <div class="login-card__logo"><img src="assets/img/logo-192.png" alt=""></div>
         <h2>${t("m.login_title")}</h2>
         <p class="muted">${t("m.login_intro")}</p>
         ${message ? `<div class="alert ${message === "m.session_expired" ? "alert--ok" : "alert--err"}">${t(message)}</div>` : ""}
         <form class="form" novalidate>
           <div><label for="m-id">${t("m.identifier")}</label>
-            <input id="m-id" name="identifier" autocomplete="username" value="${window.ZA.esc(lastIdent)}" required></div>
+            <input id="m-id" name="identifier" autocomplete="username" value="${Z().esc(lastIdent)}" required></div>
           <div><label for="m-pin">${t("m.pin")}</label>
             <input id="m-pin" name="pin" type="password" inputmode="numeric" autocomplete="current-password" required></div>
           <button class="btn btn--navy" type="submit" ${busy ? "disabled" : ""}>${busy ? t("common.loading") : t("m.login_btn")}</button>
@@ -183,6 +258,7 @@
       </div>`;
   }
 
+  /* ---------- profile panel ---------- */
   const STATUS_KEY = { on_time: "m.fee_on_time", late: "m.fee_late", unpaid: "m.fee_unpaid", future: "m.fee_future", na: "m.fee_na" };
   function feeStatus(x) {
     if (x.paid) return x.on_time ? "on_time" : "late";
@@ -190,14 +266,14 @@
     return x.future ? "future" : "unpaid";
   }
   function legendHTML() {
-    const { t } = window.ZA;
+    const { t } = Z();
     return `<div class="legend">${["on_time", "late", "unpaid", "future", "na"].map(s =>
       `<span><i class="dot dot--${s}"></i>${t(STATUS_KEY[s])}</span>`).join("")}</div>`;
   }
 
-  function meHTML() {
-    const { t, esc, money, fmtDate } = window.ZA;
-    const f = data.fees;
+  function profileHTML() {
+    const { t, esc, money, fmtDate } = Z();
+    const m = data.member, f = data.fees;
     const paid = f.months.filter(x => x.paid).length;
     const cells = f.months.map(x => {
       const s = feeStatus(x);
@@ -210,153 +286,42 @@
         <div><strong>${esc(l.material_id)}</strong> · ${esc(l.type)}<div class="muted small">${esc(l.desc)}</div></div>
         <div class="loan__right">
           <span class="badge ${l.returned ? "badge--done" : "badge--in_progress"}">${t(l.returned ? "m.loan_returned" : "m.loan_out")}</span>
-          <div class="muted small">${t("m.loan_since")} ${fmtDate(l.date)}${l.returned ? " → " + fmtDate(l.return_date) : ""}</div>
+          <div class="muted small">${fmtDate(l.date)}${l.returned ? " → " + fmtDate(l.return_date) : ""}</div>
         </div>
       </li>`).join("") : `<li class="muted">${t("m.loans_empty")}</li>`;
+    const docs = (window.SITE_CONFIG || {}).DOCS || {};
     return `
-      <div class="card">
-        <h3>${t("m.fees_title", { year: f.year })}</h3>
-        <p class="muted">${t("m.fees_summary", { paid, amount: money(f.monthly_amount) })}</p>
-        <div class="fee-grid">${cells}</div>
-        ${legendHTML()}
-      </div>
-      <div class="card mt">
-        <h3>${t("m.loans_title")}</h3>
-        <ul class="loans">${loans}</ul>
-      </div>
-      ${window.ZACard ? `<div class="card mt my-card">
+      ${window.ZACard ? `<div class="card my-card">
         <h3>${t("m.my_card")}</h3>
-        <p class="muted">${t("m.my_card_hint")}</p>
-        ${window.ZACard.card({ id: data.member.id, name: data.member.name, commission: data.member.commission, role: data.member.office_role, photo: data.member.photo, photo_data: data.member.photo_data })}
+        ${window.ZACard.card({ id: m.id, name: m.name, commission: m.commission, role: m.office_role, photo: m.photo, photo_data: m.photo_data })}
         <div class="center mt-s">
-          <div class="small muted">${t("m.photo_change")}</div>
           <label class="btn btn--outline btn--small file-btn">📷 ${t("e.photo_camera")}<input type="file" accept="image/*" capture="user" class="my-photo" hidden></label>
           <label class="btn btn--outline btn--small file-btn">🖼 ${t("e.photo_gallery")}<input type="file" accept="image/*" class="my-photo" hidden></label>
-          <p class="hint">${t("e.photo_hint")}</p>
+          <p class="hint">${t("m.my_card_hint")}</p>
           ${photoMsg ? `<div class="alert ${photoMsg === "m.photo_saved" ? "alert--ok" : "alert--err"}">${t(photoMsg)}</div>` : ""}
         </div>
       </div>` : ""}
+      <div class="card">
+        <h3>${t("m.fees_title", { year: f.year })}</h3>
+        <p class="muted small">${t("m.fees_summary", { paid, amount: money(f.monthly_amount) })}</p>
+        <div class="fee-grid">${cells}</div>
+        ${legendHTML()}
+      </div>
       ${myAttendanceHTML()}
-      ${(window.SITE_CONFIG || {}).DOCS && window.SITE_CONFIG.DOCS.rules ? `
-      <div class="card about-rules">
+      <div class="card">
+        <h3>${t("m.loans_title")}</h3>
+        <ul class="loans">${loans}</ul>
+      </div>
+      ${docs.rules ? `<div class="card">
         <h3>${t("m.rules_title")}</h3>
         <p class="muted small">${t("m.rules_text")}</p>
-        <a class="btn btn--navy btn--small" href="${esc(window.SITE_CONFIG.DOCS.rules)}" target="_blank" rel="noopener">${t("about.rules_btn")}</a>
-      </div>` : ""}`;
+        <a class="btn btn--navy btn--small" href="${esc(docs.rules)}" target="_blank" rel="noopener">${t("about.rules_btn")}</a>
+      </div>` : ""}
+      <button class="btn btn--outline e-wide" id="logout">${t("m.logout")}</button>`;
   }
 
-  /* Goals and their steps, like on the home page, plus the ones not shown publicly */
-  function goalsHTML() {
-    const { t, esc, fmtDate } = window.ZA;
-    const goals = data.goals || [];
-    if (!goals.length) return `<p class="muted">${t("goals.empty")}</p>`;
-    return `<div class="goals goals--members">${goals.map(g => {
-      const total = g.steps.length;
-      const done = g.steps.filter(x => x.status === "done").length;
-      const pct = total ? Math.round(done / total * 100) : 0;
-      const open = openGoals.has(g.id);
-      const steps = g.steps.map(x => `
-        <li class="step step--${esc(x.status)}">
-          <div class="step__title">${esc(x.title)}<span class="badge badge--${esc(x.status)}">${t("goals." + x.status)}</span>
-            ${x.visible === false ? `<span class="badge badge--hidden">${t("m.hidden")}</span>` : ""}</div>
-          <div class="step__info">${esc(x.assignee_label || "–")} · ${x.status === "done" ? t("m.task_done_on") + " " + fmtDate(x.done_date || x.due) : (x.due ? t("m.task_due") + ": " + fmtDate(x.due) : "")}</div>
-          ${x.status !== "done" && x.can_edit ? `<div class="mt-xs">${doneButton(x)}</div>` : ""}
-        </li>`).join("");
-      return `
-        <article class="goal ${g.visible ? "" : "goal--hidden"}">
-          <h3>${esc(g.title)} ${g.visible ? "" : `<span class="badge badge--hidden">${t("m.hidden")}</span>`}</h3>
-          ${g.description ? `<p class="goal__desc">${esc(g.description)}</p>` : ""}
-          <div class="goal__meta"><strong>${t("goals.progress", { done, total })}</strong>
-            ${g.target_date ? `<span>${t("goals.target")}: ${fmtDate(g.target_date)}</span>` : ""}</div>
-          <div class="progress"><div class="progress__bar" style="width:${pct}%"></div></div>
-          ${total ? `<button class="btn btn--outline btn--small goal__toggle" data-goal="${esc(g.id)}" aria-expanded="${open}">${t(open ? "goals.hide_steps" : "goals.show_steps")}</button>` : ""}
-          ${open ? `<ol class="steps">${steps}</ol>` : ""}
-        </article>`;
-    }).join("")}</div>`;
-  }
-
-  function doneButton(x) {
-    const { t, esc } = window.ZA;
-    return confirmTask === x.id
-      ? `<div class="confirm"><span>${t("m.confirm_done")}</span>
-           <button class="btn btn--gold btn--small" data-confirm="${esc(x.id)}" ${busy ? "disabled" : ""}>${t("m.confirm_yes")}</button>
-           <button class="btn btn--outline btn--small" data-cancel>${t("m.confirm_no")}</button></div>`
-      : `<button class="btn btn--navy btn--small" data-done="${esc(x.id)}">${t("m.task_mark_done")}</button>`;
-  }
-
-  function tasksHTML() {
-    const { t, esc, fmtDate } = window.ZA;
-    const today = new Date().toISOString().slice(0, 10);
-    const list = data.tasks.filter(x => taskFilter === "all" || x.mine)
-      .sort((a, b) => (a.status === "done") - (b.status === "done") || ((a.due || "9") < (b.due || "9") ? -1 : 1));
-    const items = list.length ? list.map(x => {
-      const overdue = x.status !== "done" && x.due && x.due < today;
-      const action = x.status !== "done" && x.can_edit ? doneButton(x) : "";
-      return `
-        <li class="task task--${x.status}">
-          <div class="task__main">
-            <div class="task__title">${esc(x.title)}
-              <span class="badge badge--${x.status}">${t("goals." + x.status)}</span>
-              ${x.visible === false ? `<span class="badge badge--hidden">${t("m.hidden")}</span>` : ""}
-              ${overdue ? `<span class="badge badge--late">${t("m.task_overdue")}</span>` : ""}</div>
-            <div class="task__meta">
-              ${x.goal ? `<span>${t("m.task_goal")}: ${esc(x.goal)}</span>` : ""}
-              <span>${t("m.task_assignee")}: <strong>${esc(x.assignee_label || "–")}</strong></span>
-              ${x.status === "done" ? `<span>${t("m.task_done_on")} ${fmtDate(x.done_date)}</span>` : x.due ? `<span>${t("m.task_due")}: ${fmtDate(x.due)}</span>` : ""}
-            </div>
-          </div>
-          <div class="task__action">${action}</div>
-        </li>`;
-    }).join("") : `<li class="muted">${t("m.tasks_empty")}</li>`;
-    return `
-      <div class="seg">
-        <button class="${taskFilter === "mine" ? "is-active" : ""}" data-filter="mine">${t("m.tasks_mine")}</button>
-        <button class="${taskFilter === "all" ? "is-active" : ""}" data-filter="all">${t("m.tasks_all")}</button>
-      </div>
-      <ul class="tasks">${items}</ul>`;
-  }
-
-  function financeHTML() {
-    const { t, esc, money, fmtDate } = window.ZA;
-    const fin = data.finance;
-    const rows = (fullFinance || fin.recent).map(r => {
-      const reason = r.category === "donation" ? t("m.fin_donation") : r.category === "fee" ? t("m.fin_fee") + " " + esc(r.reason.replace(/^Latsakemboka\s*/, "")) : esc(r.reason);
-      return `<tr><td class="date">${fmtDate(r.date)}</td><td>${reason}</td>
-        <td class="num ${r.type === "in" ? "amt-in" : "amt-out"}">${r.type === "in" ? "+" : "−"} ${money(r.amount)}</td></tr>`;
-    }).join("");
-    return `
-      <div class="fin-stats">
-        <div class="stat"><div class="stat__label">${t("m.fin_balance")}</div><div class="stat__value">${money(fin.balance)}</div></div>
-        <div class="card"><div class="muted">${t("m.fin_income")}</div><div class="big amt-in">${money(fin.income)}</div>
-          <div class="muted small">${t("m.fin_donations")}: ${money(fin.donations)} · ${t("m.fin_fees")}: ${money(fin.fees)}</div></div>
-        <div class="card"><div class="muted">${t("m.fin_expense")}</div><div class="big amt-out">${money(fin.expense)}</div></div>
-      </div>
-      <div class="card mt">
-        <h3>${fullFinance ? t("m.fin_all") : t("m.fin_recent")}</h3>
-        <div class="table-wrap"><table>
-          <thead><tr><th>${t("donors.col_date")}</th><th>${t("m.fin_reason")}</th><th class="num">${t("donors.col_amount")}</th></tr></thead>
-          <tbody>${rows}</tbody></table></div>
-        ${!fullFinance && fin.total_count > fin.recent.length ? `<div class="list-actions"><button class="btn btn--outline btn--small" id="fin-all" ${busy ? "disabled" : ""}>${t("common.see_all")} (${fin.total_count})</button></div>` : ""}
-      </div>`;
-  }
-
-  function rankingHTML() {
-    const { t, esc } = window.ZA;
-    const podium = (list, unit) => list.length ? `<ol class="podium">${list.map((x, i) => `
-        <li class="podium__item podium__item--${i + 1}"><span class="podium__rank">${i + 1}</span>
-          <span class="podium__name">${esc(x.name)}</span><span class="podium__count">${x.count} ${t(unit)}</span></li>`).join("")}</ol>`
-      : `<p class="muted">${t("m.rank_empty")}</p>`;
-    return `
-      <p class="muted center">${t("m.rank_year", { year: data.fees.year })}</p>
-      <div class="rank-grid">
-        <div class="card"><h3>${t("m.rank_fees")}</h3>${podium(data.top.fees, "m.rank_months")}</div>
-        <div class="card"><h3>${t("m.rank_att")}</h3>${podium(data.top.attendance, "m.rank_times")}</div>
-      </div>`;
-  }
-
-  /* Arrivals at meetings: my own summary (side column) */
   function myAttendanceHTML() {
-    const { t, esc, fmtDate } = window.ZA;
+    const { t, esc, fmtDate } = Z();
     const a = data.attendance;
     if (!a) return "";
     const pct = a.meetings ? Math.round(a.present / a.meetings * 100) : 0;
@@ -371,18 +336,205 @@
             <span class="badge badge--late">${t("m.att_late")}: ${a.late}</span>
             ${a.avg_time ? `<span class="badge badge--todo">${t("m.att_avg")}: ${esc(a.avg_time)}</span>` : ""}
           </div>
-          ${a.last.length ? `<p class="small muted mt-s">${t("m.att_last")}</p><ul class="att-last">${a.last.map(x =>
+          ${a.last.length ? `<ul class="att-last">${a.last.map(x =>
             `<li><span>${fmtDate(x.date)}</span><strong class="${x.late ? "amt-out" : x.late === false ? "amt-in" : ""}">${esc(x.time || "–")}</strong></li>`).join("")}</ul>` : ""}
           <p class="hint">${t("m.att_start", { time: esc(data.meeting.start), tol: data.meeting.tolerance })}</p>`
         : `<p class="muted">${t("m.att_none")}</p>`}
       </div>`;
   }
 
-  /* Arrivals at meetings: everybody (Birao only) */
+  /* ---------- finances ---------- */
+  function financeHTML() {
+    const { t, esc, money, fmtDate } = Z();
+    const fin = data.finance;
+    const list = fullFinance || fin.recent.slice(0, 5);
+    const rows = list.map(r => {
+      const reason = r.category === "donation" ? t("m.fin_donation") : r.category === "fee" ? t("m.fin_fee") + " " + esc(r.reason.replace(/^Latsakemboka\s*/, "")) : esc(r.reason);
+      return `<li class="tx tx--${r.type}">
+        <span class="tx__ico">${r.type === "in" ? "↓" : "↑"}</span>
+        <span class="tx__main"><strong>${reason}</strong><span class="muted small">${fmtDate(r.date)}</span></span>
+        <span class="tx__amt">${r.type === "in" ? "+" : "−"} ${money(r.amount)}</span></li>`;
+    }).join("");
+    return `
+      <div class="fin-stats">
+        <div class="stat"><div class="stat__label">${t("m.fin_balance")}</div><div class="stat__value">${money(fin.balance)}</div></div>
+        <div class="card stat-card"><div class="muted">${t("m.fin_income")}</div><div class="big amt-in">${money(fin.income)}</div>
+          <div class="muted small">${t("m.fin_donations")}: ${money(fin.donations)} · ${t("m.fin_fees")}: ${money(fin.fees)}</div></div>
+        <div class="card stat-card"><div class="muted">${t("m.fin_expense")}</div><div class="big amt-out">${money(fin.expense)}</div></div>
+      </div>
+      <div class="card mt">
+        <h3>${fullFinance ? t("m.fin_all") : t("m.fin_recent")}</h3>
+        <ul class="txs">${rows}</ul>
+        ${!fullFinance && fin.total_count > list.length
+          ? `<div class="list-actions"><button class="btn btn--outline btn--small" id="fin-all" ${busy ? "disabled" : ""}>${t("m.see_more", { n: fin.total_count })}</button></div>`
+          : fullFinance ? `<div class="list-actions"><button class="btn btn--outline btn--small" id="fin-less">${t("common.show_less")}</button></div>` : ""}
+      </div>`;
+  }
+
+  /* ---------- goals ---------- */
+  function goalFormBlock() {
+    const { t } = Z();
+    if (!(data.member.can || {}).tasks_admin) return "";
+    if (form !== "goal") return `<button class="btn btn--gold btn--small mb" data-form="goal">＋ ${t("m.add_goal")}</button>${noticeHTML("m.goal_added")}`;
+    return `
+      <form class="card form add-form" id="f-goal">
+        <h3>${t("m.add_goal")}</h3>
+        <div><label>${t("m.f_goal_title")}</label><input name="title" required maxlength="200"></div>
+        <div><label>${t("m.f_desc")}</label><textarea name="description" rows="2" maxlength="500"></textarea></div>
+        <div class="row">
+          <div><label>${t("m.task_due")}</label><input name="due" type="date"></div>
+          <label class="choice"><input type="checkbox" name="visible" checked> ${t("m.f_public")}</label>
+        </div>
+        ${notice ? `<div class="alert alert--err">${Z().t(notice)}</div>` : ""}
+        <div class="inline"><button class="btn btn--gold" type="submit" ${busy ? "disabled" : ""}>${t("e.save")}</button>
+          <button class="btn btn--outline" type="button" data-cancel-form>${t("m.confirm_no")}</button></div>
+      </form>`;
+  }
+  function noticeHTML(key) {
+    return notice === key ? `<div class="alert alert--ok mt-s">${Z().t(notice)}</div>` : "";
+  }
+
+  function stepHTML(x) {
+    const { t, esc, fmtDate } = Z();
+    return `
+      <li class="step step--${esc(x.status)}">
+        <div class="step__title">${esc(x.title)}<span class="badge badge--${esc(x.status)}">${t("goals." + x.status)}</span>
+          ${x.visible === false ? `<span class="badge badge--hidden">${t("m.hidden")}</span>` : ""}</div>
+        <div class="step__info">${x.commission ? (COMM_ICON[x.commission] || "") + " " : ""}${esc(x.assignee_label || "–")} · ${x.status === "done" ? t("m.task_done_on") + " " + fmtDate(x.done_date || x.due) : (x.due ? t("m.task_due") + ": " + fmtDate(x.due) : "")}</div>
+        ${x.status !== "done" && x.can_edit ? `<div class="mt-xs">${doneButton(x)}</div>` : ""}
+      </li>`;
+  }
+
+  function goalsHTML() {
+    const { t, esc, fmtDate } = Z();
+    const goals = data.goals || [];
+    if (!goals.length) return `<p class="muted">${t("goals.empty")}</p>`;
+    return `<div class="goals goals--members">${goals.map(g => {
+      const total = g.steps.length;
+      const done = g.steps.filter(x => x.status === "done").length;
+      const pct = total ? Math.round(done / total * 100) : 0;
+      const open = openGoals.has(g.id);
+      return `
+        <article class="goal ${g.visible ? "" : "goal--hidden"} ${total && done === total ? "goal--done" : ""}">
+          <h3>${esc(g.title)} ${g.visible ? "" : `<span class="badge badge--hidden">${t("m.hidden")}</span>`}</h3>
+          ${g.description ? `<p class="goal__desc">${esc(g.description)}</p>` : ""}
+          <div class="goal__meta"><strong>${t("goals.progress", { done, total })}</strong>
+            ${g.target_date ? `<span>${t("goals.target")}: ${fmtDate(g.target_date)}</span>` : ""}</div>
+          <div class="progress"><div class="progress__bar" style="width:${pct}%"></div></div>
+          ${total ? `<button class="btn btn--outline btn--small goal__toggle" data-goal="${esc(g.id)}" aria-expanded="${open}">${t(open ? "goals.hide_steps" : "goals.show_steps")}</button>` : ""}
+          ${open ? `<ol class="steps">${g.steps.map(stepHTML).join("")}</ol>` : ""}
+        </article>`;
+    }).join("")}</div>`;
+  }
+
+  function doneButton(x) {
+    const { t, esc } = Z();
+    return confirmTask === x.id
+      ? `<div class="confirm"><span>${t("m.confirm_done")}</span>
+           <button class="btn btn--gold btn--small" data-confirm="${esc(x.id)}" ${busy ? "disabled" : ""}>${t("m.confirm_yes")}</button>
+           <button class="btn btn--outline btn--small" data-cancel>${t("m.confirm_no")}</button></div>`
+      : `<button class="btn btn--navy btn--small" data-done="${esc(x.id)}">${t("m.task_mark_done")}</button>`;
+  }
+
+  /* ---------- commissions (Vaomiera): tasks per commission ---------- */
+  function commHTML() {
+    const { t, esc } = Z();
+    const comms = data.commissions || [];
+    const tasks = data.tasks || [];
+    const tabs = [["mine", "👤", t("m.tasks_mine")]].concat(comms.map(c => [c, COMM_ICON[c] || "•", c]));
+    const list = comm === "mine" ? tasks.filter(x => x.mine) : tasks.filter(x => x.commission === comm);
+    const openN = list.filter(x => x.status !== "done").length, doneN = list.length - openN;
+    const canAdd = comm !== "mine" && (data.can_add_tasks || []).includes(comm);
+    // group by goal
+    const groups = {};
+    list.forEach(x => { const k = x.goal_id || "_"; (groups[k] = groups[k] || []).push(x); });
+    const goalTitle = id => { const g = (data.goals || []).find(x => x.id === id); return g ? g.title : t("m.no_goal"); };
+    const body = list.length ? Object.keys(groups).map(k => `
+      <div class="comm-group">
+        <div class="comm-group__title">🎯 ${esc(goalTitle(k))}</div>
+        <ol class="steps steps--flat">${groups[k].sort((a, b) => (a.status === "done") - (b.status === "done") || ((a.due || "9") < (b.due || "9") ? -1 : 1)).map(stepHTML).join("")}</ol>
+      </div>`).join("") : `<p class="muted">${t(comm === "mine" ? "m.tasks_empty" : "m.no_tasks_comm")}</p>`;
+    return `
+      <div class="comm-tabs">${tabs.map(([k, ico, label]) =>
+        `<button class="comm-tab ${k === comm ? "is-active" : ""}" data-comm="${esc(k)}"><span>${ico}</span>${esc(label)}</button>`).join("")}</div>
+      <div class="card comm-panel">
+        <div class="comm-panel__head">
+          <div><h3>${comm === "mine" ? "👤 " + t("m.tasks_mine") : (COMM_ICON[comm] || "") + " " + esc(comm)}</h3>
+            <span class="badge badge--in_progress">${t("m.comm_open", { n: openN })}</span>
+            <span class="badge badge--done">${t("m.comm_done", { n: doneN })}</span></div>
+          ${canAdd && form !== "task" ? `<button class="btn btn--gold btn--small" data-form="task">＋ ${t("m.add_task")}</button>` : ""}
+        </div>
+        ${canAdd && form === "task" ? taskFormHTML() : noticeHTML("m.task_added")}
+        ${body}
+      </div>`;
+  }
+
+  function taskFormHTML() {
+    const { t, esc } = Z();
+    const goals = data.goals || [];
+    const people = (data.people || []).filter(p => p.commission === comm);
+    if (!goals.length) return `<p class="alert alert--err">${t("m.no_goal_hint")}</p>`;
+    return `
+      <form class="form add-form" id="f-task">
+        <input type="hidden" name="commission" value="${esc(comm)}">
+        <div><label>${t("m.task_goal")}</label>
+          <select name="goal" required><option value="">…</option>${goals.map(g => `<option value="${esc(g.id)}">${esc(g.title)}</option>`).join("")}</select></div>
+        <div><label>${t("m.f_title")}</label><input name="title" required maxlength="200"></div>
+        <div class="row">
+          <div><label>${t("m.task_assignee")}</label>
+            <select name="assignee"><option value="${esc(comm)}">${t("m.f_whole_comm")}</option>${people.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("")}</select></div>
+          <div><label>${t("m.task_due")}</label><input name="due" type="date"></div>
+        </div>
+        <label class="choice"><input type="checkbox" name="visible" checked> ${t("m.f_public")}</label>
+        ${notice && !/added$/.test(notice) ? `<div class="alert alert--err">${t(notice)}</div>` : ""}
+        <div class="inline"><button class="btn btn--gold" type="submit" ${busy ? "disabled" : ""}>${t("e.save")}</button>
+          <button class="btn btn--outline" type="button" data-cancel-form>${t("m.confirm_no")}</button></div>
+      </form>`;
+  }
+
+  /* ---------- rankings ---------- */
+  function rankingHTML() {
+    const { t, esc } = Z();
+    const podium = (list, unit) => list.length ? `<ol class="podium">${list.map((x, i) => `
+        <li class="podium__item podium__item--${i + 1}"><span class="podium__rank">${i + 1}</span>
+          <span class="podium__name">${esc(x.name)}</span><span class="podium__count">${x.count} ${t(unit)}</span></li>`).join("")}</ol>`
+      : `<p class="muted">${t("m.rank_empty")}</p>`;
+    return `
+      <p class="muted">${t("m.rank_year", { year: esc(data.fees.year) })}</p>
+      <div class="rank-grid">
+        <div class="card"><h3>${t("m.rank_fees")}</h3>${podium(data.top.fees, "m.rank_months")}</div>
+        <div class="card"><h3>${t("m.rank_att")}</h3>${podium(data.top.attendance, "m.rank_times")}</div>
+      </div>`;
+  }
+
+  /* ---------- Birao reports (top 5 + see more) ---------- */
+  function moreButton(key, total) {
+    const { t } = Z();
+    if (total <= 5) return "";
+    return `<div class="list-actions"><button class="btn btn--outline btn--small" data-more="${key}">${expanded.has(key) ? t("common.show_less") : t("m.see_more", { n: total })}</button></div>`;
+  }
+
+  function feesAllHTML() {
+    const { t, esc } = Z();
+    const all = data.fees_all || [];
+    const list = expanded.has("fees") ? all : all.slice(0, 5);
+    const head = data.fees.months.map(x => `<th class="c">${t("month_short." + Number(x.month.slice(5)))}</th>`).join("");
+    const rows = list.map(r => `<tr><td class="donor"><strong>${esc(r.name)}</strong><div class="muted small">${esc(r.id)}</div></td>
+      ${r.months.map(s => `<td class="c"><i class="dot dot--${s}" title="${t(STATUS_KEY[s])}"></i></td>`).join("")}</tr>`).join("");
+    return `
+      <div class="card">
+        <h3>${t("m.feesall_title", { year: esc(data.fees.year) })}</h3>
+        <div class="table-wrap"><table class="fees-table"><thead><tr><th>${t("m.col_member")}</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+        ${moreButton("fees", all.length)}
+        ${legendHTML()}
+      </div>`;
+  }
+
   function attendanceAllHTML() {
-    const { t, esc } = window.ZA;
-    const list = data.attendance_all || [];
-    const n = list.length ? list[0].meetings : 0;
+    const { t, esc } = Z();
+    const all = data.attendance_all || [];
+    const list = expanded.has("att") ? all : all.slice(0, 5);
+    const n = all.length ? all[0].meetings : 0;
     const rows = list.map(r => {
       const pct = r.meetings ? Math.round(r.present / r.meetings * 100) : 0;
       return `<tr>
@@ -400,21 +552,31 @@
         ${n ? `<div class="table-wrap"><table>
           <thead><tr><th>${t("m.col_member")}</th><th class="num">${t("m.att_rate")}</th><th class="num">${t("m.att_on_time")}</th>
             <th class="num">${t("m.att_late")}</th><th class="num">${t("m.att_avg")}</th></tr></thead>
-          <tbody>${rows}</tbody></table></div>` : `<p class="muted">${t("m.att_none")}</p>`}
+          <tbody>${rows}</tbody></table></div>${moreButton("att", all.length)}` : `<p class="muted">${t("m.att_none")}</p>`}
       </div>`;
   }
 
-  function feesAllHTML() {
-    const { t, esc } = window.ZA;
-    const head = data.fees.months.map(x => `<th class="c">${t("month_short." + Number(x.month.slice(5)))}</th>`).join("");
-    const rows = (data.fees_all || []).map(r => `<tr><td class="donor"><strong>${esc(r.name)}</strong><div class="muted small">${esc(r.id)}</div></td>
-      ${r.months.map(s => `<td class="c"><i class="dot dot--${s}" title="${t(STATUS_KEY[s])}"></i></td>`).join("")}</tr>`).join("");
-    return `
-      <div class="card">
-        <h3>${t("m.feesall_title", { year: data.fees.year })}</h3>
-        <div class="table-wrap"><table class="fees-table"><thead><tr><th>${t("m.col_member")}</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
-        ${legendHTML()}
-      </div>`;
+  /* ---------- events ---------- */
+  function bind(root) {
+    const on = (sel, ev, fn) => root.querySelectorAll(sel).forEach(el => el.addEventListener(ev, fn));
+    on("[data-open-drawer]", "click", openDrawer);
+    on("[data-close-drawer]", "click", closeDrawer);
+    on("#logout", "click", () => { drawer = false; logout(); });
+    on("[data-goal]", "click", e => { const id = e.currentTarget.dataset.goal; openGoals.has(id) ? openGoals.delete(id) : openGoals.add(id); render(); });
+    on("[data-done]", "click", e => { confirmTask = e.currentTarget.dataset.done; render(); });
+    on("[data-confirm]", "click", e => markDone(e.currentTarget.dataset.confirm));
+    on("[data-cancel]", "click", () => { confirmTask = null; render(); });
+    on(".my-photo", "change", e => changePhoto(e.currentTarget.files[0]));
+    on("#fin-all", "click", loadFullFinance);
+    on("#fin-less", "click", () => { fullFinance = null; render(); });
+    on("[data-more]", "click", e => { const k = e.currentTarget.dataset.more; expanded.has(k) ? expanded.delete(k) : expanded.add(k); render(); });
+    on("[data-comm]", "click", e => { comm = e.currentTarget.dataset.comm; if (form === "task") closeForm(); notice = ""; render(); });
+    on("[data-comm-jump]", "click", e => { comm = e.currentTarget.dataset.commJump; render(); setTimeout(() => { const s = document.getElementById("m-comm"); if (s) s.scrollIntoView(); }, 0); });
+    on("[data-form]", "click", e => openForm(e.currentTarget.dataset.form));
+    on("[data-cancel-form]", "click", closeForm);
+    const ft = root.querySelector("#f-task"); if (ft) ft.addEventListener("submit", e => { e.preventDefault(); submitForm("task", ft); });
+    const fg = root.querySelector("#f-goal"); if (fg) fg.addEventListener("submit", e => { e.preventDefault(); submitForm("goal", fg); });
+    document.body.classList.toggle("no-scroll", drawer);
   }
 
   /* ---------- start ---------- */

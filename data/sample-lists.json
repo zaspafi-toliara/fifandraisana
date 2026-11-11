@@ -5,9 +5,14 @@
   "id": "ZA-003",
   "name": "Manampitahiana Aroniaina",
   "can": {
-   "finance": true,
+   "tx": true,
+   "tx_direct": true,
+   "fees": true,
+   "confirm": true,
    "materials": true,
-   "attendance": true
+   "attendance": true,
+   "cards": true,
+   "tasks_admin": true
   }
  },
  "year": "2026–2027",
@@ -127,5 +132,30 @@
   "2027-06",
   "2027-07",
   "2027-08"
+ ],
+ "pending_tx": [
+  {
+   "id": "TX-demo01",
+   "date": "2026-11-09",
+   "kind": "out",
+   "amount": 12000,
+   "reason": "Fandikana taratasy hira",
+   "category": "Hira",
+   "by": "Rahary Zo"
+  }
+ ],
+ "pending_fees": [
+  {
+   "id": "FE-demo01",
+   "date": "2026-11-10",
+   "member_id": "ZA-005",
+   "member_name": "Rahary Zo",
+   "months": [
+    "2026-10",
+    "2026-11"
+   ],
+   "amount": 4000,
+   "by": "Rahary Zo"
+  }
  ]
 }

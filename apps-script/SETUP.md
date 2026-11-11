@@ -149,3 +149,24 @@ After replacing `Code.gs`: run **`setup`** once, then **Manage deployments → N
 ### 5.9 Photos
 
 The photo box now has two buttons: **📷 Haka sary** opens the camera directly, **🖼 Hisafidy sary** opens the gallery.
+
+### 5.10 Rights (update of November 2026, part 2)
+
+After replacing `Code.gs`: run **`setup`** once (it adds **Sata** and **ID** to **Vola**, **Vaomiera** to **Asa**, and the new right in the **Zo** list), then **Manage deployments → New version**.
+
+| Who | Phone app (fampidirana) | Members' page |
+|---|---|---|
+| **Mpitahiry vola** (Zo or Andraikitra Birao) | Income/expenses and fees (counted immediately), **confirm** donations and the Sekretera's income/expenses and fees | everything |
+| **Sekretera** (Zo, or Andraikitra "Sekretera …") | Income/expenses and fees (**both wait for the Mpitahiry vola's confirmation** before entering the report / the fee calendar) | everything |
+| **Birao (Birao = Eny) and Zo = Mpandrindra** | Arrivals at meetings, loans/returns, member photos, card printing | + add goals, add tasks for any commission, Birao reports |
+| **Vaomiera Fitaovana** | Loans and returns of materials only | add tasks for Fitaovana |
+| **Zo = Mpandray fahatongavana** (new) | Scan arrivals at meetings only | – |
+| Every member | – | see everything; add tasks for **their own** commission; mark their tasks done |
+
+- The **Mpandrindra** cannot enter income/expenses or fees, and cannot confirm donations.
+- In the **Vola** and **Latsakemboka** tabs, rows with **Sata = Miandry** are not counted in the financial report; **Nolavina** = rejected. Old rows (empty Sata) count as confirmed.
+- Tasks added from the website get an ID (A1, A2…), the commission in **Vaomiera**, and "Nampiditra: name" in **Fanamarihana**. Goals added by the Birao get T1, T2…
+
+### 5.11 Phone "back" button
+
+In both apps, the phone's back button now returns to the previous screen (or closes the camera / the profile panel) instead of closing the app.
