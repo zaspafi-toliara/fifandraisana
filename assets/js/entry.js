@@ -47,6 +47,7 @@
     // test mode
     if (action === "login") return (body.identifier.trim().toUpperCase() === "ZA-003" && body.pin === "1234") ? { ok: true, token: "demo" } : { ok: false, error: "bad_credentials" };
     if (action === "staff_lists") return JSON.parse(await Z().fetchText("data/sample-lists.json", "lists"));
+    if (action === "notify_materials") return { ok: true, sent: body.material_ids.length ? 1 : new Set(lists.materials.filter(x => x.holder_id).map(x => x.holder_id)).size };
     if (action === "sync") return { ok: true, results: body.ops.map(o => ({ op_id: o.op_id, ok: true })) };
     return { ok: true };
   }
@@ -198,6 +199,7 @@
     else if (view.name === "money") body = moneyHTML();
     else if (view.name === "attendance") body = attendanceHTML();
     else if (view.name === "donations") body = donationsHTML();
+    else if (view.name === "loans") body = loansHTML();
     root.innerHTML = `<div id="e-status-wrap">${statusHTML()}</div>` + (flash ? `<div class="alert alert--ok flash">${Z().esc(flash)}</div>` : "") + failedHTML() + body;
     flash = "";
     bindStatus(root);
@@ -275,6 +277,7 @@
     }
     const n = (lists.pending_donations || []).length + (lists.pending_tx || []).length + (lists.pending_fees || []).length;
     const scan = can.materials || can.attendance || can.fees || can.cards;
+    const outN = lists.materials.filter(x => x.holder_id).length;
     return `
       ${scan ? `<button class="e-big e-big--scan" data-act="scan"><span class="e-ico">▣</span>${t("e.scan")}</button>` : ""}
       <div class="e-search"><input id="e-search" type="search" placeholder="${t("e.search")}" value="${esc(search)}" autocomplete="off">${results}</div>
@@ -282,6 +285,7 @@
         ${can.attendance ? `<button class="e-big" data-go="attendance"><span class="e-ico">✓</span>${t("e.attendance")}</button>` : ""}
         ${can.tx ? `<button class="e-big" data-go="money"><span class="e-ico">Ar</span>${t("e.money")}</button>` : ""}
         ${can.confirm ? `<button class="e-big" data-go="donations"><span class="e-ico">✔</span>${t("e.confirm_title")}${n ? ` <span class="count">${n}</span>` : ""}</button>` : ""}
+        ${can.materials ? `<button class="e-big" data-go="loans"><span class="e-ico">🧰</span>${t("n.loans_title")}${outN ? ` <span class="count">${outN}</span>` : ""}</button>` : ""}
         ${can.cards ? `<a class="e-big" href="karatra.html"><span class="e-ico">▤</span>${t("e.cards")}</a>` : ""}
       </div>`;
   }
@@ -369,7 +373,9 @@
       </div>`;
     if (!can) return html;
     if (x.holder_id) {
-      html += `<button class="btn btn--gold e-wide mt" data-return="${esc(x.id)}">${t("e.return")}</button>`;
+      html += `<button class="btn btn--gold e-wide mt" data-return="${esc(x.id)}">${t("e.return")}</button>
+        <button class="btn btn--outline e-wide mt-s" data-remind="${esc(x.id)}">📩 ${t("n.remind_one", { name: esc(x.holder_name || x.holder_id) })}</button>
+        ${remindMsg[x.id] ? `<p class="center small">${remindMsg[x.id]}</p>` : ""}`;
     } else {
       html += `
         <form class="card form mt" id="f-lend-to">
@@ -474,6 +480,44 @@
             <button class="btn btn--outline btn--small" data-don="${esc(d.key)}" data-status="Nolavina">${t("e.don_reject")}</button>
           </div>
         </div>`).join("") : `<p class="muted">${t("e.don_none")}</p>`}`;
+  }
+
+  /* Materials still held by members, with SMS reminders (needs internet) */
+  const remindMsg = {};      // key (material id / member id / "all") -> short status text
+  function loansHTML() {
+    const { t, esc, fmtDate } = Z();
+    const out = lists.materials.filter(x => x.holder_id);
+    const by = {};
+    out.forEach(x => { (by[x.holder_id] = by[x.holder_id] || []).push(x); });
+    const ids = Object.keys(by);
+    return backHTML() + `
+      <div class="card">
+        <h3>${t("n.loans_title")}</h3>
+        <p class="hint">${t("n.loans_hint")}</p>
+        ${out.length ? `<button class="btn btn--gold e-wide" data-remind-all>📨 ${t("n.remind_all", { n: ids.length })}</button>
+          ${remindMsg.all ? `<p class="center small">${remindMsg.all}</p>` : ""}` : `<p class="muted">${t("e.holds_none")}</p>`}
+      </div>
+      ${ids.map(id => `
+        <div class="card mt-s">
+          <div class="loan-head"><strong>${esc(by[id][0].holder_name || id)}</strong> <span class="muted small">${esc(id)}</span></div>
+          <ul class="loans">${by[id].map(x => `<li class="loan"><div><strong>${esc(x.id)}</strong> · ${esc(x.type)} ${esc(x.size)}
+            <div class="muted small">${esc(x.desc)} · ${fmtDate(x.since)}</div></div>
+            <button class="btn btn--outline btn--small" data-remind="${esc(x.id)}">📩</button></li>`).join("")}</ul>
+          <button class="btn btn--outline btn--small mt-s" data-remind-member="${esc(id)}">📩 ${t("n.remind_member")}</button>
+          ${remindMsg[id] ? `<span class="small"> ${remindMsg[id]}</span>` : ""}
+          ${by[id].map(x => remindMsg[x.id] ? `<div class="small">${esc(x.id)}: ${remindMsg[x.id]}</div>` : "").join("")}
+        </div>`).join("")}`;
+  }
+  async function remind(key, materialIds) {
+    const t = Z().t;
+    if (!navigator.onLine) { remindMsg[key] = "⚠ " + t("n.need_online"); render(); return; }
+    remindMsg[key] = t("n.sending"); render();
+    try {
+      const r = await api("notify_materials", { material_ids: materialIds });
+      remindMsg[key] = r.ok ? "✓ " + t("n.sent", { n: r.sent }) : "⚠ " + t("n.error");
+      if (!r.ok && r.error === "session_expired") return logout("m.session_expired");
+    } catch (e) { remindMsg[key] = "⚠ " + t("n.error"); }
+    render();
   }
 
   function backHTML() { return `<button class="linkbtn e-back" data-act="home">← ${Z().t("e.back")}</button>`; }
@@ -593,6 +637,14 @@
       flash = t("e.att_list", { n: attendance.items.length }) + " · " + t("e.saved");
       attendance = null; goBack(); sync();
     });
+
+    // reminders for materials not returned
+    on("[data-remind]", "click", e => { const id = e.currentTarget.dataset.remind; remind(id, [id]); });
+    on("[data-remind-member]", "click", e => {
+      const id = e.currentTarget.dataset.remindMember;
+      remind(id, lists.materials.filter(x => x.holder_id === id).map(x => x.id));
+    });
+    on("[data-remind-all]", "click", () => remind("all", []));
 
     // fees entered by the secretary
     on("[data-fees]", "click", e => {

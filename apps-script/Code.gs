@@ -63,6 +63,11 @@ const S = {
     headers: ["Daty", "ID mpikambana", "Ora tonga"],
     widths:  [110, 120, 200]
   },
+  invitations: {
+    name: "Fanasana",
+    headers: ["Voaray tamin'ny", "Anarana", "Fikambanana / vondrona", "Finday", "Mailaka", "Lohahevitra", "Taratasy", "Sata", "Fanamarihana"],
+    widths:  [150, 200, 220, 130, 200, 320, 260, 120, 260]
+  },
   log: {
     name: "Tantara",
     headers: ["Daty", "Nampiditra", "Asa", "Antsipiriany", "op_id"],
@@ -82,6 +87,7 @@ const V = {
   feeCategory: ["Mpianatra", "Miasa"],
   rights: ["Mpikambana", "Sekretera", "Mpitahiry vola", "Mpandrindra", "Mpandray fahatongavana"],
   txStatus: ["Voamarina", "Miandry", "Nolavina"],
+  invitationStatus: ["Vaovao", "Eken'ny Birao", "Nolavina", "Vita"],
   commissions: ["Soratra Masina", "Fifandraisana", "Fitaovana", "Fampandrosoana", "Hira sy mozika"],
   officeRoles: ["Filoha", "Filoha lefitra", "Sekretera voalohany", "Sekretera faharoa", "Mpitahiry vola", "Mpanolon-tsaina"],
   txType: ["Miditra", "Mivoaka"],
@@ -176,6 +182,7 @@ function setup() {
   const attSh = ss.getSheetByName(S.attendance.name);
   attSh.getRange(2, 3, rows, 1).clearDataValidations().setNumberFormat("@");
   dateCol("log", "Daty");
+  dd("invitations", "Sata", V.invitationStatus); textCol("invitations", "Finday");
 
   // "Tompon'andraikitra" accepts a member ID (ZA-001) or a commission name: no strict list.
   const setSh = ss.getSheetByName(S.settings.name);
@@ -242,6 +249,10 @@ function doPost(e) {
       case "task_done":   return json_(withMember_(body, taskDone_));
       case "add_task":    return json_(withMember_(body, addTask_));
       case "add_goal":    return json_(withMember_(body, addGoal_));
+      case "broadcast":   return json_(withMember_(body, broadcast_));
+      case "notify_task": return json_(withMember_(body, notifyTask_));
+      case "notify_materials": return json_(withMember_(body, notifyMaterials_));
+      case "invite":      return json_(addInvitation_(body));
       case "staff_lists": return json_(withMember_(body, staffLists_));
       case "sync":        return json_(withMember_(body, sync_));
       case "my_photo":    return json_(withMember_(body, (m, b) => {
@@ -957,13 +968,18 @@ function smsSend_(phones, text) {
   if (!user || !pass) return { ok: false, error: "Tsy mbola misy kaonty SMS (menu ZA SPaFi > SMS)" };
   const numbers = phones.map(phoneIntl_).filter(Boolean);
   if (!numbers.length) return { ok: false, error: "Tsy misy laharana mety" };
-  const res = UrlFetchApp.fetch(SMS_URL, {
-    method: "post", contentType: "application/json", muteHttpExceptions: true,
-    headers: { Authorization: "Basic " + Utilities.base64Encode(user + ":" + pass) },
-    payload: JSON.stringify({ textMessage: { text: text }, phoneNumbers: numbers })
-  });
-  const code = res.getResponseCode();
-  return code >= 200 && code < 300 ? { ok: true } : { ok: false, error: "HTTP " + code + " " + res.getContentText().slice(0, 200) };
+  const unique = Array.from(new Set(numbers));
+  // send in groups of 20 numbers per request
+  for (let i = 0; i < unique.length; i += 20) {
+    const res = UrlFetchApp.fetch(SMS_URL, {
+      method: "post", contentType: "application/json", muteHttpExceptions: true,
+      headers: { Authorization: "Basic " + Utilities.base64Encode(user + ":" + pass) },
+      payload: JSON.stringify({ textMessage: { text: text }, phoneNumbers: unique.slice(i, i + 20) })
+    });
+    const code = res.getResponseCode();
+    if (code < 200 || code >= 300) return { ok: false, error: "HTTP " + code + " " + res.getContentText().slice(0, 200), sent: i };
+  }
+  return { ok: true, sent: unique.length };
 }
 
 /* "034 12 345 67" / "0341234567" / "+261 34..." -> "+261341234567" */
@@ -1073,4 +1089,154 @@ function savePhoto_(memberId, dataUrl) {
   }
   file.setTrashed(true);
   return "";
+}
+
+/* ==========================================================================
+   SMS sent by hand from the website
+   ========================================================================== */
+const DAYS_MG = ["Alahady", "Alatsinainy", "Talata", "Alarobia", "Alakamisy", "Zoma", "Sabotsy"];
+function dayText_(iso) {
+  const d = dateFrom_(iso);
+  return DAYS_MG[d.getDay()] + " " + Utilities.formatDate(d, TZ, "dd/MM/yyyy");
+}
+function logSms_(m, what, detail, n) {
+  sheet_("log").appendRow([new Date(), m ? m["Anarana feno"] : "SMS", what, String(detail).slice(0, 450) + " (" + n + " SMS)", "sms|" + Utilities.getUuid()]);
+}
+function activePhones_(filter) {
+  return rows_("members").filter(x => x["ID"] && x["Sata"] !== "Tsy mavitrika" && x["Finday"] && (!filter || filter(x)));
+}
+
+/* 1. Meeting / event announcement to every active member (Birao, Mpandrindra) */
+function broadcastText_(b) {
+  const place = String(b.place || "").trim(), time = timeText_(b.time), date = String(b.date || "");
+  if (!place || !time || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  let title = "Fivoriana";
+  if (b.kind === "hamonjy") title = "Hamonjy antsam-panahy";
+  else if (b.kind === "hafa") title = String(b.other || "").trim().slice(0, 80);
+  if (!title) return null;
+  let text = "ZA SPaFi: " + title + ". Andro: " + dayText_(date) + ". Ora: " + time + ". Toerana: " + place.slice(0, 80) + ".";
+  if (b.kind === "hamonjy") {
+    if (String(b.male || "").trim()) text += " Fanamiana lahy: " + String(b.male).trim().slice(0, 80) + ".";
+    if (String(b.female || "").trim()) text += " Fanamiana vavy: " + String(b.female).trim().slice(0, 80) + ".";
+  }
+  return text + " Tongava ara-potoana. Misaotra!";
+}
+function broadcast_(m, b) {
+  if (!isOffice_(m)) return { ok: false, error: "forbidden" };
+  const text = broadcastText_(b);
+  if (!text) return { ok: false, error: "missing_fields" };
+  const people = activePhones_();
+  if (b.preview) return { ok: true, text, count: people.length };
+  const res = smsSend_(people.map(x => x["Finday"]), text);
+  if (res.ok) logSms_(m, "broadcast", text, res.sent);
+  return res.ok ? { ok: true, sent: res.sent, text } : { ok: false, error: "sms_failed", detail: res.error };
+}
+
+/* 2. Task reminder sent now (Birao, Mpandrindra) */
+function notifyTask_(m, b) {
+  if (!isOffice_(m)) return { ok: false, error: "forbidden" };
+  const t = rows_("tasks").find(x => String(x["ID"]) === String(b.task_id));
+  if (!t) return { ok: false, error: "not_found" };
+  const who = String(t["Tompon'andraikitra"] || "").trim();
+  const targets = /^ZA-\d+$/i.test(who)
+    ? activePhones_(x => String(x["ID"]).toUpperCase() === who.toUpperCase())
+    : activePhones_(x => String(x["Vaomiera"]).toLowerCase() === (who || String(t["Vaomiera"] || "")).toLowerCase());
+  if (!targets.length) return { ok: false, error: "no_phone" };
+  const due = t["Fe-potoana"] instanceof Date ? " Fe-potoana: " + Utilities.formatDate(t["Fe-potoana"], TZ, "dd/MM/yyyy") + "." : "";
+  const text = "ZA SPaFi: Fampahatsiahivana. Asa: " + String(t["Asa"]).slice(0, 80) + "." + due + " Rehefa vita, mariho ao amin'ny tranonkala. Misaotra!";
+  const res = smsSend_(targets.map(x => x["Finday"]), text);
+  if (res.ok) logSms_(m, "task", text, res.sent);
+  return res.ok ? { ok: true, sent: res.sent } : { ok: false, error: "sms_failed", detail: res.error };
+}
+
+/* 3. Materials not returned (Birao, Mpandrindra, Vaomiera Fitaovana): one SMS per member, naming the items */
+function notifyMaterials_(m, b) {
+  if (!rights_(m).materials) return { ok: false, error: "forbidden" };
+  const ids = (b.material_ids || []).map(String);
+  const mats = rows_("materials");
+  const open = rows_("loans").filter(l => !l["Daty naverina"] && (!ids.length || ids.indexOf(String(l["ID fitaovana"])) >= 0));
+  const byMember = {};
+  open.forEach(l => { (byMember[String(l["ID mpikambana"])] = byMember[String(l["ID mpikambana"])] || []).push(l); });
+  const members = activePhones_();
+  let sent = 0, missing = 0;
+  Object.keys(byMember).forEach(id => {
+    const p = members.find(x => String(x["ID"]) === id);
+    if (!p) { missing++; return; }
+    const names = byMember[id].map(l => {
+      const x = mats.find(y => String(y["ID"]) === String(l["ID fitaovana"])) || {};
+      const type = String(x["Karazany"] || ""), desc = String(x["Famaritana"] || "");
+      const label = desc.toLowerCase().indexOf(type.toLowerCase()) === 0 ? desc : [type, desc].filter(Boolean).join(" ");
+      return [label, x["Habe"]].filter(Boolean).join(" ") || String(l["ID fitaovana"]);
+    });
+    const text = "ZA SPaFi: Fampahatsiahivana. Mbola eo aminao: " + names.join(", ").slice(0, 200) + ". Mba averina amin'ny Vaomiera Fitaovana azafady. Misaotra!";
+    const res = smsSend_([p["Finday"]], text);
+    if (res.ok) { sent++; logSms_(m, "materials", text, 1); } else missing++;
+  });
+  return { ok: true, sent, missing };
+}
+
+/* ==========================================================================
+   Invitation form (fanasana.html) – public
+   The letter is saved in a PRIVATE Drive folder of the choir account.
+   ========================================================================== */
+const INVITE_FOLDER_NAME = "ZA SPaFi Toliara – Fanasana";
+const INVITE_TEXT = {
+  mg: { sms: "ZA SPaFi Toliara: Voaray ny fanasanao \"{s}\". Hamaly anao tsy ho ela izahay. Misaotra!",
+        subject: "Voaray ny fanasanao – ZA SPaFi Toliara",
+        body: "Salama {n},\n\nVoaray ny fanasana nalefanao ho an'ny ZA SPaFi Toliara:\n\"{s}\"\n\nHodinihin'ny Birao izany ary hamaly anao tsy ho ela izahay.\n\nMisaotra betsaka,\nZA SPaFi Toliara" },
+  fr: { sms: "ZA SPaFi Toliara : nous avons bien reçu votre invitation \"{s}\". Nous vous répondrons bientôt. Merci !",
+        subject: "Invitation reçue – ZA SPaFi Toliara",
+        body: "Bonjour {n},\n\nNous avons bien reçu votre invitation adressée à ZA SPaFi Toliara :\n\"{s}\"\n\nLe bureau va l'étudier et nous vous répondrons bientôt.\n\nMerci beaucoup,\nZA SPaFi Toliara" },
+  en: { sms: "ZA SPaFi Toliara: we have received your invitation \"{s}\". We will reply soon. Thank you!",
+        subject: "Invitation received – ZA SPaFi Toliara",
+        body: "Hello {n},\n\nWe have received your invitation to ZA SPaFi Toliara:\n\"{s}\"\n\nThe board will review it and reply soon.\n\nThank you very much,\nZA SPaFi Toliara" }
+};
+
+function inviteFolder_() {
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty("INVITE_FOLDER");
+  if (id) { try { return DriveApp.getFolderById(id); } catch (e) { /* deleted: create again */ } }
+  const f = DriveApp.createFolder(INVITE_FOLDER_NAME);
+  props.setProperty("INVITE_FOLDER", f.getId());
+  return f;
+}
+
+function addInvitation_(b) {
+  if (b.website) return { ok: true };                                   // spam trap
+  const name = String(b.name || "").trim(), group = String(b.group || "").trim();
+  const phone = String(b.phone || "").trim(), email = String(b.email || "").trim(), subject = String(b.subject || "").trim();
+  if (!name || !group || !phone || !subject) return { ok: false, error: "missing_fields" };
+  if (!phoneIntl_(phone)) return { ok: false, error: "bad_phone" };
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, error: "bad_email" };
+  const fm = String(b.file || "").match(/^data:(application\/pdf|image\/jpeg|image\/png);base64,(.+)$/);
+  if (!fm) return { ok: false, error: "missing_file" };
+
+  // at most one invitation per phone number every 2 minutes
+  const cache = CacheService.getScriptCache(), ck = "inv_" + phoneIntl_(phone);
+  if (cache.get(ck)) return { ok: false, error: "too_fast" };
+  cache.put(ck, "1", 120);
+
+  const bytes = Utilities.base64Decode(fm[2]);
+  if (bytes.length > 8 * 1024 * 1024) return { ok: false, error: "file_too_big" };
+  const ext = fm[1] === "application/pdf" ? "pdf" : fm[1] === "image/png" ? "png" : "jpg";
+  const stamp = Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd_HHmm");
+  const file = inviteFolder_().createFile(Utilities.newBlob(bytes, fm[1], stamp + "_" + group.replace(/[^\w\- ]+/g, "").slice(0, 40) + "." + ext));
+
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    sheet_("invitations").appendRow([new Date(), safe_(name, 120), safe_(group, 160), "'" + phone.slice(0, 30), safe_(email, 120),
+      safe_(subject, 500), file.getUrl(), "Vaovao", ""]);
+  } finally { lock.releaseLock(); }
+
+  const L = INVITE_TEXT[b.lang] || INVITE_TEXT.mg;
+  const fill = s => s.replace("{n}", name).replace("{s}", subject.slice(0, 60));
+  try { smsSend_([phone], fill(L.sms)); } catch (e) { console.error("invite sms", e); }
+  if (email) { try { MailApp.sendEmail(email, L.subject, fill(L.body), { name: "ZA SPaFi Toliara" }); } catch (e) { console.error("invite mail", e); } }
+  // tell the association (the account that owns the script)
+  try {
+    const me = Session.getEffectiveUser().getEmail();
+    if (me) MailApp.sendEmail(me, "Fanasana vaovao: " + group, name + " (" + group + ")\n" + phone + (email ? " · " + email : "") +
+      "\n\n" + subject + "\n\nTaratasy: " + file.getUrl(), { name: "ZA SPaFi Toliara – tranonkala" });
+  } catch (e) { console.error("invite notify", e); }
+  return { ok: true };
 }

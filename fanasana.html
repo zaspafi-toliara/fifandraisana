@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="mg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hanasa anay – ZA SPaFi Toliara</title>
+<meta name="description" content="ZA SPaFi Toliara – Zanaka Ampielezana Synodam-Paritany Fisakana eto Toliara.">
+<meta property="og:title" content="Hanasa ny ZA SPaFi Toliara">
+<meta property="og:description" content="Zanaka Ampielezana Synodam-Paritany Fisakana eto Toliara">
+<meta property="og:image" content="assets/img/photo02.jpg">
+<link rel="icon" href="assets/img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="invite">
+<main>
+  <section class="page-head">
+    <div class="hero__bg" style="background-image:url('assets/img/photo02.jpg'); --focus:20%"></div>
+    <div class="container"><h1 data-i18n="inv.title"></h1><p data-i18n="inv.intro"></p></div>
+  </section>
+  <section class="section">
+    <div class="container" style="max-width:720px">
+      <div id="invite-app" class="card">
+        <form class="form" id="f-invite" novalidate>
+          <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <div><label for="i-name"><span data-i18n="inv.name"></span> <span class="req">*</span></label><input id="i-name" name="name" required maxlength="120" autocomplete="name"></div>
+          <div><label for="i-group"><span data-i18n="inv.group"></span> <span class="req">*</span></label><input id="i-group" name="group" required maxlength="160" autocomplete="organization"></div>
+          <div class="row">
+            <div><label for="i-phone"><span data-i18n="inv.phone"></span> <span class="req">*</span></label><input id="i-phone" name="phone" type="tel" required autocomplete="tel"></div>
+            <div><label for="i-email" data-i18n="inv.email"></label><input id="i-email" name="email" type="email" autocomplete="email"></div>
+          </div>
+          <div><label for="i-subject"><span data-i18n="inv.subject"></span> <span class="req">*</span></label>
+            <textarea id="i-subject" name="subject" rows="3" maxlength="500" required></textarea>
+            <p class="hint" data-i18n="inv.subject_hint"></p></div>
+          <div><label for="i-file"><span data-i18n="inv.letter"></span> <span class="req">*</span></label>
+            <input id="i-file" name="file" type="file" accept="application/pdf,image/jpeg,image/png" required>
+            <p class="hint" data-i18n="inv.letter_hint"></p></div>
+          <p class="hint"><span class="req">*</span> <span data-i18n="form.required"></span></p>
+          <div id="i-msg" role="status" aria-live="polite"></div>
+          <button class="btn btn--gold" type="submit" data-i18n="inv.send"></button>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/content.js"></script>
+<script src="assets/js/invite.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

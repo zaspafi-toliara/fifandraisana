@@ -122,6 +122,7 @@
           <a href="index.html"${cur("home")} data-i18n="nav.home"></a>
           <a href="mombamomba.html"${cur("about")} data-i18n="nav.about"></a>
           <a href="fanomezana.html"${cur("donate")} data-i18n="nav.donate"></a>
+          <a href="fanasana.html"${cur("invite")} data-i18n="nav.invite"></a>
           <a href="mpikambana.html" class="nav__login"${cur("login")} data-i18n="nav.login"></a>
           <div class="lang-switch" role="group" data-i18n-aria="nav.lang">
             <button type="button" data-lang="mg">MG</button><button type="button" data-lang="fr">FR</button><button type="button" data-lang="en">EN</button>
@@ -147,6 +148,7 @@
               <li><a href="index.html" data-i18n="nav.home"></a></li>
               <li><a href="mombamomba.html" data-i18n="nav.about"></a></li>
               <li><a href="fanomezana.html" data-i18n="nav.donate"></a></li>
+              <li><a href="fanasana.html" data-i18n="nav.invite"></a></li>
             </ul>
           </div>
           <div>
@@ -391,6 +393,7 @@
     if (window.renderMembersPage) window.renderMembersPage();
     if (window.renderEntryPage) window.renderEntryPage();
     if (window.renderCardsPage) window.renderCardsPage();
+    if (window.renderInvitePage) window.renderInvitePage();
   }
 
   // helpers shared with members.js

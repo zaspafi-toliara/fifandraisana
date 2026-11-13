@@ -28,6 +28,11 @@
   let drawer = false;         // profile panel open
   let comm = null;            // commission shown in the Vaomiera section ("mine" = my tasks)
   let form = null;            // "task" | "goal" while a form is open
+  let bc = { kind: "fivoriana" };   // announcement form values (Birao)
+  let bcStep = "edit";        // "edit" | "confirm" | "sent"
+  let bcPreview = null;       // { text, count } before sending
+  let bcMsg = "";
+  const sentTasks = {};       // task id -> "sending" | number of SMS | "error"
 
   function readToken() { try { return sessionStorage.getItem(TOKEN_KEY); } catch (e) { return null; } }
   function saveToken(t) { try { t ? sessionStorage.setItem(TOKEN_KEY, t) : sessionStorage.removeItem(TOKEN_KEY); } catch (e) { /* ignore */ } }
@@ -72,6 +77,15 @@
         demoData.goals.push({ id: "T" + Date.now(), title: b.title, description: b.description || "", target_date: b.due || "", visible: b.visible !== false, steps: [] });
         return { ok: true };
       case "my_photo": return { ok: true, photo: "" };
+      case "broadcast": {
+        const title = b.kind === "hamonjy" ? "Hamonjy antsam-panahy" : b.kind === "hafa" ? b.other : "Fivoriana";
+        if (!b.place || !b.time || !b.date || !title) return { ok: false, error: "missing_fields" };
+        let text = "ZA SPaFi: " + title + ". Andro: " + b.date + ". Ora: " + b.time + ". Toerana: " + b.place + ".";
+        if (b.kind === "hamonjy") text += (b.male ? " Fanamiana lahy: " + b.male + "." : "") + (b.female ? " Fanamiana vavy: " + b.female + "." : "");
+        text += " Tongava ara-potoana. Misaotra!";
+        return b.preview ? { ok: true, text, count: demoData.people.length } : { ok: true, sent: demoData.people.length, text };
+      }
+      case "notify_task": return { ok: true, sent: 1 };
       default: return { ok: true };
     }
   }
@@ -168,12 +182,14 @@
     }
     const { t } = Z();
     const sections = [["m-finance", "m.tab_finance"], ["m-goals", "m.goals_title"], ["m-comm", "about.commissions_title"], ["m-ranking", "m.tab_ranking"]];
+    if (data.member.is_office) sections.unshift(["m-notify", "n.title"]);
     if (data.member.is_office) sections.push(["m-feesall", "m.tab_fees_all"], ["m-attall", "e.attendance"]);
     root.innerHTML = `
       ${data.sample ? `<p class="demo-note">${t("m.demo_hint")}</p>` : ""}
       ${heroHTML()}
       ${tilesHTML()}
       <nav class="m-nav">${sections.map(([id, k]) => `<a href="#${id}">${t(k)}</a>`).join("")}</nav>
+      ${data.member.is_office ? `<section id="m-notify" class="m-sec">${secHead("📢", "n.title")}${notifyHTML()}</section>` : ""}
       <section id="m-finance" class="m-sec">${secHead("💰", "m.tab_finance")}${financeHTML()}</section>
       <section id="m-goals" class="m-sec">${secHead("🎯", "m.goals_title")}<p class="muted">${t("m.goals_intro")}</p>${goalFormBlock()}${goalsHTML()}</section>
       <section id="m-comm" class="m-sec">${secHead("🤝", "about.commissions_title")}<p class="muted">${t("m.vaomiera_intro")}</p>${commHTML()}</section>
@@ -401,7 +417,7 @@
         <div class="step__title">${esc(x.title)}<span class="badge badge--${esc(x.status)}">${t("goals." + x.status)}</span>
           ${x.visible === false ? `<span class="badge badge--hidden">${t("m.hidden")}</span>` : ""}</div>
         <div class="step__info">${x.commission ? (COMM_ICON[x.commission] || "") + " " : ""}${esc(x.assignee_label || "–")} · ${x.status === "done" ? t("m.task_done_on") + " " + fmtDate(x.done_date || x.due) : (x.due ? t("m.task_due") + ": " + fmtDate(x.due) : "")}</div>
-        ${x.status !== "done" && x.can_edit ? `<div class="mt-xs">${doneButton(x)}</div>` : ""}
+        ${x.status !== "done" && (x.can_edit || data.member.is_office) ? `<div class="mt-xs inline">${x.can_edit ? doneButton(x) : ""}${data.member.is_office ? notifyTaskButton(x) : ""}</div>` : ""}
       </li>`;
   }
 
@@ -425,6 +441,94 @@
           ${open ? `<ol class="steps">${g.steps.map(stepHTML).join("")}</ol>` : ""}
         </article>`;
     }).join("")}</div>`;
+  }
+
+  function notifyTaskButton(x) {
+    const { t, esc } = Z();
+    const st = sentTasks[x.id];
+    if (st === "sending") return `<button class="btn btn--outline btn--small" disabled>${t("n.sending")}</button>`;
+    if (typeof st === "number") return `<span class="badge badge--done">✓ ${t("n.sent", { n: st })}</span>`;
+    return `<button class="btn btn--outline btn--small" data-notify-task="${esc(x.id)}">📩 ${t("n.task_btn")}</button>${st === "error" ? ` <span class="badge badge--late">${t("n.error")}</span>` : ""}`;
+  }
+
+  /* Announcement to every member by SMS (Birao, Mpandrindra) */
+  function notifyHTML() {
+    const { t, esc } = Z();
+    if (bcStep === "sent") return `
+      <div class="card notify">
+        <div class="alert alert--ok">✓ ${t("n.done", { n: bcPreview ? bcPreview.count : "" })}</div>
+        <p class="sms-preview">${esc(bcPreview ? bcPreview.text : "")}</p>
+        <button class="btn btn--outline btn--small" data-bc="new">${t("n.new")}</button>
+      </div>`;
+    if (bcStep === "confirm" && bcPreview) return `
+      <div class="card notify">
+        <h3>${t("n.confirm_title")}</h3>
+        <p class="sms-preview">${esc(bcPreview.text)}</p>
+        <p class="muted small">${t("n.stats", { n: bcPreview.count, c: bcPreview.text.length, p: Math.ceil(bcPreview.text.length / 153) })}</p>
+        ${bcMsg ? `<div class="alert alert--err">${t(bcMsg)}</div>` : ""}
+        <div class="inline">
+          <button class="btn btn--gold" data-bc="send" ${busy ? "disabled" : ""}>📨 ${busy ? t("n.sending") : t("n.send_all", { n: bcPreview.count })}</button>
+          <button class="btn btn--outline" data-bc="edit">${t("n.edit")}</button>
+        </div>
+      </div>`;
+    const k = bc.kind;
+    return `
+      <form class="card form notify" id="f-bc">
+        <p class="muted small">${t("n.intro")}</p>
+        <div class="seg seg--3">
+          ${[["fivoriana", "n.k_meeting"], ["hamonjy", "n.k_visit"], ["hafa", "n.k_other"]].map(([v, l]) =>
+            `<label><input type="radio" name="kind" value="${v}" ${k === v ? "checked" : ""}> ${t(l)}</label>`).join("")}
+        </div>
+        ${k === "hafa" ? `<div><label>${t("n.reason")}</label><input name="other" maxlength="80" value="${esc(bc.other || "")}" required></div>` : ""}
+        ${k === "hamonjy" ? `<div class="row">
+            <div><label>${t("n.male")}</label><textarea name="male" rows="2" maxlength="80">${esc(bc.male || "")}</textarea></div>
+            <div><label>${t("n.female")}</label><textarea name="female" rows="2" maxlength="80">${esc(bc.female || "")}</textarea></div>
+          </div>` : ""}
+        <div><label>${t("n.place")}</label><input name="place" maxlength="80" value="${esc(bc.place || "")}" required></div>
+        <div class="row">
+          <div><label>${t("n.date")}</label><input name="date" type="date" value="${esc(bc.date || "")}" required></div>
+          <div><label>${t("n.time")}</label><input name="time" type="time" value="${esc(bc.time || "")}" required></div>
+        </div>
+        ${bcMsg ? `<div class="alert alert--err">${t(bcMsg)}</div>` : ""}
+        <button class="btn btn--gold" type="submit" ${busy ? "disabled" : ""}>📨 ${t("n.send")}</button>
+      </form>`;
+  }
+  function readBc(f) {
+    const v = n => (f.elements[n] ? f.elements[n].value.trim() : "");
+    bc = { kind: (f.querySelector("input[name=kind]:checked") || {}).value || "fivoriana",
+           other: v("other") || bc.other, male: v("male") || bc.male, female: v("female") || bc.female,
+           place: v("place"), date: v("date"), time: v("time") };
+  }
+  async function bcPreviewNow() {
+    bcMsg = "";
+    if (!bc.place || !bc.date || !bc.time || (bc.kind === "hafa" && !bc.other)) { bcMsg = "err.missing_fields"; render(); return; }
+    busy = true; render();
+    try {
+      const r = await api("broadcast", Object.assign({ preview: true }, bc));
+      if (r.ok) { bcPreview = { text: r.text, count: r.count }; bcStep = "confirm"; }
+      else if (r.error === "session_expired") return logout("m.session_expired");
+      else bcMsg = "err." + r.error;
+    } catch (e) { bcMsg = "m.error"; }
+    busy = false; render();
+  }
+  async function bcSend() {
+    busy = true; bcMsg = ""; render();
+    try {
+      const r = await api("broadcast", bc);
+      if (r.ok) { bcStep = "sent"; bcPreview = { text: r.text, count: r.sent }; }
+      else if (r.error === "session_expired") return logout("m.session_expired");
+      else bcMsg = r.error === "sms_failed" ? "n.error" : "err." + r.error;
+    } catch (e) { bcMsg = "m.error"; }
+    busy = false; render();
+  }
+  async function notifyTask(id) {
+    sentTasks[id] = "sending"; render();
+    try {
+      const r = await api("notify_task", { task_id: id });
+      sentTasks[id] = r.ok ? r.sent : "error";
+      if (!r.ok && r.error === "session_expired") return logout("m.session_expired");
+    } catch (e) { sentTasks[id] = "error"; }
+    render();
   }
 
   function doneButton(x) {
@@ -574,6 +678,18 @@
     on("[data-comm-jump]", "click", e => { comm = e.currentTarget.dataset.commJump; render(); setTimeout(() => { const s = document.getElementById("m-comm"); if (s) s.scrollIntoView(); }, 0); });
     on("[data-form]", "click", e => openForm(e.currentTarget.dataset.form));
     on("[data-cancel-form]", "click", closeForm);
+    on("[data-notify-task]", "click", e => notifyTask(e.currentTarget.dataset.notifyTask));
+    const fbc = root.querySelector("#f-bc");
+    if (fbc) {
+      fbc.querySelectorAll("input[name=kind]").forEach(i => i.addEventListener("change", () => { readBc(fbc); render(); }));
+      fbc.addEventListener("submit", e => { e.preventDefault(); readBc(fbc); bcPreviewNow(); });
+    }
+    on("[data-bc]", "click", e => {
+      const a = e.currentTarget.dataset.bc;
+      if (a === "send") bcSend();
+      if (a === "edit") { bcStep = "edit"; render(); }
+      if (a === "new") { bcStep = "edit"; bc = { kind: "fivoriana" }; bcPreview = null; render(); }
+    });
     const ft = root.querySelector("#f-task"); if (ft) ft.addEventListener("submit", e => { e.preventDefault(); submitForm("task", ft); });
     const fg = root.querySelector("#f-goal"); if (fg) fg.addEventListener("submit", e => { e.preventDefault(); submitForm("goal", fg); });
     document.body.classList.toggle("no-scroll", drawer);

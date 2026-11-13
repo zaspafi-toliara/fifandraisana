@@ -170,3 +170,23 @@ After replacing `Code.gs`: run **`setup`** once (it adds **Sata** and **ID** to 
 ### 5.11 Phone "back" button
 
 In both apps, the phone's back button now returns to the previous screen (or closes the camera / the profile panel) instead of closing the app.
+
+### 5.12 SMS sent by hand and invitation form
+
+After replacing `Code.gs`: run **`setup`** once (it creates the **Fanasana** tab), then **Manage deployments → New version**. Google asks again for permissions (sending email for the invitation confirmations): accept.
+
+**Members' page – Birao and Mpandrindra**
+- **Hampandrenesana amin'ny SMS**: choose *Fivoriana*, *Hamonjy antsam-panahy* (then fill *Fanamiana lahy* / *Fanamiana vavy*) or *Hafa* (then write the reason), fill *Toerana*, *Andro*, *Ora* → **Alefa** → check the message and the number of members → **Alefa amin'ny mpikambana …**. Every active member with a phone number receives it.
+- Long messages (over 160 characters) are sent as 2 SMS per person: keep the place and uniform texts short.
+- Under each task not yet done: **Mandefa fampahatsiahivana** sends the reminder now to the person or to every member of the commission in charge.
+
+**Phone app – Birao, Mpandrindra, Vaomiera Fitaovana**
+- New tile **Fitaovana mbola tsy naverina**: the list of materials still held, by member. 📩 next to an item, **Hampahatsiahy azy** for one member (one SMS naming all their items), or **Hampahatsiahy ny rehetra**. Also available on a material's screen. Needs internet.
+
+Every SMS sent is recorded in **Tantara**.
+
+**Invitation page** – `https://<account>.github.io/<repository>/fanasana.html`
+- Share this link on Facebook/WhatsApp. It is also on the home page ("Handefa fanasana aminay") and in the menu.
+- Visitors fill: name, association/group, phone, email (optional), subject, and upload the letter (PDF or photo, 8 MB max).
+- The letter is saved in the **private** Drive folder "ZA SPaFi Toliara – Fanasana" of the choir account; a row is added to **Fanasana** with the link (Sata = *Vaovao*). Change Sata to *Eken'ny Birao*, *Nolavina* or *Vita* when handled.
+- The visitor receives an SMS (from the gateway phone) and an email if given; the choir's Gmail receives an email "Fanasana vaovao: …".

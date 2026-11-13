@@ -630,3 +630,17 @@ body.no-scroll { overflow: hidden; }
 .drawer__body > * { flex: none; }
 body[data-page="login"] .page-head--short { min-height: clamp(150px, 18vw, 230px); }
 body[data-page="login"] .page-head--short .container { padding-top: 60px; padding-bottom: 26px; }
+
+/* ---------- SMS announcements, reminders, invitations ---------- */
+.notify { max-width: 760px; }
+.seg--3 { display: flex; flex-wrap: wrap; border-radius: 16px; }
+.seg--3 label { flex: 1 1 auto; justify-content: center; }
+.seg--3 label:has(input:checked) { background: var(--navy); color: #fff; }
+.sms-preview { background: #eef7f1; border: 1px solid #bfe3cd; border-radius: 16px 16px 16px 4px; padding: 14px 16px; white-space: pre-wrap; font-size: .98rem; max-width: 520px; }
+.loan-head { margin-bottom: 4px; }
+.invite-ok { text-align: center; padding: 18px 6px; }
+.invite-ok__ico { width: 72px; height: 72px; margin: 0 auto 12px; border-radius: 50%; display: grid; place-items: center; font-size: 2.2rem; color: #fff; background: linear-gradient(135deg, #22895a, #5cbf8a); box-shadow: var(--shadow-lg); }
+body[data-page="invite"] .page-head p { font-size: 1.05rem; }
+.hero .btn-row .btn { min-width: 180px; }
+.seg--3 input { position: absolute; opacity: 0; pointer-events: none; }
+.seg--3 label { cursor: pointer; padding: 10px 16px; text-align: center; }
