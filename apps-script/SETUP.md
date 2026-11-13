@@ -189,4 +189,28 @@ Every SMS sent is recorded in **Tantara**.
 - Share this link on Facebook/WhatsApp. It is also on the home page ("Handefa fanasana aminay") and in the menu.
 - Visitors fill: name, association/group, phone, email (optional), subject, and upload the letter (PDF or photo, 8 MB max).
 - The letter is saved in the **private** Drive folder "ZA SPaFi Toliara – Fanasana" of the choir account; a row is added to **Fanasana** with the link (Sata = *Vaovao*). Change Sata to *Eken'ny Birao*, *Nolavina* or *Vita* when handled.
-- The visitor receives an SMS (from the gateway phone) and an email if given; the choir's Gmail receives an email "Fanasana vaovao: …".
+- *(Replaced by 5.13: the visitor now only sees "Misaotra betsaka!".)*
+
+### 5.13 Invitation alerts, new members, broadcast rights, completed goals (update of November 2026, part 3)
+
+After replacing `Code.gs`: run **`setup`** once (it adds two rows to **Fikirana**), then **Manage deployments → New version**.
+
+**Fikirana – two new rows**
+- **Fifandraisana mandray fanasana (ID)**: the member ID (e.g. `ZA-007`) of the Vaomiera Fifandraisana person who must be told about new invitations. Leave empty to notify the Birao only.
+- **Mailaka fikambanana**: the email that receives invitations (default `zaspafi.toliara601@gmail.com`).
+
+**Invitations**
+- The visitor no longer receives an SMS or email: the "Misaotra betsaka!" screen is the confirmation.
+- Each new invitation sends one SMS to every Birao member (Birao = *Eny*) and to the Fifandraisana contact above, and an email with the letter link to the association email.
+
+**New members (phone app – Birao and Mpandrindra)**
+- Tile **Mpikambana vaovao** in *Firaketana an-tsoratra*: fill name, phone, commission, category (and birth date / joining date if known) → save.
+- The new **ID** and **PIN** are shown once: press **Adikao ny hafatra** to copy a ready message and send it to the person. The PIN is also in the **Mpikambana** tab.
+- A phone number already in the list is refused (the existing member is named). Needs internet.
+
+**SMS announcements (Hampandrenesana amin'ny SMS)**
+- Now only Vaomiera **Fifandraisana** members and members with Zo = **Mpandrindra** see this block. The Birao no longer does unless they are in one of these.
+- Task reminder buttons stay with the Birao and Mpandrindra.
+
+**Completed goals**
+- A goal whose steps are all done no longer appears among the goal cards. It is listed by name only (number of steps and completion date) under **Ireo asa vita** on the home page and members' page.

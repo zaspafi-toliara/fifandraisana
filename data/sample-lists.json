@@ -12,7 +12,8 @@
    "materials": true,
    "attendance": true,
    "cards": true,
-   "tasks_admin": true
+   "tasks_admin": true,
+   "members_add": true
   }
  },
  "year": "2026–2027",

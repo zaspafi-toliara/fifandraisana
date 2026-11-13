@@ -3,8 +3,9 @@
    Public page, meant to be shared on social media.
    The letter (PDF or photo) is sent with the form to the
    Apps Script, saved in a private Drive folder, and a row is
-   added to the "Fanasana" tab. The visitor gets an SMS (and
-   an email if given).
+   added to the "Fanasana" tab. The Birao and the chosen
+   Fifandraisana contact get an SMS; the choir's Gmail gets an email.
+   The visitor only sees the "Misaotra betsaka!" screen.
    ========================================================== */
 (function () {
   "use strict";

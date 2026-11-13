@@ -15,7 +15,8 @@
    "materials": true,
    "attendance": true,
    "cards": true,
-   "tasks_admin": true
+   "tasks_admin": true,
+   "broadcast": true
   }
  },
  "fees": {
@@ -972,6 +973,41 @@
      "commission": "Hira sy mozika",
      "goal_id": "G4",
      "goal": "Fety faha-10 taona"
+    }
+   ]
+  },
+  {
+   "id": "G0",
+   "title": "Fandraisana ireo mpikambana vaovao 2026",
+   "description": "",
+   "target_date": "2026-09-30",
+   "visible": true,
+   "steps": [
+    {
+     "id": "G0S1",
+     "title": "Fanentanana",
+     "status": "done",
+     "due": "2026-06-15",
+     "done_date": "2026-06-15",
+     "assignee_label": "Fifandraisana",
+     "commission": "Fifandraisana",
+     "goal_id": "G0",
+     "visible": true,
+     "can_edit": true,
+     "mine": false
+    },
+    {
+     "id": "G0S2",
+     "title": "Fisoratana anarana",
+     "status": "done",
+     "due": "2026-07-31",
+     "done_date": "2026-07-31",
+     "assignee_label": "Fifandraisana",
+     "commission": "Fifandraisana",
+     "goal_id": "G0",
+     "visible": true,
+     "can_edit": true,
+     "mine": false
     }
    ]
   }

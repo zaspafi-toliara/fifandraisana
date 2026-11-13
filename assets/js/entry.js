@@ -47,6 +47,7 @@
     // test mode
     if (action === "login") return (body.identifier.trim().toUpperCase() === "ZA-003" && body.pin === "1234") ? { ok: true, token: "demo" } : { ok: false, error: "bad_credentials" };
     if (action === "staff_lists") return JSON.parse(await Z().fetchText("data/sample-lists.json", "lists"));
+    if (action === "add_member") return { ok: true, id: "ZA-0" + (10 + Math.floor(Math.random() * 89)), pin: String(1000 + Math.floor(Math.random() * 9000)), name: body.name };
     if (action === "notify_materials") return { ok: true, sent: body.material_ids.length ? 1 : new Set(lists.materials.filter(x => x.holder_id).map(x => x.holder_id)).size };
     if (action === "sync") return { ok: true, results: body.ops.map(o => ({ op_id: o.op_id, ok: true })) };
     return { ok: true };
@@ -143,6 +144,7 @@
     if (box && !box.hidden) { closeScanner(); }
     view = (e.state && e.state.view) || { name: "home" };
     if (view.name !== "attendance") attendance = null;
+    if (view.name !== "newmember") { newMember = null; nmError = ""; }
     render();
   });
 
@@ -200,6 +202,7 @@
     else if (view.name === "attendance") body = attendanceHTML();
     else if (view.name === "donations") body = donationsHTML();
     else if (view.name === "loans") body = loansHTML();
+    else if (view.name === "newmember") body = newMemberHTML();
     root.innerHTML = `<div id="e-status-wrap">${statusHTML()}</div>` + (flash ? `<div class="alert alert--ok flash">${Z().esc(flash)}</div>` : "") + failedHTML() + body;
     flash = "";
     bindStatus(root);
@@ -286,6 +289,7 @@
         ${can.tx ? `<button class="e-big" data-go="money"><span class="e-ico">Ar</span>${t("e.money")}</button>` : ""}
         ${can.confirm ? `<button class="e-big" data-go="donations"><span class="e-ico">✔</span>${t("e.confirm_title")}${n ? ` <span class="count">${n}</span>` : ""}</button>` : ""}
         ${can.materials ? `<button class="e-big" data-go="loans"><span class="e-ico">🧰</span>${t("n.loans_title")}${outN ? ` <span class="count">${outN}</span>` : ""}</button>` : ""}
+        ${can.members_add ? `<button class="e-big" data-go="newmember"><span class="e-ico">＋</span>${t("e.new_member")}</button>` : ""}
         ${can.cards ? `<a class="e-big" href="karatra.html"><span class="e-ico">▤</span>${t("e.cards")}</a>` : ""}
       </div>`;
   }
@@ -520,6 +524,69 @@
     render();
   }
 
+  /* Register a new member (Birao, Mpandrindra) – online only, shows the new ID and PIN */
+  let newMember = null;      // { id, pin, name } after success
+  let nmError = "";
+  function newMemberHTML() {
+    const { t, esc } = Z();
+    if (newMember) {
+      const url = location.href.replace(/fampidirana\.html.*$/, "mpikambana.html");
+      const msg = t("e.nm_msg", { url, id: newMember.id, pin: newMember.pin });
+      return backHTML() + `
+        <div class="card nm-ok">
+          <div class="invite-ok__ico">✓</div>
+          <h3>${t("e.nm_ok")}</h3>
+          <p><strong>${esc(newMember.name)}</strong></p>
+          <div class="nm-codes">
+            <div><span>ID</span><strong>${esc(newMember.id)}</strong></div>
+            <div><span>PIN</span><strong>${esc(newMember.pin)}</strong></div>
+          </div>
+          <p class="hint">${t("e.nm_give")}</p>
+          <p class="sms-preview small" id="nm-msg">${esc(msg)}</p>
+          <div class="inline">
+            <button class="btn btn--gold btn--small" data-nm-copy>${t("e.nm_copy_msg")}</button>
+            <button class="btn btn--outline btn--small" data-nm-again>${t("e.nm_another")}</button>
+          </div>
+        </div>`;
+    }
+    const comms = (window.SITE_CONFIG || {}).COMMISSIONS || [];
+    return backHTML() + `
+      <form class="card form" id="f-nm">
+        <h3>${t("e.new_member")}</h3>
+        <div><label>${t("form.name")} <span class="req">*</span></label><input name="name" required maxlength="120"></div>
+        <div class="row">
+          <div><label>${t("inv.phone")} <span class="req">*</span></label><input name="phone" type="tel" required></div>
+          <div><label>${t("e.nm_birth")}</label><input name="birth" type="date"></div>
+        </div>
+        <div><label>${t("m.commission")} <span class="req">*</span></label>
+          <select name="commission" required><option value="">…</option>${comms.map(c => `<option>${esc(c)}</option>`).join("")}</select></div>
+        <fieldset><legend>${t("e.nm_cat")} <span class="req">*</span></legend>
+          <label class="choice"><input type="radio" name="category" value="Mpianatra"> Mpianatra</label>
+          <label class="choice"><input type="radio" name="category" value="Miasa"> Miasa</label>
+        </fieldset>
+        <div><label>${t("e.nm_joined")}</label><input name="joined" type="date" value="${today()}"></div>
+        ${nmError ? `<div class="alert alert--err">${nmError}</div>` : ""}
+        <button class="btn btn--gold" type="submit">${t("e.nm_save")}</button>
+      </form>`;
+  }
+  async function saveNewMember(f) {
+    const { t, esc } = Z();
+    const v = n => (f.elements[n] ? f.elements[n].value.trim() : "");
+    const cat = (f.querySelector("input[name=category]:checked") || {}).value || "";
+    nmError = "";
+    if (!v("name") || !v("phone") || !v("commission") || !cat) { nmError = t("err.missing_fields"); render(); return; }
+    if (!navigator.onLine) { nmError = t("n.need_online"); render(); return; }
+    const btn = f.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = t("common.loading");
+    try {
+      const r = await api("add_member", { name: v("name"), phone: v("phone"), birth: v("birth"), commission: v("commission"), category: cat, joined: v("joined") });
+      if (r.ok) { newMember = { id: r.id, pin: r.pin, name: r.name }; refreshLists().catch(() => {}); }
+      else if (r.error === "session_expired") return logout("m.session_expired");
+      else if (r.error === "exists") nmError = t("err.exists", { name: esc(r.name), id: esc(r.id) });
+      else nmError = t("err." + r.error) !== "err." + r.error ? t("err." + r.error) : t("m.error");
+    } catch (e) { nmError = t("m.error"); }
+    render();
+  }
+
   function backHTML() { return `<button class="linkbtn e-back" data-act="home">← ${Z().t("e.back")}</button>`; }
 
   /* ---------- events ---------- */
@@ -645,6 +712,16 @@
       remind(id, lists.materials.filter(x => x.holder_id === id).map(x => x.id));
     });
     on("[data-remind-all]", "click", () => remind("all", []));
+
+    // new member
+    const fnm = root.querySelector("#f-nm");
+    if (fnm) fnm.addEventListener("submit", e => { e.preventDefault(); saveNewMember(fnm); });
+    on("[data-nm-again]", "click", () => { newMember = null; nmError = ""; render(); });
+    on("[data-nm-copy]", "click", e => {
+      const txt = document.getElementById("nm-msg").textContent; const b = e.currentTarget;
+      const done = () => { b.textContent = Z().t("donate.copied"); };
+      if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, done); else done();
+    });
 
     // fees entered by the secretary
     on("[data-fees]", "click", e => {

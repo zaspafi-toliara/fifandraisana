@@ -236,7 +236,11 @@
                                 : `<p class="center muted">${t("goals.empty")}</p>`;
     const doneBox = $("#goals-done");
     if (doneBox) {
-      doneBox.innerHTML = done.map((g, i) => goalCard(g, "d" + i, true)).join("");
+      doneBox.innerHTML = done.length ? `<ul class="done-list card">${done.map(g => {
+        const last = g.steps.map(s => s.date).filter(Boolean).sort().pop();
+        return `<li><span class="done-list__name">✅ ${esc(g.title)}</span>
+          <span class="muted small">${t("goals.steps_count", { n: g.steps.length })}${last ? " · " + t("goals.completed_on") + " " + fmtDate(last) : ""}</span></li>`;
+      }).join("")}</ul>` : "";
       const sec = $("#vita"); if (sec) sec.hidden = !done.length;
     }
     document.querySelectorAll(".goal__toggle").forEach(btn => btn.addEventListener("click", () => {

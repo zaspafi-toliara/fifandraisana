@@ -182,14 +182,15 @@
     }
     const { t } = Z();
     const sections = [["m-finance", "m.tab_finance"], ["m-goals", "m.goals_title"], ["m-comm", "about.commissions_title"], ["m-ranking", "m.tab_ranking"]];
-    if (data.member.is_office) sections.unshift(["m-notify", "n.title"]);
+    const canBc = (data.member.can || {}).broadcast;
+    if (canBc) sections.unshift(["m-notify", "n.title"]);
     if (data.member.is_office) sections.push(["m-feesall", "m.tab_fees_all"], ["m-attall", "e.attendance"]);
     root.innerHTML = `
       ${data.sample ? `<p class="demo-note">${t("m.demo_hint")}</p>` : ""}
       ${heroHTML()}
       ${tilesHTML()}
       <nav class="m-nav">${sections.map(([id, k]) => `<a href="#${id}">${t(k)}</a>`).join("")}</nav>
-      ${data.member.is_office ? `<section id="m-notify" class="m-sec">${secHead("📢", "n.title")}${notifyHTML()}</section>` : ""}
+      ${canBc ? `<section id="m-notify" class="m-sec">${secHead("📢", "n.title")}${notifyHTML()}</section>` : ""}
       <section id="m-finance" class="m-sec">${secHead("💰", "m.tab_finance")}${financeHTML()}</section>
       <section id="m-goals" class="m-sec">${secHead("🎯", "m.goals_title")}<p class="muted">${t("m.goals_intro")}</p>${goalFormBlock()}${goalsHTML()}</section>
       <section id="m-comm" class="m-sec">${secHead("🤝", "about.commissions_title")}<p class="muted">${t("m.vaomiera_intro")}</p>${commHTML()}</section>
@@ -423,8 +424,19 @@
 
   function goalsHTML() {
     const { t, esc, fmtDate } = Z();
-    const goals = data.goals || [];
-    if (!goals.length) return `<p class="muted">${t("goals.empty")}</p>`;
+    const complete = g => g.steps.length > 0 && g.steps.every(x => x.status === "done");
+    const goals = (data.goals || []).filter(g => !complete(g));
+    const done = (data.goals || []).filter(complete);
+    const doneHTML = done.length ? `
+      <div class="card done-goals mt">
+        <h3>✅ ${t("m.done_goals")}</h3>
+        <ul class="done-list">${done.map(g => {
+          const last = g.steps.map(x => x.done_date || x.due).filter(Boolean).sort().pop();
+          return `<li><span class="done-list__name">${esc(g.title)}${g.visible ? "" : ` <span class="badge badge--hidden">${t("m.hidden")}</span>`}</span>
+            <span class="muted small">${t("goals.steps_count", { n: g.steps.length })}${last ? " · " + t("goals.completed_on") + " " + fmtDate(last) : ""}</span></li>`;
+        }).join("")}</ul>
+      </div>` : "";
+    if (!goals.length) return `<p class="muted">${t("goals.empty")}</p>` + doneHTML;
     return `<div class="goals goals--members">${goals.map(g => {
       const total = g.steps.length;
       const done = g.steps.filter(x => x.status === "done").length;
@@ -440,7 +452,7 @@
           ${total ? `<button class="btn btn--outline btn--small goal__toggle" data-goal="${esc(g.id)}" aria-expanded="${open}">${t(open ? "goals.hide_steps" : "goals.show_steps")}</button>` : ""}
           ${open ? `<ol class="steps">${g.steps.map(stepHTML).join("")}</ol>` : ""}
         </article>`;
-    }).join("")}</div>`;
+    }).join("")}</div>` + doneHTML;
   }
 
   function notifyTaskButton(x) {

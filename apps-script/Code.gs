@@ -105,7 +105,9 @@ const DEFAULT_SETTINGS = [
   ["Vola tany am-boalohany", 0, "Vola teo am-pelatanana talohan'ny nanombohana ny rakitra (Ariary)"],
   ["Fampahatsiahivana (andro mialoha)", 3, "Andro alohan'ny fe-potoana handefasana fampahatsiahivana (dingana 3)"],
   ["Ora fiandohan'ny fivoriana", "14:00", "Ora anombohan'ny fivoriana (oh: 14:00). Tonga aorian'io + fahatarana azo leferina = tara"],
-  ["Fahatarana azo leferina (minitra)", 10, "Minitra azo leferina aorian'ny ora fiandohana"]
+  ["Fahatarana azo leferina (minitra)", 10, "Minitra azo leferina aorian'ny ora fiandohana"],
+  ["Fifandraisana mandray fanasana (ID)", "", "ID an'ilay mpikambana amin'ny Vaomiera Fifandraisana handray SMS isaky ny fanasana vaovao (oh: ZA-005)"],
+  ["Mailaka fikambanana", "zaspafi.toliara601@gmail.com", "Adiresy handefasana mailaka isaky ny fanasana vaovao"]
 ];
 /* Fee year of the association: October → August (no fee in September) */
 const FEE_MONTHS = [10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -253,6 +255,7 @@ function doPost(e) {
       case "notify_task": return json_(withMember_(body, notifyTask_));
       case "notify_materials": return json_(withMember_(body, notifyMaterials_));
       case "invite":      return json_(addInvitation_(body));
+      case "add_member":  return json_(withMember_(body, addMember_));
       case "staff_lists": return json_(withMember_(body, staffLists_));
       case "sync":        return json_(withMember_(body, sync_));
       case "my_photo":    return json_(withMember_(body, (m, b) => {
@@ -327,7 +330,7 @@ function login_(b) {
   if (fails >= 5) return { ok: false, error: "locked" };
 
   const m = findMember_(ident);
-  if (!m || String(m["PIN"]).trim() !== pin || m["Sata"] === "Tsy mavitrika") {
+  if (!m || String(m["PIN"]).replace(/^'/, "").trim() !== pin || m["Sata"] === "Tsy mavitrika") {
     cache.put(failKey, String(fails + 1), 15 * 60);
     return { ok: false, error: "bad_credentials" };
   }
@@ -399,10 +402,12 @@ function rights_(m) {
     materials: office || m["Vaomiera"] === "Fitaovana",
     attendance: office || m["Zo"] === "Mpandray fahatongavana",
     cards: office,
-    tasks_admin: office
+    tasks_admin: office,
+    members_add: office,                                              // register new members (phone app)
+    broadcast: m["Vaomiera"] === "Fifandraisana" || m["Zo"] === "Mpandrindra"   // SMS announcement to everyone
   };
 }
-function canAny_(m) { const r = rights_(m); return r.tx || r.fees || r.confirm || r.materials || r.attendance || r.cards; }
+function canAny_(m) { const r = rights_(m); return r.tx || r.fees || r.confirm || r.materials || r.attendance || r.cards || r.members_add; }
 
 /* ==========================================================================
    Members: dashboard data
@@ -667,6 +672,8 @@ function settings_() {
     opening: num_(map["Vola tany am-boalohany"]) || 0,
     reminderDays: num_(map["Fampahatsiahivana (andro mialoha)"]) || 3,
     meetingStart: timeText_(map["Ora fiandohan'ny fivoriana"]) || "14:00",
+    inviteContact: String(map["Fifandraisana mandray fanasana (ID)"] || "").trim(),
+    assocEmail: String(map["Mailaka fikambanana"] || "").trim(),
     tolerance: num_(map["Fahatarana azo leferina (minitra)"])
   };
 }
@@ -1122,7 +1129,7 @@ function broadcastText_(b) {
   return text + " Tongava ara-potoana. Misaotra!";
 }
 function broadcast_(m, b) {
-  if (!isOffice_(m)) return { ok: false, error: "forbidden" };
+  if (!rights_(m).broadcast) return { ok: false, error: "forbidden" };
   const text = broadcastText_(b);
   if (!text) return { ok: false, error: "missing_fields" };
   const people = activePhones_();
@@ -1180,17 +1187,6 @@ function notifyMaterials_(m, b) {
    The letter is saved in a PRIVATE Drive folder of the choir account.
    ========================================================================== */
 const INVITE_FOLDER_NAME = "ZA SPaFi Toliara – Fanasana";
-const INVITE_TEXT = {
-  mg: { sms: "ZA SPaFi Toliara: Voaray ny fanasanao \"{s}\". Hamaly anao tsy ho ela izahay. Misaotra!",
-        subject: "Voaray ny fanasanao – ZA SPaFi Toliara",
-        body: "Salama {n},\n\nVoaray ny fanasana nalefanao ho an'ny ZA SPaFi Toliara:\n\"{s}\"\n\nHodinihin'ny Birao izany ary hamaly anao tsy ho ela izahay.\n\nMisaotra betsaka,\nZA SPaFi Toliara" },
-  fr: { sms: "ZA SPaFi Toliara : nous avons bien reçu votre invitation \"{s}\". Nous vous répondrons bientôt. Merci !",
-        subject: "Invitation reçue – ZA SPaFi Toliara",
-        body: "Bonjour {n},\n\nNous avons bien reçu votre invitation adressée à ZA SPaFi Toliara :\n\"{s}\"\n\nLe bureau va l'étudier et nous vous répondrons bientôt.\n\nMerci beaucoup,\nZA SPaFi Toliara" },
-  en: { sms: "ZA SPaFi Toliara: we have received your invitation \"{s}\". We will reply soon. Thank you!",
-        subject: "Invitation received – ZA SPaFi Toliara",
-        body: "Hello {n},\n\nWe have received your invitation to ZA SPaFi Toliara:\n\"{s}\"\n\nThe board will review it and reply soon.\n\nThank you very much,\nZA SPaFi Toliara" }
-};
 
 function inviteFolder_() {
   const props = PropertiesService.getScriptProperties();
@@ -1228,15 +1224,54 @@ function addInvitation_(b) {
       safe_(subject, 500), file.getUrl(), "Vaovao", ""]);
   } finally { lock.releaseLock(); }
 
-  const L = INVITE_TEXT[b.lang] || INVITE_TEXT.mg;
-  const fill = s => s.replace("{n}", name).replace("{s}", subject.slice(0, 60));
-  try { smsSend_([phone], fill(L.sms)); } catch (e) { console.error("invite sms", e); }
-  if (email) { try { MailApp.sendEmail(email, L.subject, fill(L.body), { name: "ZA SPaFi Toliara" }); } catch (e) { console.error("invite mail", e); } }
-  // tell the association (the account that owns the script)
+  // notify the Birao and the Fifandraisana contact by SMS, and the association by email
+  const set = settings_();
+  const short = group.slice(0, 40) + " (" + name.slice(0, 30) + ", " + phone + "): " + subject.slice(0, 60);
   try {
-    const me = Session.getEffectiveUser().getEmail();
-    if (me) MailApp.sendEmail(me, "Fanasana vaovao: " + group, name + " (" + group + ")\n" + phone + (email ? " · " + email : "") +
-      "\n\n" + subject + "\n\nTaratasy: " + file.getUrl(), { name: "ZA SPaFi Toliara – tranonkala" });
-  } catch (e) { console.error("invite notify", e); }
+    const targets = activePhones_(x => x["Birao"] === "Eny" || (set.inviteContact && String(x["ID"]).toUpperCase() === set.inviteContact.toUpperCase()));
+    if (targets.length) smsSend_(targets.map(x => x["Finday"]), "ZA SPaFi: Fanasana vaovao avy amin'i " + short + ". Jereo ny takelaka Fanasana.");
+  } catch (e) { console.error("invite sms", e); }
+  try {
+    const to = set.assocEmail || Session.getEffectiveUser().getEmail();
+    if (to) MailApp.sendEmail(to, "Fanasana vaovao: " + group,
+      "Nisy fanasana vaovao voaray tamin'ny tranonkala.\n\nAnarana: " + name + "\nFikambanana / vondrona: " + group +
+      "\nFinday: " + phone + (email ? "\nMailaka: " + email : "") + "\n\nLohahevitra:\n" + subject + "\n\nTaratasy: " + file.getUrl(),
+      { name: "ZA SPaFi Toliara – tranonkala" });
+  } catch (e) { console.error("invite mail", e); }
   return { ok: true };
+}
+
+/* ==========================================================================
+   Register a new member from the phone app (Birao, Mpandrindra)
+   Returns the new ID and PIN so they can be given to the member.
+   ========================================================================== */
+function addMember_(m, b) {
+  if (!rights_(m).members_add) return { ok: false, error: "forbidden" };
+  const name = String(b.name || "").trim(), phone = String(b.phone || "").trim();
+  const commission = V.commissions.indexOf(b.commission) >= 0 ? b.commission : "";
+  const cat = V.feeCategory.indexOf(b.category) >= 0 ? b.category : "";
+  if (!name || !phone || !commission || !cat) return { ok: false, error: "missing_fields" };
+  if (!phoneIntl_(phone)) return { ok: false, error: "bad_phone" };
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const members = rows_("members");
+    const digits = phone.replace(/\D/g, "").slice(-9);
+    const same = members.find(x => String(x["Finday"]).replace(/\D/g, "").slice(-9) === digits);
+    if (same) return { ok: false, error: "exists", id: String(same["ID"]), name: same["Anarana feno"] };
+    let max = 0;
+    members.forEach(x => { const mm = String(x["ID"]).match(/ZA-(\d+)/); if (mm) max = Math.max(max, Number(mm[1])); });
+    const id = "ZA-" + ("00" + (max + 1)).slice(-3);
+    const pin = String(Math.floor(1000 + Math.random() * 9000));
+    const sh = sheet_("members");
+    const h = sh.getDataRange().getValues()[0];
+    const row = h.map(k => ({
+      "ID": id, "Anarana feno": safe_(name, 120), "Daty nahaterahana": b.birth ? dateFrom_(b.birth) : "",
+      "Finday": "'" + phone.slice(0, 30), "Vaomiera": commission, "Birao": "Tsia", "Andraikitra Birao": "",
+      "Daty niditra": b.joined ? dateFrom_(b.joined) : new Date(), "Sata": "Mavitrika", "Zo": "Mpikambana",
+      "PIN": "'" + pin, "Sary": "", "Sokajy": cat
+    })[k] ?? "");
+    sh.appendRow(row);
+    sheet_("log").appendRow([new Date(), m["Anarana feno"], "new_member", id + " " + name, "mem|" + id]);
+    return { ok: true, id, pin, name };
+  } finally { lock.releaseLock(); }
 }
