@@ -1,162 +1,163 @@
 {
- "ok": true,
- "sample": true,
- "me": {
-  "id": "ZA-003",
-  "name": "Manampitahiana Aroniaina",
-  "can": {
-   "tx": true,
-   "tx_direct": true,
-   "fees": true,
-   "confirm": true,
-   "materials": true,
-   "attendance": true,
-   "cards": true,
-   "tasks_admin": true,
-   "members_add": true
-  }
- },
- "year": "2026–2027",
- "members": [
-  {
-   "id": "ZA-001",
-   "name": "Rakoto Jean",
-   "commission": "Hira sy mozika",
-   "role": "Filoha",
-   "paid": [
-    "2026-10"
-   ],
-   "category": "Miasa",
-   "fee": 2000
+  "ok": true,
+  "sample": true,
+  "me": {
+    "id": "ZA-003",
+    "name": "Manampitahiana Aroniaina",
+    "can": {
+      "tx": true,
+      "tx_direct": true,
+      "fees": true,
+      "confirm": true,
+      "materials": true,
+      "attendance": true,
+      "cards": true,
+      "tasks_admin": true,
+      "members_add": true,
+      "letters": true
+    }
   },
-  {
-   "id": "ZA-002",
-   "name": "Ravao Hanta",
-   "commission": "Soratra Masina",
-   "role": "",
-   "paid": [
-    "2026-10"
-   ],
-   "category": "Mpianatra",
-   "fee": 1000
-  },
-  {
-   "id": "ZA-003",
-   "name": "Manampitahiana Aroniaina",
-   "commission": "Fampandrosoana",
-   "role": "Mpitahiry vola",
-   "paid": [],
-   "category": "Miasa",
-   "fee": 2000
-  },
-  {
-   "id": "ZA-004",
-   "name": "Rasoa Noro",
-   "commission": "Fitaovana",
-   "role": "",
-   "paid": [
-    "2026-10"
-   ],
-   "category": "Mpianatra",
-   "fee": 1000
-  },
-  {
-   "id": "ZA-005",
-   "name": "Rahary Zo",
-   "commission": "Fifandraisana",
-   "role": "Sekretera voalohany",
-   "paid": [],
-   "category": "Miasa",
-   "fee": 2000
-  }
- ],
- "materials": [
-  {
-   "id": "ZE-01",
-   "type": "Akanjo",
-   "desc": "Akanjo manga sy fotsy",
-   "size": "M",
-   "holder_id": "ZA-001",
-   "holder_name": "Rakoto Jean",
-   "since": "2026-03-15"
-  },
-  {
-   "id": "ZE-02",
-   "type": "Akanjo",
-   "desc": "Akanjo manga sy fotsy",
-   "size": "L",
-   "holder_id": "",
-   "holder_name": "",
-   "since": ""
-  },
-  {
-   "id": "ZE-03",
-   "type": "Akanjo",
-   "desc": "Akanjo manga sy fotsy",
-   "size": "S",
-   "holder_id": "ZA-004",
-   "holder_name": "Rasoa Noro",
-   "since": "2026-06-01"
-  },
-  {
-   "id": "MK-01",
-   "type": "Mikrô",
-   "desc": "Mikrô tsy misy tariby",
-   "size": "",
-   "holder_id": "",
-   "holder_name": "",
-   "since": ""
-  }
- ],
- "pending_donations": [
-  {
-   "key": "MP2611.1234|2026-11-10T14:02:11",
-   "date": "2026-11-10",
-   "name": "Randria Faly",
-   "phone": "034 55 666 77",
-   "amount": 25000,
-   "operator": "MVola",
-   "reference": "MP2611.1234",
-   "show_name": true,
-   "message": "Ho an'ny akanjo vaovao"
-  }
- ],
- "fee_months": [
-  "2026-10",
-  "2026-11",
-  "2026-12",
-  "2027-01",
-  "2027-02",
-  "2027-03",
-  "2027-04",
-  "2027-05",
-  "2027-06",
-  "2027-07",
-  "2027-08"
- ],
- "pending_tx": [
-  {
-   "id": "TX-demo01",
-   "date": "2026-11-09",
-   "kind": "out",
-   "amount": 12000,
-   "reason": "Fandikana taratasy hira",
-   "category": "Hira",
-   "by": "Rahary Zo"
-  }
- ],
- "pending_fees": [
-  {
-   "id": "FE-demo01",
-   "date": "2026-11-10",
-   "member_id": "ZA-005",
-   "member_name": "Rahary Zo",
-   "months": [
+  "year": "2026–2027",
+  "members": [
+    {
+      "id": "ZA-001",
+      "name": "Rakoto Jean",
+      "commission": "Hira sy mozika",
+      "role": "Filoha",
+      "paid": [
+        "2026-10"
+      ],
+      "category": "Miasa",
+      "fee": 2000
+    },
+    {
+      "id": "ZA-002",
+      "name": "Ravao Hanta",
+      "commission": "Soratra Masina",
+      "role": "",
+      "paid": [
+        "2026-10"
+      ],
+      "category": "Mpianatra",
+      "fee": 1000
+    },
+    {
+      "id": "ZA-003",
+      "name": "Manampitahiana Aroniaina",
+      "commission": "Fampandrosoana",
+      "role": "Mpitahiry vola",
+      "paid": [],
+      "category": "Miasa",
+      "fee": 2000
+    },
+    {
+      "id": "ZA-004",
+      "name": "Rasoa Noro",
+      "commission": "Fitaovana",
+      "role": "",
+      "paid": [
+        "2026-10"
+      ],
+      "category": "Mpianatra",
+      "fee": 1000
+    },
+    {
+      "id": "ZA-005",
+      "name": "Rahary Zo",
+      "commission": "Fifandraisana",
+      "role": "Sekretera voalohany",
+      "paid": [],
+      "category": "Miasa",
+      "fee": 2000
+    }
+  ],
+  "materials": [
+    {
+      "id": "ZE-01",
+      "type": "Akanjo",
+      "desc": "Akanjo manga sy fotsy",
+      "size": "M",
+      "holder_id": "ZA-001",
+      "holder_name": "Rakoto Jean",
+      "since": "2026-03-15"
+    },
+    {
+      "id": "ZE-02",
+      "type": "Akanjo",
+      "desc": "Akanjo manga sy fotsy",
+      "size": "L",
+      "holder_id": "",
+      "holder_name": "",
+      "since": ""
+    },
+    {
+      "id": "ZE-03",
+      "type": "Akanjo",
+      "desc": "Akanjo manga sy fotsy",
+      "size": "S",
+      "holder_id": "ZA-004",
+      "holder_name": "Rasoa Noro",
+      "since": "2026-06-01"
+    },
+    {
+      "id": "MK-01",
+      "type": "Mikrô",
+      "desc": "Mikrô tsy misy tariby",
+      "size": "",
+      "holder_id": "",
+      "holder_name": "",
+      "since": ""
+    }
+  ],
+  "pending_donations": [
+    {
+      "key": "MP2611.1234|2026-11-10T14:02:11",
+      "date": "2026-11-10",
+      "name": "Randria Faly",
+      "phone": "034 55 666 77",
+      "amount": 25000,
+      "operator": "MVola",
+      "reference": "MP2611.1234",
+      "show_name": true,
+      "message": "Ho an'ny akanjo vaovao"
+    }
+  ],
+  "fee_months": [
     "2026-10",
-    "2026-11"
-   ],
-   "amount": 4000,
-   "by": "Rahary Zo"
-  }
- ]
+    "2026-11",
+    "2026-12",
+    "2027-01",
+    "2027-02",
+    "2027-03",
+    "2027-04",
+    "2027-05",
+    "2027-06",
+    "2027-07",
+    "2027-08"
+  ],
+  "pending_tx": [
+    {
+      "id": "TX-demo01",
+      "date": "2026-11-09",
+      "kind": "out",
+      "amount": 12000,
+      "reason": "Fandikana taratasy hira",
+      "category": "Hira",
+      "by": "Rahary Zo"
+    }
+  ],
+  "pending_fees": [
+    {
+      "id": "FE-demo01",
+      "date": "2026-11-10",
+      "member_id": "ZA-005",
+      "member_name": "Rahary Zo",
+      "months": [
+        "2026-10",
+        "2026-11"
+      ],
+      "amount": 4000,
+      "by": "Rahary Zo"
+    }
+  ]
 }

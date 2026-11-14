@@ -214,3 +214,20 @@ After replacing `Code.gs`: run **`setup`** once (it adds two rows to **Fikirana*
 
 **Completed goals**
 - A goal whose steps are all done no longer appears among the goal cards. It is listed by name only (number of steps and completion date) under **Ireo asa vita** on the home page and members' page.
+
+### 5.14 Welcome SMS and official letters (update of November 2026, part 4)
+
+After replacing `Code.gs`: run **`setup`** once (it adds the Fikirana row below), then **Manage deployments → New version**.
+
+**New members**
+- The phone number is now optional.
+- When a number is given, the new member receives an SMS: *"Tongasoa, {name}! ZA SPaFi Toliara: {link} ID: ZA-0xx PIN: xxxx (aza zaraina)"*. The screen says whether it was sent; if not (or no phone), give the ID and PIN in person.
+- **Fikirana → Rohy tranonkala**: the address of the website, e.g. `https://edu-aroo.github.io/fifandraisana/`. If empty, the link is taken from the address the phone app was opened from.
+
+**Official letters – `taratasy.html`**
+- Who: Birao, Mpandrindra and Vaomiera Fifandraisana. A button **✉ Taratasy ofisialy** appears on their members' page (log in there first, in the same browser tab).
+- Fixed: the header with both logos, the blessing *"Hampitomboina aminareo mandrakariva anie…"*, and the signature *"Ny filohan'ny ZA SPaFi Toliara"* with space for the hand signature/stamp.
+- Entered: Lohateny, Antony, the message; pre-filled and editable: *Tompoko,*, *Mankasitraka indrindra.*, the place and date (today), the Filoha's name (taken from the member whose **Andraikitra Birao = Filoha**).
+- In the message: one line = one paragraph; `- ` at the start = list item; **⇥** = indented paragraph; `**word**` = bold.
+- The PDF is A4, always one page: spacing shrinks first, then the text (11 pt down to 8 pt). If it still does not fit, the page asks to shorten the message.
+- Nothing is stored on the server; the current draft stays on the device until **Taratasy vaovao**.

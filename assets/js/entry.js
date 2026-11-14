@@ -541,6 +541,8 @@
             <div><span>ID</span><strong>${esc(newMember.id)}</strong></div>
             <div><span>PIN</span><strong>${esc(newMember.pin)}</strong></div>
           </div>
+          ${newMember.sms === "sent" ? `<div class="alert alert--ok">${t("e.nm_sms_sent", { phone: esc(newMember.phone) })}</div>`
+            : newMember.sms === "failed" ? `<div class="alert alert--err">${t("e.nm_sms_failed")}</div>` : ""}
           <p class="hint">${t("e.nm_give")}</p>
           <p class="sms-preview small" id="nm-msg">${esc(msg)}</p>
           <div class="inline">
@@ -555,7 +557,7 @@
         <h3>${t("e.new_member")}</h3>
         <div><label>${t("form.name")} <span class="req">*</span></label><input name="name" required maxlength="120"></div>
         <div class="row">
-          <div><label>${t("inv.phone")} <span class="req">*</span></label><input name="phone" type="tel" required></div>
+          <div><label>${t("inv.phone")}</label><input name="phone" type="tel" placeholder="034 00 000 00"></div>
           <div><label>${t("e.nm_birth")}</label><input name="birth" type="date"></div>
         </div>
         <div><label>${t("m.commission")} <span class="req">*</span></label>
@@ -574,12 +576,13 @@
     const v = n => (f.elements[n] ? f.elements[n].value.trim() : "");
     const cat = (f.querySelector("input[name=category]:checked") || {}).value || "";
     nmError = "";
-    if (!v("name") || !v("phone") || !v("commission") || !cat) { nmError = t("err.missing_fields"); render(); return; }
+    if (!v("name") || !v("commission") || !cat) { nmError = t("err.missing_fields"); render(); return; }
     if (!navigator.onLine) { nmError = t("n.need_online"); render(); return; }
     const btn = f.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = t("common.loading");
     try {
-      const r = await api("add_member", { name: v("name"), phone: v("phone"), birth: v("birth"), commission: v("commission"), category: cat, joined: v("joined") });
-      if (r.ok) { newMember = { id: r.id, pin: r.pin, name: r.name }; refreshLists().catch(() => {}); }
+      const site = location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "");
+      const r = await api("add_member", { name: v("name"), phone: v("phone"), birth: v("birth"), commission: v("commission"), category: cat, joined: v("joined"), site });
+      if (r.ok) { newMember = { id: r.id, pin: r.pin, name: r.name, sms: r.sms || "none", phone: v("phone") }; refreshLists().catch(() => {}); }
       else if (r.error === "session_expired") return logout("m.session_expired");
       else if (r.error === "exists") nmError = t("err.exists", { name: esc(r.name), id: esc(r.id) });
       else nmError = t("err." + r.error) !== "err." + r.error ? t("err." + r.error) : t("m.error");

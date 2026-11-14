@@ -398,6 +398,7 @@
     if (window.renderEntryPage) window.renderEntryPage();
     if (window.renderCardsPage) window.renderCardsPage();
     if (window.renderInvitePage) window.renderInvitePage();
+    if (window.renderLetterPage) window.renderLetterPage();
   }
 
   // helpers shared with members.js

@@ -107,7 +107,8 @@ const DEFAULT_SETTINGS = [
   ["Ora fiandohan'ny fivoriana", "14:00", "Ora anombohan'ny fivoriana (oh: 14:00). Tonga aorian'io + fahatarana azo leferina = tara"],
   ["Fahatarana azo leferina (minitra)", 10, "Minitra azo leferina aorian'ny ora fiandohana"],
   ["Fifandraisana mandray fanasana (ID)", "", "ID an'ilay mpikambana amin'ny Vaomiera Fifandraisana handray SMS isaky ny fanasana vaovao (oh: ZA-005)"],
-  ["Mailaka fikambanana", "zaspafi.toliara601@gmail.com", "Adiresy handefasana mailaka isaky ny fanasana vaovao"]
+  ["Mailaka fikambanana", "zaspafi.toliara601@gmail.com", "Adiresy handefasana mailaka isaky ny fanasana vaovao"],
+  ["Rohy tranonkala", "", "Adiresin'ny tranonkala (oh: https://edu-aroo.github.io/fifandraisana/) – ampiasaina amin'ny SMS fandraisana mpikambana vaovao"]
 ];
 /* Fee year of the association: October → August (no fee in September) */
 const FEE_MONTHS = [10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -256,6 +257,7 @@ function doPost(e) {
       case "notify_materials": return json_(withMember_(body, notifyMaterials_));
       case "invite":      return json_(addInvitation_(body));
       case "add_member":  return json_(withMember_(body, addMember_));
+      case "letter_info": return json_(withMember_(body, letterInfo_));
       case "staff_lists": return json_(withMember_(body, staffLists_));
       case "sync":        return json_(withMember_(body, sync_));
       case "my_photo":    return json_(withMember_(body, (m, b) => {
@@ -404,7 +406,8 @@ function rights_(m) {
     cards: office,
     tasks_admin: office,
     members_add: office,                                              // register new members (phone app)
-    broadcast: m["Vaomiera"] === "Fifandraisana" || m["Zo"] === "Mpandrindra"   // SMS announcement to everyone
+    broadcast: m["Vaomiera"] === "Fifandraisana" || m["Zo"] === "Mpandrindra",  // SMS announcement to everyone
+    letters: office || m["Vaomiera"] === "Fifandraisana"                       // official letters (taratasy.html)
   };
 }
 function canAny_(m) { const r = rights_(m); return r.tx || r.fees || r.confirm || r.materials || r.attendance || r.cards || r.members_add; }
@@ -674,6 +677,7 @@ function settings_() {
     meetingStart: timeText_(map["Ora fiandohan'ny fivoriana"]) || "14:00",
     inviteContact: String(map["Fifandraisana mandray fanasana (ID)"] || "").trim(),
     assocEmail: String(map["Mailaka fikambanana"] || "").trim(),
+    siteUrl: String(map["Rohy tranonkala"] || "").trim(),
     tolerance: num_(map["Fahatarana azo leferina (minitra)"])
   };
 }
@@ -1250,28 +1254,61 @@ function addMember_(m, b) {
   const name = String(b.name || "").trim(), phone = String(b.phone || "").trim();
   const commission = V.commissions.indexOf(b.commission) >= 0 ? b.commission : "";
   const cat = V.feeCategory.indexOf(b.category) >= 0 ? b.category : "";
-  if (!name || !phone || !commission || !cat) return { ok: false, error: "missing_fields" };
-  if (!phoneIntl_(phone)) return { ok: false, error: "bad_phone" };
+  if (!name || !commission || !cat) return { ok: false, error: "missing_fields" };   // phone is optional
+  if (phone && !phoneIntl_(phone)) return { ok: false, error: "bad_phone" };
+  let id, pin;
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
     const members = rows_("members");
-    const digits = phone.replace(/\D/g, "").slice(-9);
-    const same = members.find(x => String(x["Finday"]).replace(/\D/g, "").slice(-9) === digits);
-    if (same) return { ok: false, error: "exists", id: String(same["ID"]), name: same["Anarana feno"] };
+    if (phone) {
+      const digits = phone.replace(/\D/g, "").slice(-9);
+      const same = members.find(x => String(x["Finday"]).replace(/\D/g, "").slice(-9) === digits);
+      if (same) return { ok: false, error: "exists", id: String(same["ID"]), name: same["Anarana feno"] };
+    }
     let max = 0;
     members.forEach(x => { const mm = String(x["ID"]).match(/ZA-(\d+)/); if (mm) max = Math.max(max, Number(mm[1])); });
-    const id = "ZA-" + ("00" + (max + 1)).slice(-3);
-    const pin = String(Math.floor(1000 + Math.random() * 9000));
+    id = "ZA-" + ("00" + (max + 1)).slice(-3);
+    pin = String(Math.floor(1000 + Math.random() * 9000));
     const sh = sheet_("members");
     const h = sh.getDataRange().getValues()[0];
     const row = h.map(k => ({
       "ID": id, "Anarana feno": safe_(name, 120), "Daty nahaterahana": b.birth ? dateFrom_(b.birth) : "",
-      "Finday": "'" + phone.slice(0, 30), "Vaomiera": commission, "Birao": "Tsia", "Andraikitra Birao": "",
+      "Finday": phone ? "'" + phone.slice(0, 30) : "", "Vaomiera": commission, "Birao": "Tsia", "Andraikitra Birao": "",
       "Daty niditra": b.joined ? dateFrom_(b.joined) : new Date(), "Sata": "Mavitrika", "Zo": "Mpikambana",
       "PIN": "'" + pin, "Sary": "", "Sokajy": cat
     })[k] ?? "");
     sh.appendRow(row);
     sheet_("log").appendRow([new Date(), m["Anarana feno"], "new_member", id + " " + name, "mem|" + id]);
-    return { ok: true, id, pin, name };
   } finally { lock.releaseLock(); }
+
+  /* Welcome SMS with the link, ID and PIN (only when a phone number was given) */
+  let sms = "none";
+  if (phone) {
+    const url = membersUrl_(b.site);
+    // kept under 160 characters when possible (1 SMS)
+    const text = "Tongasoa, " + safe_(name, 30) + "! ZA SPaFi Toliara" + (url ? ": " + url : "") +
+                 " ID: " + id + " PIN: " + pin + " (aza zaraina)";
+    const res = smsSend_([phone], text);
+    sms = res.ok ? "sent" : "failed";
+    sheet_("log").appendRow([new Date(), m["Anarana feno"], "sms_welcome", id + (res.ok ? " ok" : " " + res.error), "smsw|" + id]);
+  }
+  return { ok: true, id, pin, name, sms };
+}
+
+/* Official letters (taratasy.html): who may write them and the name of the Filoha for the signature.
+   The PDF itself is made in the browser; nothing is stored. */
+function letterInfo_(m) {
+  if (!rights_(m).letters) return { ok: false, error: "forbidden" };
+  const f = rows_("members").find(x => x["Andraikitra Birao"] === "Filoha" && x["Sata"] !== "Tsy mavitrika");
+  return { ok: true, filoha: f ? String(f["Anarana feno"]) : "", me: m["Anarana feno"] };
+}
+
+/* Link to the members' page: the Fikirana row "Rohy tranonkala" if filled, otherwise the address
+   the phone app was opened from (sent by the app). */
+function membersUrl_(site) {
+  let base = String(settings_().siteUrl || site || "").trim();
+  if (!/^https:\/\/[^\s]+$/.test(base)) return "";
+  base = base.replace(/[?#].*$/, "").replace(/[^/]*\.html$/, "");
+  if (!/\/$/.test(base)) base += "/";
+  return base + "mpikambana.html";
 }

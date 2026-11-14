@@ -673,3 +673,21 @@ body[data-page="invite"] .page-head p { font-size: 1.05rem; }
   .nav a.nav__login { margin: 8px 0 0; text-align: center; }
   .lang-switch { margin: 12px 0 0; align-self: flex-start; }
 }
+
+/* ---------- official letters (taratasy.html) ---------- */
+.letter-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.letter-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.letter-fixed { background: var(--cream, #f6f1e6); border-radius: 8px; padding: 8px 10px; }
+.letter-preview { position: sticky; top: 84px; }
+.letter-preview__label { font-size: .85rem; color: #666; margin-bottom: 6px; }
+.letter-preview canvas { width: 100%; aspect-ratio: 210 / 297; background: #fff; box-shadow: 0 6px 24px rgba(0,0,0,.15); border-radius: 2px; display: block; }
+.letter-fit { font-size: .92rem; border-radius: 8px; padding: 8px 10px; }
+.letter-fit.is-ok { background: #e3f1e8; color: #1f5a37; }
+.letter-fit.is-err { background: #fdeaea; color: #8a1c1c; }
+.btn--outline-light { background: transparent; border: 1.5px solid rgba(255,255,255,.8); color: #fff; margin-left: 6px; }
+.btn--outline-light:hover { background: rgba(255,255,255,.12); }
+@media (max-width: 900px) { .letter-grid { grid-template-columns: minmax(0, 1fr); } .letter-preview { position: static; } }
+
+/* field to correct after a refused registration */
+.form .is-invalid { border-color: #c62828 !important; box-shadow: 0 0 0 3px rgba(198,40,40,.15); }
+fieldset.is-invalid { border-radius: 10px; padding: 6px 10px; }

@@ -1,1171 +1,1172 @@
 {
- "ok": true,
- "sample": true,
- "member": {
-  "id": "ZA-001",
-  "name": "Rakoto Jean",
-  "commission": "Hira sy mozika",
-  "office_role": "Filoha",
-  "is_office": true,
-  "can": {
-   "tx": false,
-   "tx_direct": false,
-   "fees": false,
-   "confirm": false,
-   "materials": true,
-   "attendance": true,
-   "cards": true,
-   "tasks_admin": true,
-   "broadcast": true
-  }
- },
- "fees": {
-  "year": "2026–2027",
-  "monthly_amount": 2000,
-  "category": "Miasa",
-  "months": [
-   {
-    "month": "2026-10",
-    "paid": true,
-    "on_time": true,
-    "date": "2026-10-28",
-    "amount": 2000,
-    "future": false,
-    "not_member": false
-   },
-   {
-    "month": "2026-11",
-    "paid": false,
-    "on_time": false,
-    "date": "",
-    "amount": 0,
-    "future": true,
-    "not_member": false
-   },
-   {
-    "month": "2026-12",
-    "paid": false,
-    "on_time": false,
-    "date": "",
-    "amount": 0,
-    "future": true,
-    "not_member": false
-   },
-   {
-    "month": "2027-01",
-    "paid": false,
-    "on_time": false,
-    "date": "",
-    "amount": 0,
-    "future": true,
-    "not_member": false
-   },
-   {
-    "month": "2027-02",
-    "paid": false,
-    "on_time": false,
-    "date": "",
-    "amount": 0,
-    "future": true,
-    "not_member": false
-   },
-   {
-    "month": "2027-03",
-    "paid": false,
-    "on_time": false,
-    "date": "",
-    "amount": 0,
-    "future": true,
-    "not_member": false
-   },
-   {
-    "month": "2027-04",
-    "paid": false,
-    "on_time": false,
-    "date": "",
-    "amount": 0,
-    "future": true,
-    "not_member": false
-   },
-   {
-    "month": "2027-05",
-    "paid": false,
-    "on_time": false,
-    "date": "",
-    "amount": 0,
-    "future": true,
-    "not_member": false
-   },
-   {
-    "month": "2027-06",
-    "paid": false,
-    "on_time": false,
-    "date": "",
-    "amount": 0,
-    "future": true,
-    "not_member": false
-   },
-   {
-    "month": "2027-07",
-    "paid": false,
-    "on_time": false,
-    "date": "",
-    "amount": 0,
-    "future": true,
-    "not_member": false
-   },
-   {
-    "month": "2027-08",
-    "paid": false,
-    "on_time": false,
-    "date": "",
-    "amount": 0,
-    "future": true,
-    "not_member": false
-   }
-  ]
- },
- "loans": [
-  {
-   "material_id": "ZE-01",
-   "type": "Akanjo",
-   "desc": "Akanjo manga sy fotsy (lehilahy)",
-   "date": "2026-03-15",
-   "returned": false,
-   "return_date": ""
-  },
-  {
-   "material_id": "MK-03",
-   "type": "Mikrô",
-   "desc": "Mikrô tsy misy tariby",
-   "date": "2026-08-02",
-   "returned": true,
-   "return_date": "2026-08-04"
-  }
- ],
- "tasks": [
-  {
-   "id": "G1S1",
-   "title": "Fifidianana ny modely sy ny loko",
-   "status": "done",
-   "due": "2026-08-15",
-   "done_date": "2026-08-15",
-   "assignee_label": "Hira sy mozika",
-   "mine": true,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Hira sy mozika",
-   "goal_id": "G1",
-   "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-  },
-  {
-   "id": "G1S2",
-   "title": "Fanombanana ny vidiny",
-   "status": "done",
-   "due": "2026-09-10",
-   "done_date": "2026-09-10",
-   "assignee_label": "Fampandrosoana",
-   "mine": false,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Fampandrosoana",
-   "goal_id": "G1",
-   "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-  },
-  {
-   "id": "G1S3",
-   "title": "Fanangonam-bola",
-   "status": "in_progress",
-   "due": "2026-12-31",
-   "done_date": "",
-   "assignee_label": "Rakoto Jean",
-   "mine": true,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Hira sy mozika",
-   "goal_id": "G1",
-   "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-  },
-  {
-   "id": "G1S4",
-   "title": "Fividianana lamba",
-   "status": "todo",
-   "due": "2027-01-31",
-   "done_date": "",
-   "assignee_label": "Randria Faly",
-   "mine": false,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Fitaovana",
-   "goal_id": "G1",
-   "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-  },
-  {
-   "id": "G1S5",
-   "title": "Fanjairana",
-   "status": "todo",
-   "due": "2027-03-01",
-   "done_date": "",
-   "assignee_label": "Fifandraisana",
-   "mine": false,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Fifandraisana",
-   "goal_id": "G1",
-   "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-  },
-  {
-   "id": "G1S6",
-   "title": "Fizarana ny akanjo",
-   "status": "todo",
-   "due": "2027-03-31",
-   "done_date": "",
-   "assignee_label": "Fitaovana",
-   "mine": false,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Fitaovana",
-   "goal_id": "G1",
-   "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-  },
-  {
-   "id": "G1S7",
-   "title": "Fifanarahana amin'ny mpanjaitra",
-   "status": "todo",
-   "due": "2026-12-15",
-   "done_date": "",
-   "assignee_label": "Rakoto Jean",
-   "mine": true,
-   "can_edit": true,
-   "visible": false,
-   "commission": "Hira sy mozika",
-   "goal_id": "G1",
-   "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-  },
-  {
-   "id": "G2S1",
-   "title": "Fisafidianana ireo hira",
-   "status": "done",
-   "due": "2026-07-20",
-   "done_date": "2026-07-20",
-   "assignee_label": "Hira sy mozika",
-   "mine": true,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Hira sy mozika",
-   "goal_id": "G2",
-   "goal": "Fandraisam-peo rakikira voalohany"
-  },
-  {
-   "id": "G2S2",
-   "title": "Fanazaran-tena",
-   "status": "in_progress",
-   "due": "2027-04-30",
-   "done_date": "",
-   "assignee_label": "Fampandrosoana",
-   "mine": false,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Fampandrosoana",
-   "goal_id": "G2",
-   "goal": "Fandraisam-peo rakikira voalohany"
-  },
-  {
-   "id": "G2S3",
-   "title": "Fifanarahana amin'ny studio",
-   "status": "todo",
-   "due": "2027-05-31",
-   "done_date": "",
-   "assignee_label": "Rakoto Jean",
-   "mine": true,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Hira sy mozika",
-   "goal_id": "G2",
-   "goal": "Fandraisam-peo rakikira voalohany"
-  },
-  {
-   "id": "G2S4",
-   "title": "Fandraisam-peo",
-   "status": "todo",
-   "due": "2027-07-15",
-   "done_date": "",
-   "assignee_label": "Randria Faly",
-   "mine": false,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Fitaovana",
-   "goal_id": "G2",
-   "goal": "Fandraisam-peo rakikira voalohany"
-  },
-  {
-   "id": "G2S5",
-   "title": "Famoahana ny rakikira",
-   "status": "todo",
-   "due": "2027-08-31",
-   "done_date": "",
-   "assignee_label": "Fifandraisana",
-   "mine": false,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Fifandraisana",
-   "goal_id": "G2",
-   "goal": "Fandraisam-peo rakikira voalohany"
-  },
-  {
-   "id": "G3S1",
-   "title": "Lisitry ny fitaovana ilaina",
-   "status": "done",
-   "due": "2026-10-01",
-   "done_date": "2026-10-01",
-   "assignee_label": "Hira sy mozika",
-   "mine": true,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Hira sy mozika",
-   "goal_id": "G3",
-   "goal": "Fitaovana mozika"
-  },
-  {
-   "id": "G3S2",
-   "title": "Fangatahana tolotra amin'ny mpivarotra",
-   "status": "done",
-   "due": "2026-10-25",
-   "done_date": "2026-10-25",
-   "assignee_label": "Fampandrosoana",
-   "mine": false,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Fampandrosoana",
-   "goal_id": "G3",
-   "goal": "Fitaovana mozika"
-  },
-  {
-   "id": "G3S3",
-   "title": "Fividianana",
-   "status": "todo",
-   "due": "2027-06-30",
-   "done_date": "",
-   "assignee_label": "Rakoto Jean",
-   "mine": true,
-   "can_edit": true,
-   "visible": true,
-   "commission": "Hira sy mozika",
-   "goal_id": "G3",
-   "goal": "Fitaovana mozika"
-  },
-  {
-   "id": "G4S1",
-   "title": "Fanomanana tetibola",
-   "status": "in_progress",
-   "due": "2026-12-20",
-   "done_date": "",
-   "assignee_label": "Fampandrosoana",
-   "mine": false,
-   "can_edit": true,
-   "visible": false,
-   "commission": "Fampandrosoana",
-   "goal_id": "G4",
-   "goal": "Fety faha-10 taona"
-  },
-  {
-   "id": "G4S2",
-   "title": "Fifidianana toerana",
-   "status": "todo",
-   "due": "2027-02-28",
-   "done_date": "",
-   "assignee_label": "Rakoto Jean",
-   "mine": true,
-   "can_edit": true,
-   "visible": false,
-   "commission": "Hira sy mozika",
-   "goal_id": "G4",
-   "goal": "Fety faha-10 taona"
-  }
- ],
- "top": {
-  "fees": [
-   {
+  "ok": true,
+  "sample": true,
+  "member": {
+    "id": "ZA-001",
     "name": "Rakoto Jean",
-    "count": 1
-   },
-   {
-    "name": "Ravao Hanta",
-    "count": 1
-   },
-   {
-    "name": "Rahary Zo",
-    "count": 1
-   }
+    "commission": "Hira sy mozika",
+    "office_role": "Filoha",
+    "is_office": true,
+    "can": {
+      "tx": false,
+      "tx_direct": false,
+      "fees": false,
+      "confirm": false,
+      "materials": true,
+      "attendance": true,
+      "cards": true,
+      "tasks_admin": true,
+      "broadcast": true,
+      "letters": true
+    }
+  },
+  "fees": {
+    "year": "2026–2027",
+    "monthly_amount": 2000,
+    "category": "Miasa",
+    "months": [
+      {
+        "month": "2026-10",
+        "paid": true,
+        "on_time": true,
+        "date": "2026-10-28",
+        "amount": 2000,
+        "future": false,
+        "not_member": false
+      },
+      {
+        "month": "2026-11",
+        "paid": false,
+        "on_time": false,
+        "date": "",
+        "amount": 0,
+        "future": true,
+        "not_member": false
+      },
+      {
+        "month": "2026-12",
+        "paid": false,
+        "on_time": false,
+        "date": "",
+        "amount": 0,
+        "future": true,
+        "not_member": false
+      },
+      {
+        "month": "2027-01",
+        "paid": false,
+        "on_time": false,
+        "date": "",
+        "amount": 0,
+        "future": true,
+        "not_member": false
+      },
+      {
+        "month": "2027-02",
+        "paid": false,
+        "on_time": false,
+        "date": "",
+        "amount": 0,
+        "future": true,
+        "not_member": false
+      },
+      {
+        "month": "2027-03",
+        "paid": false,
+        "on_time": false,
+        "date": "",
+        "amount": 0,
+        "future": true,
+        "not_member": false
+      },
+      {
+        "month": "2027-04",
+        "paid": false,
+        "on_time": false,
+        "date": "",
+        "amount": 0,
+        "future": true,
+        "not_member": false
+      },
+      {
+        "month": "2027-05",
+        "paid": false,
+        "on_time": false,
+        "date": "",
+        "amount": 0,
+        "future": true,
+        "not_member": false
+      },
+      {
+        "month": "2027-06",
+        "paid": false,
+        "on_time": false,
+        "date": "",
+        "amount": 0,
+        "future": true,
+        "not_member": false
+      },
+      {
+        "month": "2027-07",
+        "paid": false,
+        "on_time": false,
+        "date": "",
+        "amount": 0,
+        "future": true,
+        "not_member": false
+      },
+      {
+        "month": "2027-08",
+        "paid": false,
+        "on_time": false,
+        "date": "",
+        "amount": 0,
+        "future": true,
+        "not_member": false
+      }
+    ]
+  },
+  "loans": [
+    {
+      "material_id": "ZE-01",
+      "type": "Akanjo",
+      "desc": "Akanjo manga sy fotsy (lehilahy)",
+      "date": "2026-03-15",
+      "returned": false,
+      "return_date": ""
+    },
+    {
+      "material_id": "MK-03",
+      "type": "Mikrô",
+      "desc": "Mikrô tsy misy tariby",
+      "date": "2026-08-02",
+      "returned": true,
+      "return_date": "2026-08-04"
+    }
   ],
-  "attendance": [
-   {
-    "name": "Rasoa Noro",
-    "count": 6
-   },
-   {
-    "name": "Rakoto Jean",
-    "count": 5
-   },
-   {
-    "name": "Ravao Hanta",
-    "count": 5
-   }
+  "tasks": [
+    {
+      "id": "G1S1",
+      "title": "Fifidianana ny modely sy ny loko",
+      "status": "done",
+      "due": "2026-08-15",
+      "done_date": "2026-08-15",
+      "assignee_label": "Hira sy mozika",
+      "mine": true,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Hira sy mozika",
+      "goal_id": "G1",
+      "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+    },
+    {
+      "id": "G1S2",
+      "title": "Fanombanana ny vidiny",
+      "status": "done",
+      "due": "2026-09-10",
+      "done_date": "2026-09-10",
+      "assignee_label": "Fampandrosoana",
+      "mine": false,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Fampandrosoana",
+      "goal_id": "G1",
+      "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+    },
+    {
+      "id": "G1S3",
+      "title": "Fanangonam-bola",
+      "status": "in_progress",
+      "due": "2026-12-31",
+      "done_date": "",
+      "assignee_label": "Rakoto Jean",
+      "mine": true,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Hira sy mozika",
+      "goal_id": "G1",
+      "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+    },
+    {
+      "id": "G1S4",
+      "title": "Fividianana lamba",
+      "status": "todo",
+      "due": "2027-01-31",
+      "done_date": "",
+      "assignee_label": "Randria Faly",
+      "mine": false,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Fitaovana",
+      "goal_id": "G1",
+      "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+    },
+    {
+      "id": "G1S5",
+      "title": "Fanjairana",
+      "status": "todo",
+      "due": "2027-03-01",
+      "done_date": "",
+      "assignee_label": "Fifandraisana",
+      "mine": false,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Fifandraisana",
+      "goal_id": "G1",
+      "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+    },
+    {
+      "id": "G1S6",
+      "title": "Fizarana ny akanjo",
+      "status": "todo",
+      "due": "2027-03-31",
+      "done_date": "",
+      "assignee_label": "Fitaovana",
+      "mine": false,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Fitaovana",
+      "goal_id": "G1",
+      "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+    },
+    {
+      "id": "G1S7",
+      "title": "Fifanarahana amin'ny mpanjaitra",
+      "status": "todo",
+      "due": "2026-12-15",
+      "done_date": "",
+      "assignee_label": "Rakoto Jean",
+      "mine": true,
+      "can_edit": true,
+      "visible": false,
+      "commission": "Hira sy mozika",
+      "goal_id": "G1",
+      "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+    },
+    {
+      "id": "G2S1",
+      "title": "Fisafidianana ireo hira",
+      "status": "done",
+      "due": "2026-07-20",
+      "done_date": "2026-07-20",
+      "assignee_label": "Hira sy mozika",
+      "mine": true,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Hira sy mozika",
+      "goal_id": "G2",
+      "goal": "Fandraisam-peo rakikira voalohany"
+    },
+    {
+      "id": "G2S2",
+      "title": "Fanazaran-tena",
+      "status": "in_progress",
+      "due": "2027-04-30",
+      "done_date": "",
+      "assignee_label": "Fampandrosoana",
+      "mine": false,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Fampandrosoana",
+      "goal_id": "G2",
+      "goal": "Fandraisam-peo rakikira voalohany"
+    },
+    {
+      "id": "G2S3",
+      "title": "Fifanarahana amin'ny studio",
+      "status": "todo",
+      "due": "2027-05-31",
+      "done_date": "",
+      "assignee_label": "Rakoto Jean",
+      "mine": true,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Hira sy mozika",
+      "goal_id": "G2",
+      "goal": "Fandraisam-peo rakikira voalohany"
+    },
+    {
+      "id": "G2S4",
+      "title": "Fandraisam-peo",
+      "status": "todo",
+      "due": "2027-07-15",
+      "done_date": "",
+      "assignee_label": "Randria Faly",
+      "mine": false,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Fitaovana",
+      "goal_id": "G2",
+      "goal": "Fandraisam-peo rakikira voalohany"
+    },
+    {
+      "id": "G2S5",
+      "title": "Famoahana ny rakikira",
+      "status": "todo",
+      "due": "2027-08-31",
+      "done_date": "",
+      "assignee_label": "Fifandraisana",
+      "mine": false,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Fifandraisana",
+      "goal_id": "G2",
+      "goal": "Fandraisam-peo rakikira voalohany"
+    },
+    {
+      "id": "G3S1",
+      "title": "Lisitry ny fitaovana ilaina",
+      "status": "done",
+      "due": "2026-10-01",
+      "done_date": "2026-10-01",
+      "assignee_label": "Hira sy mozika",
+      "mine": true,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Hira sy mozika",
+      "goal_id": "G3",
+      "goal": "Fitaovana mozika"
+    },
+    {
+      "id": "G3S2",
+      "title": "Fangatahana tolotra amin'ny mpivarotra",
+      "status": "done",
+      "due": "2026-10-25",
+      "done_date": "2026-10-25",
+      "assignee_label": "Fampandrosoana",
+      "mine": false,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Fampandrosoana",
+      "goal_id": "G3",
+      "goal": "Fitaovana mozika"
+    },
+    {
+      "id": "G3S3",
+      "title": "Fividianana",
+      "status": "todo",
+      "due": "2027-06-30",
+      "done_date": "",
+      "assignee_label": "Rakoto Jean",
+      "mine": true,
+      "can_edit": true,
+      "visible": true,
+      "commission": "Hira sy mozika",
+      "goal_id": "G3",
+      "goal": "Fitaovana mozika"
+    },
+    {
+      "id": "G4S1",
+      "title": "Fanomanana tetibola",
+      "status": "in_progress",
+      "due": "2026-12-20",
+      "done_date": "",
+      "assignee_label": "Fampandrosoana",
+      "mine": false,
+      "can_edit": true,
+      "visible": false,
+      "commission": "Fampandrosoana",
+      "goal_id": "G4",
+      "goal": "Fety faha-10 taona"
+    },
+    {
+      "id": "G4S2",
+      "title": "Fifidianana toerana",
+      "status": "todo",
+      "due": "2027-02-28",
+      "done_date": "",
+      "assignee_label": "Rakoto Jean",
+      "mine": true,
+      "can_edit": true,
+      "visible": false,
+      "commission": "Hira sy mozika",
+      "goal_id": "G4",
+      "goal": "Fety faha-10 taona"
+    }
+  ],
+  "top": {
+    "fees": [
+      {
+        "name": "Rakoto Jean",
+        "count": 1
+      },
+      {
+        "name": "Ravao Hanta",
+        "count": 1
+      },
+      {
+        "name": "Rahary Zo",
+        "count": 1
+      }
+    ],
+    "attendance": [
+      {
+        "name": "Rasoa Noro",
+        "count": 6
+      },
+      {
+        "name": "Rakoto Jean",
+        "count": 5
+      },
+      {
+        "name": "Ravao Hanta",
+        "count": 5
+      }
+    ]
+  },
+  "finance": {
+    "opening": 0,
+    "income": 319000,
+    "expense": 95000,
+    "donations": 150000,
+    "fees": 4000,
+    "balance": 224000,
+    "total_count": 12,
+    "recent": [
+      {
+        "date": "2026-11-08",
+        "type": "in",
+        "amount": 50000,
+        "reason": "Fanomezana",
+        "category": "donation"
+      },
+      {
+        "date": "2026-11-05",
+        "type": "out",
+        "amount": 35000,
+        "reason": "Fanamboarana keyboard",
+        "category": ""
+      },
+      {
+        "date": "2026-11-03",
+        "type": "in",
+        "amount": 20000,
+        "reason": "Fanomezana",
+        "category": "donation"
+      },
+      {
+        "date": "2026-10-31",
+        "type": "in",
+        "amount": 2000,
+        "reason": "Latsakemboka 2026-10",
+        "category": "fee"
+      },
+      {
+        "date": "2026-10-25",
+        "type": "in",
+        "amount": 150000,
+        "reason": "Fampisehoana tao amin'ny fiangonana",
+        "category": ""
+      },
+      {
+        "date": "2026-10-20",
+        "type": "out",
+        "amount": 12000,
+        "reason": "Fandikana taratasy hira",
+        "category": ""
+      },
+      {
+        "date": "2026-10-15",
+        "type": "in",
+        "amount": 2000,
+        "reason": "Latsakemboka 2026-09",
+        "category": "fee"
+      },
+      {
+        "date": "2026-10-10",
+        "type": "out",
+        "amount": 40000,
+        "reason": "Fitaterana fampisehoana",
+        "category": ""
+      },
+      {
+        "date": "2026-10-02",
+        "type": "in",
+        "amount": 15000,
+        "reason": "Fanomezana",
+        "category": "donation"
+      },
+      {
+        "date": "2026-09-28",
+        "type": "out",
+        "amount": 8000,
+        "reason": "Rano sy sakafo maivana",
+        "category": ""
+      }
+    ]
+  },
+  "finance_all": [
+    {
+      "date": "2026-11-08",
+      "type": "in",
+      "amount": 50000,
+      "reason": "Fanomezana",
+      "category": "donation"
+    },
+    {
+      "date": "2026-11-05",
+      "type": "out",
+      "amount": 35000,
+      "reason": "Fanamboarana keyboard",
+      "category": ""
+    },
+    {
+      "date": "2026-11-03",
+      "type": "in",
+      "amount": 20000,
+      "reason": "Fanomezana",
+      "category": "donation"
+    },
+    {
+      "date": "2026-10-31",
+      "type": "in",
+      "amount": 2000,
+      "reason": "Latsakemboka 2026-10",
+      "category": "fee"
+    },
+    {
+      "date": "2026-10-25",
+      "type": "in",
+      "amount": 150000,
+      "reason": "Fampisehoana tao amin'ny fiangonana",
+      "category": ""
+    },
+    {
+      "date": "2026-10-20",
+      "type": "out",
+      "amount": 12000,
+      "reason": "Fandikana taratasy hira",
+      "category": ""
+    },
+    {
+      "date": "2026-10-15",
+      "type": "in",
+      "amount": 2000,
+      "reason": "Latsakemboka 2026-09",
+      "category": "fee"
+    },
+    {
+      "date": "2026-10-10",
+      "type": "out",
+      "amount": 40000,
+      "reason": "Fitaterana fampisehoana",
+      "category": ""
+    },
+    {
+      "date": "2026-10-02",
+      "type": "in",
+      "amount": 15000,
+      "reason": "Fanomezana",
+      "category": "donation"
+    },
+    {
+      "date": "2026-09-28",
+      "type": "out",
+      "amount": 8000,
+      "reason": "Rano sy sakafo maivana",
+      "category": ""
+    },
+    {
+      "date": "2026-09-14",
+      "type": "in",
+      "amount": 25000,
+      "reason": "Fanomezana",
+      "category": "donation"
+    },
+    {
+      "date": "2026-09-01",
+      "type": "in",
+      "amount": 40000,
+      "reason": "Fanomezana",
+      "category": "donation"
+    }
+  ],
+  "fees_all": [
+    {
+      "id": "ZA-001",
+      "name": "Rakoto Jean",
+      "months": [
+        "on_time",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future"
+      ]
+    },
+    {
+      "id": "ZA-002",
+      "name": "Ravao Hanta",
+      "months": [
+        "on_time",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future"
+      ]
+    },
+    {
+      "id": "ZA-003",
+      "name": "Randria Faly",
+      "months": [
+        "unpaid",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future"
+      ]
+    },
+    {
+      "id": "ZA-004",
+      "name": "Rasoa Noro",
+      "months": [
+        "late",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future"
+      ]
+    },
+    {
+      "id": "ZA-005",
+      "name": "Rahary Zo",
+      "months": [
+        "on_time",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future"
+      ]
+    },
+    {
+      "id": "ZA-006",
+      "name": "Manampitahiana Aroniaina",
+      "months": [
+        "on_time",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future"
+      ]
+    },
+    {
+      "id": "ZA-007",
+      "name": "Rabe Fanja",
+      "months": [
+        "unpaid",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future",
+        "future"
+      ]
+    }
+  ],
+  "goals": [
+    {
+      "id": "G1",
+      "title": "Akanjo vaovao ho an'ny mpihira rehetra",
+      "description": "Hanana akanjo mitovy sy madio ny mpihira rehetra amin'ny fotoam-pivavahana sy fampisehoana.",
+      "target_date": "2027-03-31",
+      "visible": true,
+      "steps": [
+        {
+          "id": "G1S1",
+          "title": "Fifidianana ny modely sy ny loko",
+          "status": "done",
+          "due": "2026-08-15",
+          "done_date": "2026-08-15",
+          "assignee_label": "Hira sy mozika",
+          "mine": true,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Hira sy mozika",
+          "goal_id": "G1",
+          "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+        },
+        {
+          "id": "G1S2",
+          "title": "Fanombanana ny vidiny",
+          "status": "done",
+          "due": "2026-09-10",
+          "done_date": "2026-09-10",
+          "assignee_label": "Fampandrosoana",
+          "mine": false,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Fampandrosoana",
+          "goal_id": "G1",
+          "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+        },
+        {
+          "id": "G1S3",
+          "title": "Fanangonam-bola",
+          "status": "in_progress",
+          "due": "2026-12-31",
+          "done_date": "",
+          "assignee_label": "Rakoto Jean",
+          "mine": true,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Hira sy mozika",
+          "goal_id": "G1",
+          "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+        },
+        {
+          "id": "G1S4",
+          "title": "Fividianana lamba",
+          "status": "todo",
+          "due": "2027-01-31",
+          "done_date": "",
+          "assignee_label": "Randria Faly",
+          "mine": false,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Fitaovana",
+          "goal_id": "G1",
+          "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+        },
+        {
+          "id": "G1S5",
+          "title": "Fanjairana",
+          "status": "todo",
+          "due": "2027-03-01",
+          "done_date": "",
+          "assignee_label": "Fifandraisana",
+          "mine": false,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Fifandraisana",
+          "goal_id": "G1",
+          "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+        },
+        {
+          "id": "G1S6",
+          "title": "Fizarana ny akanjo",
+          "status": "todo",
+          "due": "2027-03-31",
+          "done_date": "",
+          "assignee_label": "Fitaovana",
+          "mine": false,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Fitaovana",
+          "goal_id": "G1",
+          "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+        },
+        {
+          "id": "G1S7",
+          "title": "Fifanarahana amin'ny mpanjaitra",
+          "status": "todo",
+          "due": "2026-12-15",
+          "done_date": "",
+          "assignee_label": "Rakoto Jean",
+          "mine": true,
+          "can_edit": true,
+          "visible": false,
+          "commission": "Hira sy mozika",
+          "goal_id": "G1",
+          "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
+        }
+      ]
+    },
+    {
+      "id": "G2",
+      "title": "Fandraisam-peo rakikira voalohany",
+      "description": "Handrakitra hira 10 ho fitoriana ny Filazantsara.",
+      "target_date": "2027-08-31",
+      "visible": true,
+      "steps": [
+        {
+          "id": "G2S1",
+          "title": "Fisafidianana ireo hira",
+          "status": "done",
+          "due": "2026-07-20",
+          "done_date": "2026-07-20",
+          "assignee_label": "Hira sy mozika",
+          "mine": true,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Hira sy mozika",
+          "goal_id": "G2",
+          "goal": "Fandraisam-peo rakikira voalohany"
+        },
+        {
+          "id": "G2S2",
+          "title": "Fanazaran-tena",
+          "status": "in_progress",
+          "due": "2027-04-30",
+          "done_date": "",
+          "assignee_label": "Fampandrosoana",
+          "mine": false,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Fampandrosoana",
+          "goal_id": "G2",
+          "goal": "Fandraisam-peo rakikira voalohany"
+        },
+        {
+          "id": "G2S3",
+          "title": "Fifanarahana amin'ny studio",
+          "status": "todo",
+          "due": "2027-05-31",
+          "done_date": "",
+          "assignee_label": "Rakoto Jean",
+          "mine": true,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Hira sy mozika",
+          "goal_id": "G2",
+          "goal": "Fandraisam-peo rakikira voalohany"
+        },
+        {
+          "id": "G2S4",
+          "title": "Fandraisam-peo",
+          "status": "todo",
+          "due": "2027-07-15",
+          "done_date": "",
+          "assignee_label": "Randria Faly",
+          "mine": false,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Fitaovana",
+          "goal_id": "G2",
+          "goal": "Fandraisam-peo rakikira voalohany"
+        },
+        {
+          "id": "G2S5",
+          "title": "Famoahana ny rakikira",
+          "status": "todo",
+          "due": "2027-08-31",
+          "done_date": "",
+          "assignee_label": "Fifandraisana",
+          "mine": false,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Fifandraisana",
+          "goal_id": "G2",
+          "goal": "Fandraisam-peo rakikira voalohany"
+        }
+      ]
+    },
+    {
+      "id": "G3",
+      "title": "Fitaovana mozika",
+      "description": "Hividy feo fanamafisam-peo sy keyboard vaovao.",
+      "target_date": "2027-06-30",
+      "visible": true,
+      "steps": [
+        {
+          "id": "G3S1",
+          "title": "Lisitry ny fitaovana ilaina",
+          "status": "done",
+          "due": "2026-10-01",
+          "done_date": "2026-10-01",
+          "assignee_label": "Hira sy mozika",
+          "mine": true,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Hira sy mozika",
+          "goal_id": "G3",
+          "goal": "Fitaovana mozika"
+        },
+        {
+          "id": "G3S2",
+          "title": "Fangatahana tolotra amin'ny mpivarotra",
+          "status": "done",
+          "due": "2026-10-25",
+          "done_date": "2026-10-25",
+          "assignee_label": "Fampandrosoana",
+          "mine": false,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Fampandrosoana",
+          "goal_id": "G3",
+          "goal": "Fitaovana mozika"
+        },
+        {
+          "id": "G3S3",
+          "title": "Fividianana",
+          "status": "todo",
+          "due": "2027-06-30",
+          "done_date": "",
+          "assignee_label": "Rakoto Jean",
+          "mine": true,
+          "can_edit": true,
+          "visible": true,
+          "commission": "Hira sy mozika",
+          "goal_id": "G3",
+          "goal": "Fitaovana mozika"
+        }
+      ]
+    },
+    {
+      "id": "G4",
+      "title": "Fety faha-10 taona",
+      "description": "Fikarakarana anatiny, tsy mbola aseho ampahibemaso.",
+      "target_date": "2027-10-01",
+      "visible": false,
+      "steps": [
+        {
+          "id": "G4S1",
+          "title": "Fanomanana tetibola",
+          "status": "in_progress",
+          "due": "2026-12-20",
+          "done_date": "",
+          "assignee_label": "Fampandrosoana",
+          "mine": false,
+          "can_edit": true,
+          "visible": false,
+          "commission": "Fampandrosoana",
+          "goal_id": "G4",
+          "goal": "Fety faha-10 taona"
+        },
+        {
+          "id": "G4S2",
+          "title": "Fifidianana toerana",
+          "status": "todo",
+          "due": "2027-02-28",
+          "done_date": "",
+          "assignee_label": "Rakoto Jean",
+          "mine": true,
+          "can_edit": true,
+          "visible": false,
+          "commission": "Hira sy mozika",
+          "goal_id": "G4",
+          "goal": "Fety faha-10 taona"
+        }
+      ]
+    },
+    {
+      "id": "G0",
+      "title": "Fandraisana ireo mpikambana vaovao 2026",
+      "description": "",
+      "target_date": "2026-09-30",
+      "visible": true,
+      "steps": [
+        {
+          "id": "G0S1",
+          "title": "Fanentanana",
+          "status": "done",
+          "due": "2026-06-15",
+          "done_date": "2026-06-15",
+          "assignee_label": "Fifandraisana",
+          "commission": "Fifandraisana",
+          "goal_id": "G0",
+          "visible": true,
+          "can_edit": true,
+          "mine": false
+        },
+        {
+          "id": "G0S2",
+          "title": "Fisoratana anarana",
+          "status": "done",
+          "due": "2026-07-31",
+          "done_date": "2026-07-31",
+          "assignee_label": "Fifandraisana",
+          "commission": "Fifandraisana",
+          "goal_id": "G0",
+          "visible": true,
+          "can_edit": true,
+          "mine": false
+        }
+      ]
+    }
+  ],
+  "meeting": {
+    "start": "14:00",
+    "tolerance": 10
+  },
+  "attendance": {
+    "meetings": 6,
+    "present": 5,
+    "on_time": 4,
+    "late": 1,
+    "avg_time": "14:04",
+    "last": [
+      {
+        "date": "2026-11-08",
+        "time": "13:56",
+        "late": false
+      },
+      {
+        "date": "2026-11-01",
+        "time": "14:22",
+        "late": true
+      },
+      {
+        "date": "2026-10-25",
+        "time": "13:58",
+        "late": false
+      },
+      {
+        "date": "2026-10-18",
+        "time": "14:03",
+        "late": false
+      },
+      {
+        "date": "2026-10-04",
+        "time": "14:01",
+        "late": false
+      }
+    ]
+  },
+  "attendance_all": [
+    {
+      "id": "ZA-004",
+      "name": "Rasoa Noro",
+      "meetings": 6,
+      "present": 6,
+      "on_time": 6,
+      "late": 0,
+      "avg_time": "13:52",
+      "last": []
+    },
+    {
+      "id": "ZA-001",
+      "name": "Rakoto Jean",
+      "meetings": 6,
+      "present": 5,
+      "on_time": 4,
+      "late": 1,
+      "avg_time": "14:04",
+      "last": []
+    },
+    {
+      "id": "ZA-002",
+      "name": "Ravao Hanta",
+      "meetings": 6,
+      "present": 5,
+      "on_time": 2,
+      "late": 3,
+      "avg_time": "14:15",
+      "last": []
+    },
+    {
+      "id": "ZA-005",
+      "name": "Rahary Zo",
+      "meetings": 6,
+      "present": 3,
+      "on_time": 1,
+      "late": 2,
+      "avg_time": "14:21",
+      "last": []
+    },
+    {
+      "id": "ZA-003",
+      "name": "Randria Faly",
+      "meetings": 6,
+      "present": 2,
+      "on_time": 2,
+      "late": 0,
+      "avg_time": "13:58",
+      "last": []
+    },
+    {
+      "id": "ZA-006",
+      "name": "Manampitahiana Aroniaina",
+      "meetings": 6,
+      "present": 2,
+      "on_time": 1,
+      "late": 1,
+      "avg_time": "14:12",
+      "last": []
+    },
+    {
+      "id": "ZA-007",
+      "name": "Rabe Fanja",
+      "meetings": 6,
+      "present": 1,
+      "on_time": 0,
+      "late": 1,
+      "avg_time": "14:35",
+      "last": []
+    }
+  ],
+  "commissions": [
+    "Soratra Masina",
+    "Fifandraisana",
+    "Fitaovana",
+    "Fampandrosoana",
+    "Hira sy mozika"
+  ],
+  "can_add_tasks": [
+    "Soratra Masina",
+    "Fifandraisana",
+    "Fitaovana",
+    "Fampandrosoana",
+    "Hira sy mozika"
+  ],
+  "people": [
+    {
+      "id": "ZA-001",
+      "name": "Rakoto Jean",
+      "commission": "Hira sy mozika"
+    },
+    {
+      "id": "ZA-002",
+      "name": "Ravao Hanta",
+      "commission": "Soratra Masina"
+    },
+    {
+      "id": "ZA-003",
+      "name": "Randria Faly",
+      "commission": "Fitaovana"
+    },
+    {
+      "id": "ZA-004",
+      "name": "Rasoa Noro",
+      "commission": "Fitaovana"
+    },
+    {
+      "id": "ZA-005",
+      "name": "Rahary Zo",
+      "commission": "Fifandraisana"
+    },
+    {
+      "id": "ZA-006",
+      "name": "Manampitahiana Aroniaina",
+      "commission": "Fampandrosoana"
+    }
   ]
- },
- "finance": {
-  "opening": 0,
-  "income": 319000,
-  "expense": 95000,
-  "donations": 150000,
-  "fees": 4000,
-  "balance": 224000,
-  "total_count": 12,
-  "recent": [
-   {
-    "date": "2026-11-08",
-    "type": "in",
-    "amount": 50000,
-    "reason": "Fanomezana",
-    "category": "donation"
-   },
-   {
-    "date": "2026-11-05",
-    "type": "out",
-    "amount": 35000,
-    "reason": "Fanamboarana keyboard",
-    "category": ""
-   },
-   {
-    "date": "2026-11-03",
-    "type": "in",
-    "amount": 20000,
-    "reason": "Fanomezana",
-    "category": "donation"
-   },
-   {
-    "date": "2026-10-31",
-    "type": "in",
-    "amount": 2000,
-    "reason": "Latsakemboka 2026-10",
-    "category": "fee"
-   },
-   {
-    "date": "2026-10-25",
-    "type": "in",
-    "amount": 150000,
-    "reason": "Fampisehoana tao amin'ny fiangonana",
-    "category": ""
-   },
-   {
-    "date": "2026-10-20",
-    "type": "out",
-    "amount": 12000,
-    "reason": "Fandikana taratasy hira",
-    "category": ""
-   },
-   {
-    "date": "2026-10-15",
-    "type": "in",
-    "amount": 2000,
-    "reason": "Latsakemboka 2026-09",
-    "category": "fee"
-   },
-   {
-    "date": "2026-10-10",
-    "type": "out",
-    "amount": 40000,
-    "reason": "Fitaterana fampisehoana",
-    "category": ""
-   },
-   {
-    "date": "2026-10-02",
-    "type": "in",
-    "amount": 15000,
-    "reason": "Fanomezana",
-    "category": "donation"
-   },
-   {
-    "date": "2026-09-28",
-    "type": "out",
-    "amount": 8000,
-    "reason": "Rano sy sakafo maivana",
-    "category": ""
-   }
-  ]
- },
- "finance_all": [
-  {
-   "date": "2026-11-08",
-   "type": "in",
-   "amount": 50000,
-   "reason": "Fanomezana",
-   "category": "donation"
-  },
-  {
-   "date": "2026-11-05",
-   "type": "out",
-   "amount": 35000,
-   "reason": "Fanamboarana keyboard",
-   "category": ""
-  },
-  {
-   "date": "2026-11-03",
-   "type": "in",
-   "amount": 20000,
-   "reason": "Fanomezana",
-   "category": "donation"
-  },
-  {
-   "date": "2026-10-31",
-   "type": "in",
-   "amount": 2000,
-   "reason": "Latsakemboka 2026-10",
-   "category": "fee"
-  },
-  {
-   "date": "2026-10-25",
-   "type": "in",
-   "amount": 150000,
-   "reason": "Fampisehoana tao amin'ny fiangonana",
-   "category": ""
-  },
-  {
-   "date": "2026-10-20",
-   "type": "out",
-   "amount": 12000,
-   "reason": "Fandikana taratasy hira",
-   "category": ""
-  },
-  {
-   "date": "2026-10-15",
-   "type": "in",
-   "amount": 2000,
-   "reason": "Latsakemboka 2026-09",
-   "category": "fee"
-  },
-  {
-   "date": "2026-10-10",
-   "type": "out",
-   "amount": 40000,
-   "reason": "Fitaterana fampisehoana",
-   "category": ""
-  },
-  {
-   "date": "2026-10-02",
-   "type": "in",
-   "amount": 15000,
-   "reason": "Fanomezana",
-   "category": "donation"
-  },
-  {
-   "date": "2026-09-28",
-   "type": "out",
-   "amount": 8000,
-   "reason": "Rano sy sakafo maivana",
-   "category": ""
-  },
-  {
-   "date": "2026-09-14",
-   "type": "in",
-   "amount": 25000,
-   "reason": "Fanomezana",
-   "category": "donation"
-  },
-  {
-   "date": "2026-09-01",
-   "type": "in",
-   "amount": 40000,
-   "reason": "Fanomezana",
-   "category": "donation"
-  }
- ],
- "fees_all": [
-  {
-   "id": "ZA-001",
-   "name": "Rakoto Jean",
-   "months": [
-    "on_time",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future"
-   ]
-  },
-  {
-   "id": "ZA-002",
-   "name": "Ravao Hanta",
-   "months": [
-    "on_time",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future"
-   ]
-  },
-  {
-   "id": "ZA-003",
-   "name": "Randria Faly",
-   "months": [
-    "unpaid",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future"
-   ]
-  },
-  {
-   "id": "ZA-004",
-   "name": "Rasoa Noro",
-   "months": [
-    "late",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future"
-   ]
-  },
-  {
-   "id": "ZA-005",
-   "name": "Rahary Zo",
-   "months": [
-    "on_time",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future"
-   ]
-  },
-  {
-   "id": "ZA-006",
-   "name": "Manampitahiana Aroniaina",
-   "months": [
-    "on_time",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future"
-   ]
-  },
-  {
-   "id": "ZA-007",
-   "name": "Rabe Fanja",
-   "months": [
-    "unpaid",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future",
-    "future"
-   ]
-  }
- ],
- "goals": [
-  {
-   "id": "G1",
-   "title": "Akanjo vaovao ho an'ny mpihira rehetra",
-   "description": "Hanana akanjo mitovy sy madio ny mpihira rehetra amin'ny fotoam-pivavahana sy fampisehoana.",
-   "target_date": "2027-03-31",
-   "visible": true,
-   "steps": [
-    {
-     "id": "G1S1",
-     "title": "Fifidianana ny modely sy ny loko",
-     "status": "done",
-     "due": "2026-08-15",
-     "done_date": "2026-08-15",
-     "assignee_label": "Hira sy mozika",
-     "mine": true,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Hira sy mozika",
-     "goal_id": "G1",
-     "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-    },
-    {
-     "id": "G1S2",
-     "title": "Fanombanana ny vidiny",
-     "status": "done",
-     "due": "2026-09-10",
-     "done_date": "2026-09-10",
-     "assignee_label": "Fampandrosoana",
-     "mine": false,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Fampandrosoana",
-     "goal_id": "G1",
-     "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-    },
-    {
-     "id": "G1S3",
-     "title": "Fanangonam-bola",
-     "status": "in_progress",
-     "due": "2026-12-31",
-     "done_date": "",
-     "assignee_label": "Rakoto Jean",
-     "mine": true,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Hira sy mozika",
-     "goal_id": "G1",
-     "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-    },
-    {
-     "id": "G1S4",
-     "title": "Fividianana lamba",
-     "status": "todo",
-     "due": "2027-01-31",
-     "done_date": "",
-     "assignee_label": "Randria Faly",
-     "mine": false,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Fitaovana",
-     "goal_id": "G1",
-     "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-    },
-    {
-     "id": "G1S5",
-     "title": "Fanjairana",
-     "status": "todo",
-     "due": "2027-03-01",
-     "done_date": "",
-     "assignee_label": "Fifandraisana",
-     "mine": false,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Fifandraisana",
-     "goal_id": "G1",
-     "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-    },
-    {
-     "id": "G1S6",
-     "title": "Fizarana ny akanjo",
-     "status": "todo",
-     "due": "2027-03-31",
-     "done_date": "",
-     "assignee_label": "Fitaovana",
-     "mine": false,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Fitaovana",
-     "goal_id": "G1",
-     "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-    },
-    {
-     "id": "G1S7",
-     "title": "Fifanarahana amin'ny mpanjaitra",
-     "status": "todo",
-     "due": "2026-12-15",
-     "done_date": "",
-     "assignee_label": "Rakoto Jean",
-     "mine": true,
-     "can_edit": true,
-     "visible": false,
-     "commission": "Hira sy mozika",
-     "goal_id": "G1",
-     "goal": "Akanjo vaovao ho an'ny mpihira rehetra"
-    }
-   ]
-  },
-  {
-   "id": "G2",
-   "title": "Fandraisam-peo rakikira voalohany",
-   "description": "Handrakitra hira 10 ho fitoriana ny Filazantsara.",
-   "target_date": "2027-08-31",
-   "visible": true,
-   "steps": [
-    {
-     "id": "G2S1",
-     "title": "Fisafidianana ireo hira",
-     "status": "done",
-     "due": "2026-07-20",
-     "done_date": "2026-07-20",
-     "assignee_label": "Hira sy mozika",
-     "mine": true,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Hira sy mozika",
-     "goal_id": "G2",
-     "goal": "Fandraisam-peo rakikira voalohany"
-    },
-    {
-     "id": "G2S2",
-     "title": "Fanazaran-tena",
-     "status": "in_progress",
-     "due": "2027-04-30",
-     "done_date": "",
-     "assignee_label": "Fampandrosoana",
-     "mine": false,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Fampandrosoana",
-     "goal_id": "G2",
-     "goal": "Fandraisam-peo rakikira voalohany"
-    },
-    {
-     "id": "G2S3",
-     "title": "Fifanarahana amin'ny studio",
-     "status": "todo",
-     "due": "2027-05-31",
-     "done_date": "",
-     "assignee_label": "Rakoto Jean",
-     "mine": true,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Hira sy mozika",
-     "goal_id": "G2",
-     "goal": "Fandraisam-peo rakikira voalohany"
-    },
-    {
-     "id": "G2S4",
-     "title": "Fandraisam-peo",
-     "status": "todo",
-     "due": "2027-07-15",
-     "done_date": "",
-     "assignee_label": "Randria Faly",
-     "mine": false,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Fitaovana",
-     "goal_id": "G2",
-     "goal": "Fandraisam-peo rakikira voalohany"
-    },
-    {
-     "id": "G2S5",
-     "title": "Famoahana ny rakikira",
-     "status": "todo",
-     "due": "2027-08-31",
-     "done_date": "",
-     "assignee_label": "Fifandraisana",
-     "mine": false,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Fifandraisana",
-     "goal_id": "G2",
-     "goal": "Fandraisam-peo rakikira voalohany"
-    }
-   ]
-  },
-  {
-   "id": "G3",
-   "title": "Fitaovana mozika",
-   "description": "Hividy feo fanamafisam-peo sy keyboard vaovao.",
-   "target_date": "2027-06-30",
-   "visible": true,
-   "steps": [
-    {
-     "id": "G3S1",
-     "title": "Lisitry ny fitaovana ilaina",
-     "status": "done",
-     "due": "2026-10-01",
-     "done_date": "2026-10-01",
-     "assignee_label": "Hira sy mozika",
-     "mine": true,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Hira sy mozika",
-     "goal_id": "G3",
-     "goal": "Fitaovana mozika"
-    },
-    {
-     "id": "G3S2",
-     "title": "Fangatahana tolotra amin'ny mpivarotra",
-     "status": "done",
-     "due": "2026-10-25",
-     "done_date": "2026-10-25",
-     "assignee_label": "Fampandrosoana",
-     "mine": false,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Fampandrosoana",
-     "goal_id": "G3",
-     "goal": "Fitaovana mozika"
-    },
-    {
-     "id": "G3S3",
-     "title": "Fividianana",
-     "status": "todo",
-     "due": "2027-06-30",
-     "done_date": "",
-     "assignee_label": "Rakoto Jean",
-     "mine": true,
-     "can_edit": true,
-     "visible": true,
-     "commission": "Hira sy mozika",
-     "goal_id": "G3",
-     "goal": "Fitaovana mozika"
-    }
-   ]
-  },
-  {
-   "id": "G4",
-   "title": "Fety faha-10 taona",
-   "description": "Fikarakarana anatiny, tsy mbola aseho ampahibemaso.",
-   "target_date": "2027-10-01",
-   "visible": false,
-   "steps": [
-    {
-     "id": "G4S1",
-     "title": "Fanomanana tetibola",
-     "status": "in_progress",
-     "due": "2026-12-20",
-     "done_date": "",
-     "assignee_label": "Fampandrosoana",
-     "mine": false,
-     "can_edit": true,
-     "visible": false,
-     "commission": "Fampandrosoana",
-     "goal_id": "G4",
-     "goal": "Fety faha-10 taona"
-    },
-    {
-     "id": "G4S2",
-     "title": "Fifidianana toerana",
-     "status": "todo",
-     "due": "2027-02-28",
-     "done_date": "",
-     "assignee_label": "Rakoto Jean",
-     "mine": true,
-     "can_edit": true,
-     "visible": false,
-     "commission": "Hira sy mozika",
-     "goal_id": "G4",
-     "goal": "Fety faha-10 taona"
-    }
-   ]
-  },
-  {
-   "id": "G0",
-   "title": "Fandraisana ireo mpikambana vaovao 2026",
-   "description": "",
-   "target_date": "2026-09-30",
-   "visible": true,
-   "steps": [
-    {
-     "id": "G0S1",
-     "title": "Fanentanana",
-     "status": "done",
-     "due": "2026-06-15",
-     "done_date": "2026-06-15",
-     "assignee_label": "Fifandraisana",
-     "commission": "Fifandraisana",
-     "goal_id": "G0",
-     "visible": true,
-     "can_edit": true,
-     "mine": false
-    },
-    {
-     "id": "G0S2",
-     "title": "Fisoratana anarana",
-     "status": "done",
-     "due": "2026-07-31",
-     "done_date": "2026-07-31",
-     "assignee_label": "Fifandraisana",
-     "commission": "Fifandraisana",
-     "goal_id": "G0",
-     "visible": true,
-     "can_edit": true,
-     "mine": false
-    }
-   ]
-  }
- ],
- "meeting": {
-  "start": "14:00",
-  "tolerance": 10
- },
- "attendance": {
-  "meetings": 6,
-  "present": 5,
-  "on_time": 4,
-  "late": 1,
-  "avg_time": "14:04",
-  "last": [
-   {
-    "date": "2026-11-08",
-    "time": "13:56",
-    "late": false
-   },
-   {
-    "date": "2026-11-01",
-    "time": "14:22",
-    "late": true
-   },
-   {
-    "date": "2026-10-25",
-    "time": "13:58",
-    "late": false
-   },
-   {
-    "date": "2026-10-18",
-    "time": "14:03",
-    "late": false
-   },
-   {
-    "date": "2026-10-04",
-    "time": "14:01",
-    "late": false
-   }
-  ]
- },
- "attendance_all": [
-  {
-   "id": "ZA-004",
-   "name": "Rasoa Noro",
-   "meetings": 6,
-   "present": 6,
-   "on_time": 6,
-   "late": 0,
-   "avg_time": "13:52",
-   "last": []
-  },
-  {
-   "id": "ZA-001",
-   "name": "Rakoto Jean",
-   "meetings": 6,
-   "present": 5,
-   "on_time": 4,
-   "late": 1,
-   "avg_time": "14:04",
-   "last": []
-  },
-  {
-   "id": "ZA-002",
-   "name": "Ravao Hanta",
-   "meetings": 6,
-   "present": 5,
-   "on_time": 2,
-   "late": 3,
-   "avg_time": "14:15",
-   "last": []
-  },
-  {
-   "id": "ZA-005",
-   "name": "Rahary Zo",
-   "meetings": 6,
-   "present": 3,
-   "on_time": 1,
-   "late": 2,
-   "avg_time": "14:21",
-   "last": []
-  },
-  {
-   "id": "ZA-003",
-   "name": "Randria Faly",
-   "meetings": 6,
-   "present": 2,
-   "on_time": 2,
-   "late": 0,
-   "avg_time": "13:58",
-   "last": []
-  },
-  {
-   "id": "ZA-006",
-   "name": "Manampitahiana Aroniaina",
-   "meetings": 6,
-   "present": 2,
-   "on_time": 1,
-   "late": 1,
-   "avg_time": "14:12",
-   "last": []
-  },
-  {
-   "id": "ZA-007",
-   "name": "Rabe Fanja",
-   "meetings": 6,
-   "present": 1,
-   "on_time": 0,
-   "late": 1,
-   "avg_time": "14:35",
-   "last": []
-  }
- ],
- "commissions": [
-  "Soratra Masina",
-  "Fifandraisana",
-  "Fitaovana",
-  "Fampandrosoana",
-  "Hira sy mozika"
- ],
- "can_add_tasks": [
-  "Soratra Masina",
-  "Fifandraisana",
-  "Fitaovana",
-  "Fampandrosoana",
-  "Hira sy mozika"
- ],
- "people": [
-  {
-   "id": "ZA-001",
-   "name": "Rakoto Jean",
-   "commission": "Hira sy mozika"
-  },
-  {
-   "id": "ZA-002",
-   "name": "Ravao Hanta",
-   "commission": "Soratra Masina"
-  },
-  {
-   "id": "ZA-003",
-   "name": "Randria Faly",
-   "commission": "Fitaovana"
-  },
-  {
-   "id": "ZA-004",
-   "name": "Rasoa Noro",
-   "commission": "Fitaovana"
-  },
-  {
-   "id": "ZA-005",
-   "name": "Rahary Zo",
-   "commission": "Fifandraisana"
-  },
-  {
-   "id": "ZA-006",
-   "name": "Manampitahiana Aroniaina",
-   "commission": "Fampandrosoana"
-  }
- ]
 }

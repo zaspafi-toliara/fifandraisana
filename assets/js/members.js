@@ -230,6 +230,7 @@
           </div>
           ${can.tx || can.fees || can.confirm || can.materials || can.attendance || can.cards
             ? `<a class="btn btn--gold btn--small mt-s" href="fampidirana.html">${t("nav.entry")} →</a>` : ""}
+          ${can.letters ? `<a class="btn btn--outline-light btn--small mt-s" href="taratasy.html">✉ ${t("l.title")}</a>` : ""}
         </div>
         <button class="dash-avatar" data-open-drawer aria-label="${t("m.tab_me")}">
           ${avatarHTML("dash-avatar__img")}
