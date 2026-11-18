@@ -47,6 +47,7 @@
     // test mode
     if (action === "login") return (body.identifier.trim().toUpperCase() === "ZA-003" && body.pin === "1234") ? { ok: true, token: "demo" } : { ok: false, error: "bad_credentials" };
     if (action === "staff_lists") return JSON.parse(await Z().fetchText("data/sample-lists.json", "lists"));
+    if (action === "add_member" && String(body.phone || "").replace(/\D/g, "").endsWith("340000000")) return { ok: false, error: "exists", id: "ZA-002", name: "Rasoa Mialy" };   // test: number already used
     if (action === "add_member") return { ok: true, id: "ZA-0" + (10 + Math.floor(Math.random() * 89)), pin: String(1000 + Math.floor(Math.random() * 9000)), name: body.name };
     if (action === "notify_materials") return { ok: true, sent: body.material_ids.length ? 1 : new Set(lists.materials.filter(x => x.holder_id).map(x => x.holder_id)).size };
     if (action === "sync") return { ok: true, results: body.ops.map(o => ({ op_id: o.op_id, ok: true })) };
@@ -144,7 +145,7 @@
     if (box && !box.hidden) { closeScanner(); }
     view = (e.state && e.state.view) || { name: "home" };
     if (view.name !== "attendance") attendance = null;
-    if (view.name !== "newmember") { newMember = null; nmError = ""; }
+    if (view.name !== "newmember") { newMember = null; nmError = ""; nmDraft = {}; nmBad = ""; }
     render();
   });
 
@@ -396,13 +397,18 @@
   }
 
   function moneyHTML() {
-    const { t } = Z();
+    const { t, esc, money } = Z();
+    const ws = lists.wallets || [];
     return backHTML() + `
       <form class="card form" id="f-money">
         <h3>${t("e.money")}</h3>
         <div class="seg"><label><input type="radio" name="kind" value="in" checked> ${t("e.in")}</label><label><input type="radio" name="kind" value="out"> ${t("e.out")}</label></div>
         <div><label>${t("e.amount")}</label><input name="amount" inputmode="numeric" required></div>
         <div><label>${t("e.reason")}</label><input name="reason" required></div>
+        ${ws.length ? `<div><label>${t("w.which")}</label>
+          <select name="wallet"><option value="">${t("w.shared")}</option>
+            ${ws.map(w => `<option value="${esc(w.id)}">${esc(w.name)} · ${money(w.balance || 0)}</option>`).join("")}</select>
+          <p class="hint">${t("w.which_hint")}</p><div id="w-warn"></div></div>` : ""}
         <div class="row">
           <div><label>${t("e.category")}</label><input name="category"></div>
           <div><label>${t("e.date")}</label><input name="date" type="date" value="${today()}"></div>
@@ -527,6 +533,8 @@
   /* Register a new member (Birao, Mpandrindra) – online only, shows the new ID and PIN */
   let newMember = null;      // { id, pin, name } after success
   let nmError = "";
+  let nmDraft = {};          // what was typed, kept when the server refuses (error, phone already used)
+  let nmBad = "";            // name of the field to correct (highlighted and focused)
   function newMemberHTML() {
     const { t, esc } = Z();
     if (newMember) {
@@ -552,22 +560,27 @@
         </div>`;
     }
     const comms = (window.SITE_CONFIG || {}).COMMISSIONS || [];
+    const d = nmDraft, val = k => esc(d[k] || ""), bad = k => (nmBad === k ? ' class="is-invalid"' : "");
+    const chk = c => (d.category === c ? " checked" : "");
+    const errAt = k => (nmError && nmBad === k ? `<div class="alert alert--err">${nmError}</div>` : "");
     return backHTML() + `
       <form class="card form" id="f-nm">
         <h3>${t("e.new_member")}</h3>
-        <div><label>${t("form.name")} <span class="req">*</span></label><input name="name" required maxlength="120"></div>
+        <div><label>${t("form.name")} <span class="req">*</span></label><input name="name" required maxlength="120" value="${val("name")}"${bad("name")}>${errAt("name")}</div>
         <div class="row">
-          <div><label>${t("inv.phone")}</label><input name="phone" type="tel" placeholder="034 00 000 00"></div>
-          <div><label>${t("e.nm_birth")}</label><input name="birth" type="date"></div>
+          <div><label>${t("inv.phone")}</label><input name="phone" type="tel" placeholder="034 00 000 00" value="${val("phone")}"${bad("phone")}></div>
+          <div><label>${t("e.nm_birth")}</label><input name="birth" type="date" value="${val("birth")}"></div>
         </div>
+        ${errAt("phone")}
         <div><label>${t("m.commission")} <span class="req">*</span></label>
-          <select name="commission" required><option value="">…</option>${comms.map(c => `<option>${esc(c)}</option>`).join("")}</select></div>
-        <fieldset><legend>${t("e.nm_cat")} <span class="req">*</span></legend>
-          <label class="choice"><input type="radio" name="category" value="Mpianatra"> Mpianatra</label>
-          <label class="choice"><input type="radio" name="category" value="Miasa"> Miasa</label>
+          <select name="commission" required${bad("commission")}><option value="">…</option>${comms.map(c => `<option${d.commission === c ? " selected" : ""}>${esc(c)}</option>`).join("")}</select>${errAt("commission")}</div>
+        <fieldset${bad("category")}><legend>${t("e.nm_cat")} <span class="req">*</span></legend>
+          <label class="choice"><input type="radio" name="category" value="Mpianatra"${chk("Mpianatra")}> Mpianatra</label>
+          <label class="choice"><input type="radio" name="category" value="Miasa"${chk("Miasa")}> Miasa</label>
+          ${errAt("category")}
         </fieldset>
-        <div><label>${t("e.nm_joined")}</label><input name="joined" type="date" value="${today()}"></div>
-        ${nmError ? `<div class="alert alert--err">${nmError}</div>` : ""}
+        <div><label>${t("e.nm_joined")}</label><input name="joined" type="date" value="${d.joined ? val("joined") : today()}"></div>
+        ${nmError && !nmBad ? `<div class="alert alert--err">${nmError}</div>` : ""}
         <button class="btn btn--gold" type="submit">${t("e.nm_save")}</button>
       </form>`;
   }
@@ -575,16 +588,21 @@
     const { t, esc } = Z();
     const v = n => (f.elements[n] ? f.elements[n].value.trim() : "");
     const cat = (f.querySelector("input[name=category]:checked") || {}).value || "";
-    nmError = "";
-    if (!v("name") || !v("commission") || !cat) { nmError = t("err.missing_fields"); render(); return; }
+    nmError = ""; nmBad = "";
+    nmDraft = { name: v("name"), phone: v("phone"), birth: v("birth"), commission: v("commission"), category: cat, joined: v("joined") };
+    if (!v("name") || !v("commission") || !cat) {
+      nmBad = !v("name") ? "name" : !v("commission") ? "commission" : "category";
+      nmError = t("err.missing_fields"); render(); return;
+    }
     if (!navigator.onLine) { nmError = t("n.need_online"); render(); return; }
     const btn = f.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = t("common.loading");
     try {
       const site = location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "");
       const r = await api("add_member", { name: v("name"), phone: v("phone"), birth: v("birth"), commission: v("commission"), category: cat, joined: v("joined"), site });
-      if (r.ok) { newMember = { id: r.id, pin: r.pin, name: r.name, sms: r.sms || "none", phone: v("phone") }; refreshLists().catch(() => {}); }
+      if (r.ok) { newMember = { id: r.id, pin: r.pin, name: r.name, sms: r.sms || "none", phone: v("phone") }; nmDraft = {}; refreshLists().catch(() => {}); }
       else if (r.error === "session_expired") return logout("m.session_expired");
-      else if (r.error === "exists") nmError = t("err.exists", { name: esc(r.name), id: esc(r.id) });
+      else if (r.error === "exists") { nmBad = "phone"; nmError = t("err.exists", { name: esc(r.name), id: esc(r.id) }); }
+      else if (r.error === "bad_phone") { nmBad = "phone"; nmError = t("err.bad_phone"); }
       else nmError = t("err." + r.error) !== "err." + r.error ? t("err." + r.error) : t("m.error");
     } catch (e) { nmError = t("m.error"); }
     render();
@@ -681,11 +699,25 @@
       const amount = Z().num(mon.amount.value);
       if (!(amount > 0) || !mon.reason.value.trim()) { flash = t("err.missing_fields"); render(); return; }
       const kind = mon.querySelector("input[name=kind]:checked").value;
-      enqueue("tx", { kind, amount, reason: mon.reason.value.trim(), category: mon.category.value.trim(), date: mon.date.value || today() },
-        `${t(kind === "in" ? "e.in" : "e.out")} ${money(amount)}: ${mon.reason.value.trim()}`);
+      const wallet = mon.wallet ? mon.wallet.value : "";
+      const wName = wallet ? ((lists.wallets || []).find(w => w.id === wallet) || {}).name : "";
+      enqueue("tx", { kind, amount, reason: mon.reason.value.trim(), category: mon.category.value.trim(), date: mon.date.value || today(), wallet },
+        `${t(kind === "in" ? "e.in" : "e.out")} ${money(amount)}: ${mon.reason.value.trim()}${wName ? " (" + wName + ")" : ""}`);
       if (!lists.me.can.tx_direct) flash = t("e.tx_pending");
       goBack();
     });
+
+    // warn when an expense is larger than what the chosen wallet holds (still allowed)
+    if (mon && mon.wallet) {
+      const warn = () => {
+        const box = mon.querySelector("#w-warn"); if (!box) return;
+        const w = (lists.wallets || []).find(x => x.id === mon.wallet.value);
+        const out = mon.querySelector("input[name=kind]:checked").value === "out";
+        const amount = Z().num(mon.amount.value);
+        box.innerHTML = w && out && amount > (w.balance || 0) ? `<div class="alert alert--warn small">${t("w.over", { name: Z().esc(w.name), amount: money(w.balance || 0) })}</div>` : "";
+      };
+      ["change", "input"].forEach(ev => mon.addEventListener(ev, warn));
+    }
 
     // attendance mode
     const add = root.querySelector("#att-add");
@@ -719,7 +751,11 @@
     // new member
     const fnm = root.querySelector("#f-nm");
     if (fnm) fnm.addEventListener("submit", e => { e.preventDefault(); saveNewMember(fnm); });
-    on("[data-nm-again]", "click", () => { newMember = null; nmError = ""; render(); });
+    on("[data-nm-again]", "click", () => { newMember = null; nmError = ""; nmDraft = {}; nmBad = ""; render(); });
+    if (fnm && nmBad) {   // put the cursor on the field to correct
+      const el = fnm.querySelector(`[name=${nmBad}]`);
+      if (el) { el.scrollIntoView({ block: "center" }); if (el.focus) el.focus(); }
+    }
     on("[data-nm-copy]", "click", e => {
       const txt = document.getElementById("nm-msg").textContent; const b = e.currentTarget;
       const done = () => { b.textContent = Z().t("donate.copied"); };

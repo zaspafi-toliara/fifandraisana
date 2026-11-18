@@ -29,14 +29,14 @@ const S = {
   },
   transactions: {
     name: "Vola",
-    headers: ["Daty", "Karazany", "Vola", "Antony", "Sokajy", "Nampiditra", "Sata", "ID"],
-    widths:  [110, 100, 110, 300, 150, 130, 110, 160]
+    headers: ["Daty", "Karazany", "Vola", "Antony", "Sokajy", "Nampiditra", "Sata", "ID", "Kitapo"],
+    widths:  [110, 100, 110, 300, 150, 130, 110, 160, 160]
   },
   donations: {
     name: "Fanomezana",
     headers: ["Voaray tamin'ny", "Daty nandefasana", "Anarana", "Finday", "Vola", "Tambajotra",
-              "Référence", "Aseho anarana", "Hafatra", "Sata", "Daty voamarina"],
-    widths:  [150, 120, 200, 130, 100, 120, 150, 110, 250, 110, 120]
+              "Référence", "Aseho anarana", "Hafatra", "Sata", "Daty voamarina", "Kitapo"],
+    widths:  [150, 120, 200, 130, 100, 120, 150, 110, 250, 110, 120, 200]
   },
   materials: {
     name: "Fitaovana",
@@ -65,8 +65,18 @@ const S = {
   },
   invitations: {
     name: "Fanasana",
-    headers: ["Voaray tamin'ny", "Anarana", "Fikambanana / vondrona", "Finday", "Mailaka", "Lohahevitra", "Taratasy", "Sata", "Fanamarihana"],
-    widths:  [150, 200, 220, 130, 200, 320, 260, 120, 260]
+    headers: ["Voaray tamin'ny", "Anarana", "Fikambanana / vondrona", "Finday", "Mailaka", "Lohahevitra", "Taratasy", "Sata", "Fanamarihana", "Daty hanatanterahana"],
+    widths:  [150, 200, 220, 130, 200, 320, 260, 120, 260, 140]
+  },
+  wallets: {
+    name: "Kitapo",
+    headers: ["ID", "Anarana", "Tanjona", "Aseho", "Ambiny", "Sata", "Daty namoronana", "Vola ankehitriny", "Isan-jato", "Fanamarihana"],
+    widths:  [70, 220, 120, 80, 80, 110, 130, 140, 90, 300]
+  },
+  calendar: {
+    name: "Kalandrie",
+    headers: ["Daty", "Antony (tsy aseho)"],
+    widths:  [120, 360]
   },
   log: {
     name: "Tantara",
@@ -113,6 +123,18 @@ const DEFAULT_SETTINGS = [
 /* Fee year of the association: October → August (no fee in September) */
 const FEE_MONTHS = [10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];
 
+/* Wallets created by setup when the "Kitapo" tab is empty.
+   Ambiny = Eny marks the wallet that receives the rest of every division (it has no goal). */
+const DEFAULT_WALLETS = [
+  ["KT1", "Ezaka sono", 2000000, "Eny", "Tsia", "Mavitrika"],
+  ["KT2", "Isantaona", 8000000, "Eny", "Tsia", "Mavitrika"],
+  ["KT3", "Fitsinjo", "", "Eny", "Eny", "Mavitrika"],
+  ["KT4", "Fanamiana", 2000000, "Eny", "Tsia", "Mavitrika"],
+  ["KT5", "Fampiofanana tanora", 500000, "Eny", "Tsia", "Mavitrika"]
+];
+const REPORT_SHEET = "Tatitra ara-bola";
+const WALLET_SHEET_PREFIX = "Kitapo - ";
+
 const TZ = "Indian/Antananarivo";
 const SESSION_SECONDS = 6 * 60 * 60;   // 6 hours (members' area)
 const DEVICE_DAYS = 30;                 // "remember this phone" for the entry app (staff only)
@@ -125,6 +147,7 @@ function onOpen() {
   SpreadsheetApp.getUi().createMenu("ZA SPaFi")
     .addItem("Hamorona ny takelaka (setup)", "setup")
     .addItem("Hameno ID sy PIN tsy ampy", "fillIdsAndPins")
+    .addItem("Havaozina ny tatitra ara-bola sy ny kitapo", "rebuildReports")
     .addSeparator()
     .addItem("SMS: ampidiro ny kaonty SMS Gateway", "smsSetCredentials")
     .addItem("SMS: andramo (alefa SMS iray)", "smsTest")
@@ -185,7 +208,14 @@ function setup() {
   const attSh = ss.getSheetByName(S.attendance.name);
   attSh.getRange(2, 3, rows, 1).clearDataValidations().setNumberFormat("@");
   dateCol("log", "Daty");
-  dd("invitations", "Sata", V.invitationStatus); textCol("invitations", "Finday");
+  dd("invitations", "Sata", V.invitationStatus); textCol("invitations", "Finday"); dateCol("invitations", "Daty hanatanterahana");
+  dd("wallets", "Aseho", V.yesNo); dd("wallets", "Ambiny", V.yesNo); dd("wallets", "Sata", V.memberStatus);
+  ss.getSheetByName(S.wallets.name).getRange(2, 3, rows, 1).setNumberFormat("#,##0");
+  ss.getSheetByName(S.wallets.name).getRange(2, 8, rows, 1).setNumberFormat("#,##0");
+  dateCol("wallets", "Daty namoronana");
+  dateCol("calendar", "Daty");
+  const wSh = ss.getSheetByName(S.wallets.name);
+  if (wSh.getLastRow() < 2) wSh.getRange(2, 1, DEFAULT_WALLETS.length, 6).setValues(DEFAULT_WALLETS);
 
   // "Tompon'andraikitra" accepts a member ID (ZA-001) or a commission name: no strict list.
   const setSh = ss.getSheetByName(S.settings.name);
@@ -199,6 +229,7 @@ function setup() {
   const def = ss.getSheetByName("Sheet1") || ss.getSheetByName("Feuille 1") || ss.getSheetByName("Feuille1");
   if (def && ss.getSheets().length > 1 && def.getLastRow() === 0) ss.deleteSheet(def);
 
+  try { rebuildReports_(); } catch (e) { console.error("reports", e); }
   SpreadsheetApp.getActive().toast("Vita ny fanomanana ny takelaka.", "ZA SPaFi", 5);
 }
 
@@ -258,6 +289,7 @@ function doPost(e) {
       case "invite":      return json_(addInvitation_(body));
       case "add_member":  return json_(withMember_(body, addMember_));
       case "letter_info": return json_(withMember_(body, letterInfo_));
+      case "wallet_save": return json_(withMember_(body, walletSave_));
       case "staff_lists": return json_(withMember_(body, staffLists_));
       case "sync":        return json_(withMember_(body, sync_));
       case "my_photo":    return json_(withMember_(body, (m, b) => {
@@ -299,7 +331,9 @@ function publicData_() {
     .map(m => ({ role: m["Andraikitra Birao"] || "", name: m["Anarana feno"] }))
     .sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role));
 
-  return { ok: true, sample: false, updated: iso_(new Date()), goals: outGoals, donations, office };
+  const wallets = walletState_().wallets.filter(w => w.public && w.active)
+    .map(w => ({ id: w.id, name: w.name, goal: w.goal, balance: Math.max(0, w.balance) }));
+  return { ok: true, sample: false, updated: iso_(new Date()), goals: outGoals, donations, office, wallets, busy: calendarBusy_() };
 }
 
 function addDonation_(b) {
@@ -309,10 +343,13 @@ function addDonation_(b) {
   const clip = (s, n) => { const t = String(s || "").slice(0, n); return /^[=+\-@]/.test(t) ? "'" + t : t; };
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
+    // chosen wallets: only public, active ones; none or "all" = every wallet (public and private)
+    const pub = wallets_().filter(w => w.public && w.active).map(w => w.id);
+    const chosen = Array.isArray(b.wallets) ? b.wallets.map(String).filter(id => pub.indexOf(id) >= 0) : [];
     sheet_("donations").appendRow([
       new Date(), b.date ? new Date(b.date + "T00:00:00") : "", clip(b.name, 120), "'" + clip(b.phone, 30),
       amount, clip(b.operator, 30), clip(b.reference, 60), b.show_name ? "Eny" : "Tsia",
-      clip(b.message, 500), "Miandry", ""
+      clip(b.message, 500), "Miandry", "", chosen.length ? chosen.join(", ") : "Rehetra"
     ]);
   } finally { lock.releaseLock(); }
   return { ok: true };
@@ -407,7 +444,8 @@ function rights_(m) {
     tasks_admin: office,
     members_add: office,                                              // register new members (phone app)
     broadcast: m["Vaomiera"] === "Fifandraisana" || m["Zo"] === "Mpandrindra",  // SMS announcement to everyone
-    letters: office || m["Vaomiera"] === "Fifandraisana"                       // official letters (taratasy.html)
+    letters: office || m["Vaomiera"] === "Fifandraisana",                      // official letters (taratasy.html)
+    wallets: office || treasurer                                                // add / edit the wallets (Kitapo)
   };
 }
 function canAny_(m) { const r = rights_(m); return r.tx || r.fees || r.confirm || r.materials || r.attendance || r.cards || r.members_add; }
@@ -552,14 +590,23 @@ function financeSummary_(limit) {
   const feeTotal = fees.reduce((s, f) => s + num_(f["Vola"]), 0);
 
   const list = tx.map(t => ({ date: iso_(t["Daty"]), type: t["Karazany"] === "Miditra" ? "in" : "out",
-                              amount: num_(t["Vola"]), reason: t["Antony"], category: t["Sokajy"] || "" }))
+                              amount: num_(t["Vola"]), reason: t["Antony"], category: t["Sokajy"] || "", wref: t["Kitapo"] }))
     .concat(don.map(d => ({ date: iso_(d["Daty nandefasana"]) || iso_(d["Voaray tamin'ny"]), type: "in",
-                            amount: num_(d["Vola"]), reason: "Fanomezana", category: "donation" })))
+                            amount: num_(d["Vola"]), reason: "Fanomezana", category: "donation", wref: d["Kitapo"] })))
     .concat(fees.map(f => ({ date: iso_(f["Daty naloa"]), type: "in", amount: num_(f["Vola"]),
                              reason: "Latsakemboka " + monthKey_(f["Volana"]), category: "fee" })))
     .sort((a, b) => (a.date < b.date ? 1 : -1));
 
+  const ws = walletState_();
+  const label = ref => {
+    if (!ref || ref === "Rehetra") return "";
+    return String(ref).split(",").map(x => resolveWallet_(ws.wallets, x)).filter(Boolean).map(w => w.name).join(", ");
+  };
+  list.forEach(x => { x.wallet = label(x.wref); delete x.wref; });
   return {
+    wallets: ws.wallets.filter(w => w.active).map(w => ({ id: w.id, name: w.name, goal: w.goal, balance: w.balance,
+      public: w.public, rest: w.rest, active: w.active })),
+    wallets_all: ws.wallets.map(w => ({ id: w.id, name: w.name, goal: w.goal, balance: w.balance, public: w.public, rest: w.rest, active: w.active })),
     opening: set.opening, income: income + donations + feeTotal, expense, donations, fees: feeTotal,
     balance: set.opening + income + donations + feeTotal - expense,
     total_count: list.length,
@@ -757,7 +804,8 @@ function staffLists_(m) {
                                  role: x["Andraikitra Birao"] || "", photo: String(x["Sary"] || ""),
                                  category: x["Sokajy"] || "", fee: feeFor_(x, set),
                                  paid: paid[String(x["ID"])] || [] })),
-    materials
+    materials,
+    wallets: walletState_().wallets.filter(w => w.active).map(w => ({ id: w.id, name: w.name, balance: w.balance }))
   };
   if (r.confirm) {
     out.pending_tx = rows_("transactions").filter(t => t["Sata"] === "Miandry" && t["ID"]).map(t => ({
@@ -787,6 +835,8 @@ function donationKey_(d) {
   return String(d["Référence"] || "") + "|" + t;
 }
 
+const MONEY_OPS = ["tx", "tx_status", "fee", "fee_status", "donation_status"];
+
 /* Receives the queue of operations saved on the phone (possibly offline) */
 function sync_(m, b) {
   if (!canAny_(m)) return { ok: false, error: "forbidden" };
@@ -794,6 +844,7 @@ function sync_(m, b) {
   const lock = LockService.getScriptLock(); lock.waitLock(20000);
   try {
     const logSh = sheet_("log");
+    let moneyChanged = false;
     const done = {};
     rows_("log").forEach(l => { if (l["op_id"]) done[String(l["op_id"])] = true; });
     const results = ops.map(op => {
@@ -807,8 +858,10 @@ function sync_(m, b) {
         logSh.appendRow([new Date(), m["Anarana feno"], op.type, JSON.stringify(logged).slice(0, 500), op.op_id]);
         done[op.op_id] = true;
       }
+      if (res.ok && !res.dup && MONEY_OPS.indexOf(op.type) >= 0) moneyChanged = true;
       return Object.assign({ op_id: op.op_id }, res);
     });
+    if (moneyChanged) { try { rebuildReports_(); } catch (e) { console.error("reports", e); } }
     return { ok: true, results };
   } finally { lock.releaseLock(); }
 }
@@ -825,8 +878,9 @@ function applyOp_(m, type, d) {
       const amount = num_(d.amount);
       if (!(amount > 0) || !d.reason || (d.kind !== "in" && d.kind !== "out")) return { ok: false, error: "missing_fields" };
       const status = r.tx_direct ? "Voamarina" : "Miandry";
+      const w = d.wallet ? resolveWallet_(wallets_(), d.wallet) : null;     // empty = shared between the wallets
       sheet_("transactions").appendRow([date, d.kind === "in" ? "Miditra" : "Mivoaka", amount, safe_(d.reason, 200),
-        safe_(d.category, 60), who, status, "TX-" + Utilities.getUuid().slice(0, 8)]);
+        safe_(d.category, 60), who, status, "TX-" + Utilities.getUuid().slice(0, 8), w ? w.id : ""]);
       return { ok: true, pending: status === "Miandry" };
     }
     case "fee_status": {
@@ -1119,12 +1173,13 @@ function activePhones_(filter) {
 
 /* 1. Meeting / event announcement to every active member (Birao, Mpandrindra) */
 function broadcastText_(b) {
+  if (b.kind === "hafa") {                     // free message, typed as it is
+    const msg = String(b.message || "").replace(/\s+/g, " ").trim().slice(0, 450);
+    return msg ? "ZA SPaFi: " + msg : null;
+  }
   const place = String(b.place || "").trim(), time = timeText_(b.time), date = String(b.date || "");
   if (!place || !time || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
-  let title = "Fivoriana";
-  if (b.kind === "hamonjy") title = "Hamonjy antsam-panahy";
-  else if (b.kind === "hafa") title = String(b.other || "").trim().slice(0, 80);
-  if (!title) return null;
+  const title = b.kind === "hamonjy" ? "Hamonjy antsam-panahy" : "Fivoriana";
   let text = "ZA SPaFi: " + title + ". Andro: " + dayText_(date) + ". Ora: " + time + ". Toerana: " + place.slice(0, 80) + ".";
   if (b.kind === "hamonjy") {
     if (String(b.male || "").trim()) text += " Fanamiana lahy: " + String(b.male).trim().slice(0, 80) + ".";
@@ -1205,8 +1260,10 @@ function addInvitation_(b) {
   if (b.website) return { ok: true };                                   // spam trap
   const name = String(b.name || "").trim(), group = String(b.group || "").trim();
   const phone = String(b.phone || "").trim(), email = String(b.email || "").trim(), subject = String(b.subject || "").trim();
-  if (!name || !group || !phone || !subject) return { ok: false, error: "missing_fields" };
+  const eventDate = String(b.event_date || "");
+  if (!name || !group || !phone || !subject || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) return { ok: false, error: "missing_fields" };
   if (!phoneIntl_(phone)) return { ok: false, error: "bad_phone" };
+  const sunday = dateFrom_(eventDate).getDay() === 0;
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, error: "bad_email" };
   const fm = String(b.file || "").match(/^data:(application\/pdf|image\/jpeg|image\/png);base64,(.+)$/);
   if (!fm) return { ok: false, error: "missing_file" };
@@ -1225,12 +1282,13 @@ function addInvitation_(b) {
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
     sheet_("invitations").appendRow([new Date(), safe_(name, 120), safe_(group, 160), "'" + phone.slice(0, 30), safe_(email, 120),
-      safe_(subject, 500), file.getUrl(), "Vaovao", ""]);
+      safe_(subject, 500), file.getUrl(), "Vaovao", sunday ? "" : "Tsy Alahady: mila fanapahan-kevitry ny mpikambana", dateFrom_(eventDate)]);
   } finally { lock.releaseLock(); }
 
   // notify the Birao and the Fifandraisana contact by SMS, and the association by email
   const set = settings_();
-  const short = group.slice(0, 40) + " (" + name.slice(0, 30) + ", " + phone + "): " + subject.slice(0, 60);
+  const when = dayText_(eventDate) + (sunday ? "" : " (TSY Alahady)");
+  const short = group.slice(0, 40) + " (" + name.slice(0, 30) + ", " + phone + ") ny " + when + ": " + subject.slice(0, 50);
   try {
     const targets = activePhones_(x => x["Birao"] === "Eny" || (set.inviteContact && String(x["ID"]).toUpperCase() === set.inviteContact.toUpperCase()));
     if (targets.length) smsSend_(targets.map(x => x["Finday"]), "ZA SPaFi: Fanasana vaovao avy amin'i " + short + ". Jereo ny takelaka Fanasana.");
@@ -1239,7 +1297,8 @@ function addInvitation_(b) {
     const to = set.assocEmail || Session.getEffectiveUser().getEmail();
     if (to) MailApp.sendEmail(to, "Fanasana vaovao: " + group,
       "Nisy fanasana vaovao voaray tamin'ny tranonkala.\n\nAnarana: " + name + "\nFikambanana / vondrona: " + group +
-      "\nFinday: " + phone + (email ? "\nMailaka: " + email : "") + "\n\nLohahevitra:\n" + subject + "\n\nTaratasy: " + file.getUrl(),
+      "\nFinday: " + phone + (email ? "\nMailaka: " + email : "") + "\nDaty: " + when +
+      (sunday ? "" : "\nTsy Alahady ity daty ity: mila fanapahan-kevitry ny mpikambana alohan'ny hanekena.") + "\n\nLohahevitra:\n" + subject + "\n\nTaratasy: " + file.getUrl(),
       { name: "ZA SPaFi Toliara – tranonkala" });
   } catch (e) { console.error("invite mail", e); }
   return { ok: true };
@@ -1311,4 +1370,230 @@ function membersUrl_(site) {
   base = base.replace(/[?#].*$/, "").replace(/[^/]*\.html$/, "");
   if (!/\/$/.test(base)) base += "/";
   return base + "mpikambana.html";
+}
+
+/* ==========================================================================
+   Wallets (Kitapo)
+   Every confirmed movement is replayed from the start, in date order:
+   - income without wallet (fees, donations "Rehetra", entries "zaraina"):
+     divided equally between the active wallets that are not full; a full
+     wallet's share goes to the others; whole Ariary only, the rest goes to
+     the "Ambiny" wallet (Fitsinjo);
+   - income for chosen wallets: divided equally between them, rest to Fitsinjo;
+   - expense from a wallet: taken from that wallet;
+   - expense without wallet: taken from the wallets in proportion to what each
+     holds (none goes below zero), the rounding rest from the largest ones,
+     then from Fitsinjo.
+   A wallet added later ("Daty namoronana") shares only the income received
+   from that date: adding a wallet never moves money already shared.
+   ========================================================================== */
+/* Rows of an optional tab: [] when the tab does not exist yet (setup not run) */
+function rowsIf_(key) { return SpreadsheetApp.getActive().getSheetByName(S[key].name) ? rows_(key) : []; }
+
+function wallets_() {
+  return rowsIf_("wallets").filter(w => w["ID"] && w["Anarana"]).map(w => ({
+    id: String(w["ID"]).trim(), name: String(w["Anarana"]).trim(),
+    goal: w["Tanjona"] === "" || w["Tanjona"] === null ? null : (num_(w["Tanjona"]) > 0 ? num_(w["Tanjona"]) : null),
+    public: w["Aseho"] !== "Tsia", rest: w["Ambiny"] === "Eny", active: w["Sata"] !== "Tsy mavitrika",
+    since: iso_(w["Daty namoronana"]) || ""          // shares only the income received from this date
+  }));
+}
+function resolveWallet_(ws, ref) {
+  const k = String(ref || "").trim().toLowerCase();
+  if (!k) return null;
+  return ws.find(w => w.id.toLowerCase() === k) || ws.find(w => w.name.toLowerCase() === k) || null;
+}
+function restWallet_(ws) {
+  return ws.find(w => w.rest) || ws.find(w => w.name.toLowerCase() === "fitsinjo") || ws.find(w => w.goal === null) || ws[0];
+}
+
+/* All confirmed movements in date order */
+function movements_() {
+  const set = settings_();
+  const members = rows_("members");
+  const nameOf = id => { const x = members.find(y => String(y["ID"]) === String(id)); return x ? x["Anarana feno"] : String(id); };
+  const out = [];
+  if (set.opening) out.push({ date: "", kind: "in", amount: set.opening, reason: "Vola tany am-boalohany", ref: "" });
+  rows_("transactions").filter(t => t["Vola"] !== "" && t["Karazany"] && t["Sata"] !== "Miandry" && t["Sata"] !== "Nolavina")
+    .forEach(t => out.push({ date: iso_(t["Daty"]), kind: t["Karazany"] === "Miditra" ? "in" : "out", amount: num_(t["Vola"]),
+                             reason: String(t["Antony"] || ""), ref: String(t["Kitapo"] || "") }));
+  rows_("donations").filter(d => d["Sata"] === "Voamarina")
+    .forEach(d => out.push({ date: iso_(d["Daty nandefasana"]) || iso_(d["Voaray tamin'ny"]), kind: "in", amount: num_(d["Vola"]),
+                             reason: "Fanomezana – " + (d["Anarana"] || ""), ref: String(d["Kitapo"] || "") }));
+  confirmedFees_().filter(f => f["Vola"] !== "")
+    .forEach(f => out.push({ date: iso_(f["Daty naloa"]), kind: "in", amount: num_(f["Vola"]),
+                             reason: "Latsakemboka – " + nameOf(f["ID mpikambana"]) + " (" + monthKey_(f["Volana"]) + ")", ref: "" }));
+  out.forEach((m, i) => { m.i = i; });
+  return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.i - b.i));
+}
+
+function walletState_() {
+  const ws = wallets_();
+  const bal = {}; ws.forEach(w => { bal[w.id] = 0; });
+  const ledger = [];
+  if (!ws.length) return { wallets: [], ledger };
+  const rest = restWallet_(ws);
+  const active = ws.filter(w => w.active);
+  const room = (w, parts) => w.goal === null ? Infinity : w.goal - bal[w.id] - (parts[w.id] || 0);
+
+  movements_().forEach(mv => {
+    const parts = {};
+    const add = (id, v) => { parts[id] = (parts[id] || 0) + v; };
+    const A = Math.round(mv.amount);
+    const refs = mv.ref && mv.ref !== "Rehetra" ? mv.ref.split(",").map(x => resolveWallet_(ws, x)).filter(Boolean) : [];
+    if (mv.kind === "in") {
+      if (refs.length) {
+        const per = Math.floor(A / refs.length);
+        refs.forEach(w => add(w.id, per));
+        add(rest.id, A - per * refs.length);
+      } else {
+        let left = A;
+        for (let guard = 0; guard < 50 && left > 0; guard++) {
+          const open = active.filter(w => room(w, parts) > 0 && (!w.since || w.since <= mv.date || w.rest));
+          if (!open.length) break;
+          const per = Math.floor(left / open.length);
+          if (per <= 0) break;
+          open.forEach(w => { const g = Math.min(per, room(w, parts)); add(w.id, g); left -= g; });
+        }
+        if (left) add(rest.id, left);
+      }
+    } else {
+      if (refs.length) add(refs[0].id, -A);
+      else {
+        const pos = active.filter(w => bal[w.id] > 0);
+        const total = pos.reduce((s, w) => s + bal[w.id], 0);
+        let left = A;
+        if (total > 0) {
+          pos.forEach(w => { const g = Math.min(bal[w.id], Math.floor(A * bal[w.id] / total)); add(w.id, -g); left -= g; });
+          pos.slice().sort((a, b) => (bal[b.id] + (parts[b.id] || 0)) - (bal[a.id] + (parts[a.id] || 0))).forEach(w => {
+            const can = Math.min(left, bal[w.id] + (parts[w.id] || 0)); if (can > 0) { add(w.id, -can); left -= can; }
+          });
+        }
+        if (left > 0) add(rest.id, -left);
+      }
+    }
+    Object.keys(parts).forEach(id => { bal[id] += parts[id]; });
+    ledger.push({ mv, parts, shared: !refs.length });
+  });
+  return { wallets: ws.map(w => Object.assign({}, w, { balance: bal[w.id] })), ledger };
+}
+
+/* Add or edit a wallet from the members' page (Birao, Mpitahiry vola) */
+function walletSave_(m, b) {
+  if (!rights_(m).wallets) return { ok: false, error: "forbidden" };
+  const name = String(b.name || "").trim().slice(0, 60);
+  if (!name) return { ok: false, error: "missing_fields" };
+  const goal = b.goal === "" || b.goal === null || b.goal === undefined ? "" : Math.round(num_(b.goal));
+  if (goal !== "" && !(goal > 0)) return { ok: false, error: "missing_fields" };
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const ws = wallets_();
+    if (ws.some(w => w.name.toLowerCase() === name.toLowerCase() && w.id !== String(b.id || ""))) return { ok: false, error: "wallet_exists" };
+    const sh = sheet_("wallets");
+    const data = sh.getDataRange().getValues(); const h = data[0];
+    const col = k => h.indexOf(k);
+    if (b.id) {
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][col("ID")]) !== String(b.id)) continue;
+        const isRest = data[i][col("Ambiny")] === "Eny";
+        sh.getRange(i + 1, col("Anarana") + 1).setValue(safe_(name, 60));
+        sh.getRange(i + 1, col("Tanjona") + 1).setValue(isRest ? "" : goal);   // the Fitsinjo wallet never has a goal
+        sh.getRange(i + 1, col("Aseho") + 1).setValue(b.public ? "Eny" : "Tsia");
+        sh.getRange(i + 1, col("Sata") + 1).setValue(isRest || b.active !== false ? "Mavitrika" : "Tsy mavitrika");
+        sheet_("log").appendRow([new Date(), m["Anarana feno"], "wallet_edit", b.id + " " + name, "wal|" + Utilities.getUuid()]);
+        return Object.assign({ ok: true, id: String(b.id) }, safeRebuild_());
+      }
+      return { ok: false, error: "not_found" };
+    }
+    const id = nextId_("wallets", "KT");
+    const row = h.map(k => ({ "ID": id, "Anarana": safe_(name, 60), "Tanjona": goal, "Aseho": b.public ? "Eny" : "Tsia",
+                             "Ambiny": "Tsia", "Sata": "Mavitrika", "Daty namoronana": dateFrom_(iso_(new Date())) })[k] ?? "");
+    sh.appendRow(row);
+    sheet_("log").appendRow([new Date(), m["Anarana feno"], "wallet_add", id + " " + name, "wal|" + Utilities.getUuid()]);
+    return Object.assign({ ok: true, id }, safeRebuild_());
+  } finally { lock.releaseLock(); }
+}
+function safeRebuild_() { try { rebuildReports_(); return {}; } catch (e) { console.error("reports", e); return { report_error: String(e) }; } }
+
+/* Sundays (or other dates) that are no longer free: accepted invitations + dates blocked in "Kalandrie" */
+function calendarBusy_() {
+  const from = new Date().getFullYear() + "-01-01";
+  const set = {};
+  rows_("invitations").filter(r => (r["Sata"] === "Eken'ny Birao" || r["Sata"] === "Vita") && r["Daty hanatanterahana"])
+    .forEach(r => { set[iso_(r["Daty hanatanterahana"])] = true; });
+  rowsIf_("calendar").filter(r => r["Daty"]).forEach(r => { set[iso_(r["Daty"])] = true; });
+  return Object.keys(set).filter(d => d && d >= from).sort();
+}
+
+/* ==========================================================================
+   Reports in the Sheet: "Tatitra ara-bola" and one tab per wallet.
+   These tabs are rewritten each time: do not type in them.
+   ========================================================================== */
+function rebuildReports() { rebuildReports_(); SpreadsheetApp.getActive().toast("Voavao ny tatitra ara-bola sy ny kitapo.", "ZA SPaFi", 5); }
+function rebuildReports_() {
+  const ss = SpreadsheetApp.getActive();
+  const st = walletState_();
+  const nameOf = {}; st.wallets.forEach(w => { nameOf[w.id] = w.name; });
+  const asDate = d => d ? dateFrom_(d) : "";
+
+  const writeTab = (name, headers, rows, color) => {
+    let sh = ss.getSheetByName(name);
+    if (!sh) sh = ss.insertSheet(name);
+    sh.clear();
+    sh.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight("bold").setBackground(color).setFontColor("#ffffff");
+    sh.setFrozenRows(1);
+    if (rows.length) sh.getRange(2, 1, rows.length, headers.length).setValues(rows);
+    return sh;
+  };
+  const fmt = (sh, n, cols, firstDate) => {
+    if (!n) return;
+    if (firstDate) sh.getRange(2, 1, n, 1).setNumberFormat("yyyy-mm-dd");
+    cols.forEach(c => sh.getRange(2, c, n, 1).setNumberFormat("#,##0"));
+  };
+
+  // 1. general report
+  let run = 0;
+  const rows = st.ledger.map(e => {
+    const v = Math.round(e.mv.amount); run += e.mv.kind === "in" ? v : -v;
+    const where = e.shared ? "Zaraina" : Object.keys(e.parts).filter(id => e.parts[id]).map(id => nameOf[id]).join(", ");
+    return [asDate(e.mv.date), e.mv.kind === "in" ? "Miditra" : "Mivoaka", e.mv.reason, where,
+            e.mv.kind === "in" ? v : "", e.mv.kind === "out" ? v : "", run];
+  });
+  const totIn = st.ledger.filter(e => e.mv.kind === "in").reduce((s, e) => s + Math.round(e.mv.amount), 0);
+  const totOut = st.ledger.filter(e => e.mv.kind === "out").reduce((s, e) => s + Math.round(e.mv.amount), 0);
+  rows.push(["", "", "FITAMBARANY", "", totIn, totOut, totIn - totOut]);
+  const rep = writeTab(REPORT_SHEET, ["Daty", "Karazany", "Antony", "Kitapo", "Vola niditra", "Vola nivoaka", "Ambiny"], rows, "#1b3a8a");
+  fmt(rep, rows.length, [5, 6, 7], true);
+  rep.getRange(rows.length + 1, 1, 1, 7).setFontWeight("bold").setBackground("#f3eee1");
+  [110, 90, 320, 200, 120, 120, 130].forEach((w, i) => rep.setColumnWidth(i + 1, w));
+
+  // 2. one tab per wallet
+  const keep = {};
+  st.wallets.forEach(w => {
+    const tab = WALLET_SHEET_PREFIX + w.name.replace(/[\[\]\*\?\/\\:]/g, " ").slice(0, 80);
+    keep[tab] = true;
+    let r = 0;
+    const lines = st.ledger.filter(e => e.parts[w.id]).map(e => {
+      const v = e.parts[w.id]; r += v;
+      return [asDate(e.mv.date), e.mv.reason + (e.shared ? " (zaraina)" : ""), v > 0 ? v : "", v < 0 ? -v : "", r];
+    });
+    lines.push(["", "AMBINY" + (w.goal ? " (tanjona: " + w.goal + " Ar, " + Math.floor(Math.max(0, w.balance) * 100 / w.goal) + "%)" : ""), "", "", w.balance]);
+    const sh = writeTab(tab, ["Daty", "Antony", "Vola niditra", "Vola nivoaka", "Ambiny"], lines, "#7a4b2a");
+    fmt(sh, lines.length, [3, 4, 5], true);
+    sh.getRange(lines.length + 1, 1, 1, 5).setFontWeight("bold").setBackground("#f3eee1");
+    [110, 360, 120, 120, 130].forEach((wd, i) => sh.setColumnWidth(i + 1, wd));
+  });
+  ss.getSheets().forEach(sh => { const n = sh.getName(); if (n.indexOf(WALLET_SHEET_PREFIX) === 0 && !keep[n]) ss.deleteSheet(sh); });
+
+  // 3. current amount and % in the "Kitapo" tab
+  if (!ss.getSheetByName(S.wallets.name)) return;
+  const wsh = sheet_("wallets");
+  const data = wsh.getDataRange().getValues(); const h = data[0];
+  const cId = h.indexOf("ID"), cBal = h.indexOf("Vola ankehitriny"), cPct = h.indexOf("Isan-jato");
+  for (let i = 1; i < data.length; i++) {
+    const w = st.wallets.find(x => x.id === String(data[i][cId]).trim());
+    if (!w) continue;
+    wsh.getRange(i + 1, cBal + 1).setValue(w.balance);
+    wsh.getRange(i + 1, cPct + 1).setValue(w.goal ? Math.floor(Math.max(0, w.balance) * 100 / w.goal) + "%" : "–");
+  }
 }

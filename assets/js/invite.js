@@ -51,7 +51,7 @@
     msg.innerHTML = "";
     const v = n => form.elements[n].value.trim();
     if (form.elements.website.value) return;                                   // spam trap
-    if (!v("name") || !v("group") || !v("phone") || !v("subject")) { msg.innerHTML = `<div class="alert alert--err">${t("err.missing_fields")}</div>`; return; }
+    if (!v("name") || !v("group") || !v("phone") || !v("subject") || !v("event_date")) { msg.innerHTML = `<div class="alert alert--err">${t("err.missing_fields")}</div>`; return; }
     if (v("phone").replace(/\D/g, "").length < 9) { msg.innerHTML = `<div class="alert alert--err">${t("inv.err_phone")}</div>`; return; }
     if (v("email") && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v("email"))) { msg.innerHTML = `<div class="alert alert--err">${t("inv.err_email")}</div>`; return; }
     let file;
@@ -60,7 +60,7 @@
 
     sending = true; btn.disabled = true; btn.textContent = t("inv.sending");
     const payload = { action: "invite", name: v("name"), group: v("group"), phone: v("phone"), email: v("email"),
-                      subject: v("subject"), file, lang: window.ZA.lang(), website: "" };
+                      subject: v("subject"), event_date: v("event_date"), file, lang: window.ZA.lang(), website: "" };
     const CFG = window.SITE_CONFIG || {};
     try {
       let out = { ok: true, demo: true };
@@ -85,11 +85,68 @@
     sending = false;
   }
 
+  /* ---------- availability calendar: Sundays only ---------- */
+  let calYear = new Date().getFullYear();
+  const isoOf = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  const todayIso = () => isoOf(new Date());
+  function busySet() { const D = window.ZA.data && window.ZA.data(); return new Set((D && D.busy) || []); }
+
+  function renderCalendar() {
+    const box = document.getElementById("cal-app"); if (!box) return;
+    const { t } = window.ZA;
+    const busy = busySet(), today = todayIso(), thisYear = new Date().getFullYear();
+    const sel = (document.getElementById("i-date") || {}).value || "";
+    let html = `<div class="cal-head">
+        <button type="button" class="btn btn--outline btn--small" data-cal="-1" ${calYear <= thisYear ? "disabled" : ""}>‹</button>
+        <strong class="cal-year">${calYear}</strong>
+        <button type="button" class="btn btn--outline btn--small" data-cal="1" ${calYear >= thisYear + 1 ? "disabled" : ""}>›</button>
+        <span class="cal-legend"><span class="cal-day is-free">${t("cal.free")}</span><span class="cal-day is-busy">${t("cal.busy")}</span></span>
+      </div><div class="cal-grid">`;
+    const firstMonth = calYear === thisYear ? new Date().getMonth() : 0;   // past months are not shown
+    for (let m = firstMonth; m < 12; m++) {
+      const days = [];
+      const d = new Date(calYear, m, 1);
+      while (d.getDay() !== 0) d.setDate(d.getDate() + 1);
+      for (; d.getMonth() === m; d.setDate(d.getDate() + 7)) days.push(new Date(d));
+      html += `<div class="cal-month"><div class="cal-month__name">${t("month." + (m + 1))}</div><div class="cal-days">` +
+        days.map(x => {
+          const iso = isoOf(x), past = iso < today, isBusy = busy.has(iso);
+          const cls = past ? "is-past" : isBusy ? "is-busy" : "is-free";
+          const label = past ? "" : isBusy ? t("cal.busy") : t("cal.free");
+          return `<button type="button" class="cal-day ${cls}${iso === sel ? " is-sel" : ""}" data-day="${iso}" ${past || isBusy ? "disabled" : ""}
+                   title="${label}" aria-label="${x.getDate()} ${t("month." + (m + 1))} ${calYear}: ${label}">${x.getDate()}</button>`;
+        }).join("") + `</div></div>`;
+    }
+    box.innerHTML = html + `</div><p class="hint">${t("cal.pick")}</p>`;
+    box.querySelectorAll("[data-cal]").forEach(b => b.addEventListener("click", () => { calYear += Number(b.dataset.cal); renderCalendar(); }));
+    box.querySelectorAll("[data-day]").forEach(b => b.addEventListener("click", () => {
+      const input = document.getElementById("i-date"); if (!input) return;
+      input.value = b.dataset.day; dateNote(); renderCalendar();
+      input.scrollIntoView({ behavior: "smooth", block: "center" });
+    }));
+  }
+
+  /* Warning under the date: not a Sunday, or Sunday already taken */
+  function dateNote() {
+    const { t } = window.ZA;
+    const input = document.getElementById("i-date"), box = document.getElementById("i-date-note");
+    if (!input || !box) return;
+    const v = input.value; box.innerHTML = "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return;
+    const d = new Date(v + "T12:00:00");
+    if (d.getDay() !== 0) box.innerHTML = `<div class="alert alert--warn">${t("cal.not_sunday")}</div>`;
+    else if (busySet().has(v)) box.innerHTML = `<div class="alert alert--warn">${t("cal.taken")}</div>`;
+    else box.innerHTML = `<div class="alert alert--ok">${t("cal.ok")}</div>`;
+  }
+
   window.renderInvitePage = function () {
     if (ready) return;
     const form = document.getElementById("f-invite");
     if (!form || !window.ZA) return;
     ready = true;
+    const input = document.getElementById("i-date");
+    if (input) { input.min = todayIso(); input.addEventListener("change", () => { dateNote(); renderCalendar(); }); }
+    renderCalendar();
     form.addEventListener("submit", e => { e.preventDefault(); if (!sending) submit(form); });
   };
 })();

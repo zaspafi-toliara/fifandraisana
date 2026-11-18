@@ -17,7 +17,8 @@
       "cards": true,
       "tasks_admin": true,
       "broadcast": true,
-      "letters": true
+      "letters": true,
+      "wallets": true
     }
   },
   "fees": {
@@ -428,70 +429,174 @@
         "type": "in",
         "amount": 50000,
         "reason": "Fanomezana",
-        "category": "donation"
+        "category": "donation",
+        "wallet": ""
       },
       {
         "date": "2026-11-05",
         "type": "out",
         "amount": 35000,
         "reason": "Fanamboarana keyboard",
-        "category": ""
+        "category": "",
+        "wallet": "Fanamiana"
       },
       {
         "date": "2026-11-03",
         "type": "in",
         "amount": 20000,
         "reason": "Fanomezana",
-        "category": "donation"
+        "category": "donation",
+        "wallet": ""
       },
       {
         "date": "2026-10-31",
         "type": "in",
         "amount": 2000,
         "reason": "Latsakemboka 2026-10",
-        "category": "fee"
+        "category": "fee",
+        "wallet": ""
       },
       {
         "date": "2026-10-25",
         "type": "in",
         "amount": 150000,
         "reason": "Fampisehoana tao amin'ny fiangonana",
-        "category": ""
+        "category": "",
+        "wallet": ""
       },
       {
         "date": "2026-10-20",
         "type": "out",
         "amount": 12000,
         "reason": "Fandikana taratasy hira",
-        "category": ""
+        "category": "",
+        "wallet": ""
       },
       {
         "date": "2026-10-15",
         "type": "in",
         "amount": 2000,
         "reason": "Latsakemboka 2026-09",
-        "category": "fee"
+        "category": "fee",
+        "wallet": ""
       },
       {
         "date": "2026-10-10",
         "type": "out",
         "amount": 40000,
         "reason": "Fitaterana fampisehoana",
-        "category": ""
+        "category": "",
+        "wallet": ""
       },
       {
         "date": "2026-10-02",
         "type": "in",
         "amount": 15000,
         "reason": "Fanomezana",
-        "category": "donation"
+        "category": "donation",
+        "wallet": ""
       },
       {
         "date": "2026-09-28",
         "type": "out",
         "amount": 8000,
         "reason": "Rano sy sakafo maivana",
-        "category": ""
+        "category": "",
+        "wallet": ""
+      }
+    ],
+    "wallets": [
+      {
+        "id": "KT1",
+        "name": "Ezaka sono",
+        "goal": 2000000,
+        "balance": 412000,
+        "public": true,
+        "rest": false,
+        "active": true
+      },
+      {
+        "id": "KT2",
+        "name": "Isantaona",
+        "goal": 8000000,
+        "balance": 1350000,
+        "public": true,
+        "rest": false,
+        "active": true
+      },
+      {
+        "id": "KT3",
+        "name": "Fitsinjo",
+        "goal": null,
+        "balance": 286500,
+        "public": true,
+        "rest": true,
+        "active": true
+      },
+      {
+        "id": "KT4",
+        "name": "Fanamiana",
+        "goal": 2000000,
+        "balance": 1530000,
+        "public": true,
+        "rest": false,
+        "active": true
+      },
+      {
+        "id": "KT5",
+        "name": "Fampiofanana tanora",
+        "goal": 500000,
+        "balance": 500000,
+        "public": false,
+        "rest": false,
+        "active": true
+      }
+    ],
+    "wallets_all": [
+      {
+        "id": "KT1",
+        "name": "Ezaka sono",
+        "goal": 2000000,
+        "balance": 412000,
+        "public": true,
+        "rest": false,
+        "active": true
+      },
+      {
+        "id": "KT2",
+        "name": "Isantaona",
+        "goal": 8000000,
+        "balance": 1350000,
+        "public": true,
+        "rest": false,
+        "active": true
+      },
+      {
+        "id": "KT3",
+        "name": "Fitsinjo",
+        "goal": null,
+        "balance": 286500,
+        "public": true,
+        "rest": true,
+        "active": true
+      },
+      {
+        "id": "KT4",
+        "name": "Fanamiana",
+        "goal": 2000000,
+        "balance": 1530000,
+        "public": true,
+        "rest": false,
+        "active": true
+      },
+      {
+        "id": "KT5",
+        "name": "Fampiofanana tanora",
+        "goal": 500000,
+        "balance": 500000,
+        "public": false,
+        "rest": false,
+        "active": true
       }
     ]
   },
@@ -501,84 +606,96 @@
       "type": "in",
       "amount": 50000,
       "reason": "Fanomezana",
-      "category": "donation"
+      "category": "donation",
+      "wallet": ""
     },
     {
       "date": "2026-11-05",
       "type": "out",
       "amount": 35000,
       "reason": "Fanamboarana keyboard",
-      "category": ""
+      "category": "",
+      "wallet": ""
     },
     {
       "date": "2026-11-03",
       "type": "in",
       "amount": 20000,
       "reason": "Fanomezana",
-      "category": "donation"
+      "category": "donation",
+      "wallet": ""
     },
     {
       "date": "2026-10-31",
       "type": "in",
       "amount": 2000,
       "reason": "Latsakemboka 2026-10",
-      "category": "fee"
+      "category": "fee",
+      "wallet": ""
     },
     {
       "date": "2026-10-25",
       "type": "in",
       "amount": 150000,
       "reason": "Fampisehoana tao amin'ny fiangonana",
-      "category": ""
+      "category": "",
+      "wallet": ""
     },
     {
       "date": "2026-10-20",
       "type": "out",
       "amount": 12000,
       "reason": "Fandikana taratasy hira",
-      "category": ""
+      "category": "",
+      "wallet": ""
     },
     {
       "date": "2026-10-15",
       "type": "in",
       "amount": 2000,
       "reason": "Latsakemboka 2026-09",
-      "category": "fee"
+      "category": "fee",
+      "wallet": ""
     },
     {
       "date": "2026-10-10",
       "type": "out",
       "amount": 40000,
       "reason": "Fitaterana fampisehoana",
-      "category": ""
+      "category": "",
+      "wallet": ""
     },
     {
       "date": "2026-10-02",
       "type": "in",
       "amount": 15000,
       "reason": "Fanomezana",
-      "category": "donation"
+      "category": "donation",
+      "wallet": ""
     },
     {
       "date": "2026-09-28",
       "type": "out",
       "amount": 8000,
       "reason": "Rano sy sakafo maivana",
-      "category": ""
+      "category": "",
+      "wallet": ""
     },
     {
       "date": "2026-09-14",
       "type": "in",
       "amount": 25000,
       "reason": "Fanomezana",
-      "category": "donation"
+      "category": "donation",
+      "wallet": ""
     },
     {
       "date": "2026-09-01",
       "type": "in",
       "amount": 40000,
       "reason": "Fanomezana",
-      "category": "donation"
+      "category": "donation",
+      "wallet": ""
     }
   ],
   "fees_all": [

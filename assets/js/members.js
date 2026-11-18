@@ -78,14 +78,27 @@
         return { ok: true };
       case "my_photo": return { ok: true, photo: "" };
       case "broadcast": {
-        const title = b.kind === "hamonjy" ? "Hamonjy antsam-panahy" : b.kind === "hafa" ? b.other : "Fivoriana";
-        if (!b.place || !b.time || !b.date || !title) return { ok: false, error: "missing_fields" };
+        if (b.kind === "hafa") {
+          if (!b.message) return { ok: false, error: "missing_fields" };
+          const text = "ZA SPaFi: " + b.message;
+          return b.preview ? { ok: true, text, count: demoData.people.length } : { ok: true, sent: demoData.people.length, text };
+        }
+        const title = b.kind === "hamonjy" ? "Hamonjy antsam-panahy" : "Fivoriana";
+        if (!b.place || !b.time || !b.date) return { ok: false, error: "missing_fields" };
         let text = "ZA SPaFi: " + title + ". Andro: " + b.date + ". Ora: " + b.time + ". Toerana: " + b.place + ".";
         if (b.kind === "hamonjy") text += (b.male ? " Fanamiana lahy: " + b.male + "." : "") + (b.female ? " Fanamiana vavy: " + b.female + "." : "");
         text += " Tongava ara-potoana. Misaotra!";
         return b.preview ? { ok: true, text, count: demoData.people.length } : { ok: true, sent: demoData.people.length, text };
       }
       case "notify_task": return { ok: true, sent: 1 };
+      case "wallet_save": {
+        const all = demoData.finance.wallets_all || demoData.finance.wallets;
+        let w = all.find(x => x.id === b.id);
+        if (!w) { w = { id: "KT" + (all.length + 1), balance: 0, rest: false }; all.push(w); }
+        Object.assign(w, { name: b.name, goal: w.rest ? null : (b.goal || null), public: !!b.public, active: w.rest || b.active !== false });
+        demoData.finance.wallets = all.filter(x => x.active);
+        return { ok: true, id: w.id };
+      }
       default: return { ok: true };
     }
   }
@@ -370,7 +383,7 @@
       const reason = r.category === "donation" ? t("m.fin_donation") : r.category === "fee" ? t("m.fin_fee") + " " + esc(r.reason.replace(/^Latsakemboka\s*/, "")) : esc(r.reason);
       return `<li class="tx tx--${r.type}">
         <span class="tx__ico">${r.type === "in" ? "↓" : "↑"}</span>
-        <span class="tx__main"><strong>${reason}</strong><span class="muted small">${fmtDate(r.date)}</span></span>
+        <span class="tx__main"><strong>${reason}</strong><span class="muted small">${fmtDate(r.date)}${r.wallet ? " · 👛 " + esc(r.wallet) : ""}</span></span>
         <span class="tx__amt">${r.type === "in" ? "+" : "−"} ${money(r.amount)}</span></li>`;
     }).join("");
     return `
@@ -380,6 +393,7 @@
           <div class="muted small">${t("m.fin_donations")}: ${money(fin.donations)} · ${t("m.fin_fees")}: ${money(fin.fees)}</div></div>
         <div class="card stat-card"><div class="muted">${t("m.fin_expense")}</div><div class="big amt-out">${money(fin.expense)}</div></div>
       </div>
+      ${walletsHTML()}
       <div class="card mt">
         <h3>${fullFinance ? t("m.fin_all") : t("m.fin_recent")}</h3>
         <ul class="txs">${rows}</ul>
@@ -387,6 +401,58 @@
           ? `<div class="list-actions"><button class="btn btn--outline btn--small" id="fin-all" ${busy ? "disabled" : ""}>${t("m.see_more", { n: fin.total_count })}</button></div>`
           : fullFinance ? `<div class="list-actions"><button class="btn btn--outline btn--small" id="fin-less">${t("common.show_less")}</button></div>` : ""}
       </div>`;
+  }
+
+  /* ---------- wallets (Kitapo) ---------- */
+  function walletsHTML() {
+    const { t, esc } = Z();
+    const fin = data.finance, can = (data.member.can || {}).wallets;
+    const ws = (can ? fin.wallets_all : fin.wallets) || fin.wallets || [];
+    if (!ws.length && !can) return "";
+    const editing = typeof form === "string" && form.indexOf("wallet:") === 0 ? form.slice(7) : null;
+    const tags = w => (w.rest ? `<span class="badge">${t("w.rest")}</span>` : "") +
+      (!w.public ? `<span class="badge badge--hidden">${t("m.hidden")}</span>` : "") +
+      (!w.active ? `<span class="badge badge--hidden">${t("w.inactive")}</span>` : "") +
+      (can ? `<button class="linkbtn wallet__edit" data-form="wallet:${esc(w.id)}">${t("w.edit")}</button>` : "");
+    return `
+      <div class="card mt">
+        <div class="wallets-head"><h3>👛 ${t("w.title")}</h3>
+          ${can && editing !== "new" ? `<button class="btn btn--gold btn--small" data-form="wallet:new">＋ ${t("w.add")}</button>` : ""}</div>
+        <p class="muted small">${t("w.rules")}</p>
+        ${noticeHTML("w.saved")}
+        ${editing === "new" ? walletForm(null) : ""}
+        <div class="wallets">${ws.map(w => editing === w.id ? walletForm(w) : Z().walletBar(w, tags(w))).join("")}</div>
+      </div>`;
+  }
+  function walletForm(w) {
+    const { t, esc } = Z();
+    return `
+      <form class="card form add-form wallet-form" id="f-wallet" data-id="${w ? esc(w.id) : ""}">
+        <h3>${w ? t("w.edit") + ": " + esc(w.name) : t("w.add")}</h3>
+        <div><label>${t("w.f_name")}</label><input name="name" required maxlength="60" value="${w ? esc(w.name) : ""}"></div>
+        <div><label>${t("w.f_goal")}</label><input name="goal" inputmode="numeric" value="${w && w.goal ? w.goal : ""}" ${w && w.rest ? "disabled" : ""}
+          placeholder="${t("w.no_goal")}"><p class="hint">${w && w.rest ? t("w.rest_hint") : t("w.goal_hint")}</p></div>
+        <label class="choice"><input type="checkbox" name="public" ${!w || w.public ? "checked" : ""}> ${t("w.f_public")}</label>
+        ${w && !w.rest ? `<label class="choice"><input type="checkbox" name="active" ${w.active ? "checked" : ""}> ${t("w.f_active")}</label>` : ""}
+        ${notice && notice !== "w.saved" ? `<div class="alert alert--err">${t(notice)}</div>` : ""}
+        <div class="inline"><button class="btn btn--gold" type="submit" ${busy ? "disabled" : ""}>${t("e.save")}</button>
+          <button class="btn btn--outline" type="button" data-cancel-form>${t("m.confirm_no")}</button></div>
+      </form>`;
+  }
+  async function saveWallet(f) {
+    const { num } = Z();
+    const name = f.elements.name.value.trim();
+    const goalRaw = f.elements.goal.disabled ? "" : f.elements.goal.value.trim();
+    if (!name || (goalRaw && !(num(goalRaw) > 0))) { notice = "err.missing_fields"; render(); return; }
+    busy = true; notice = ""; render();
+    try {
+      const r = await api("wallet_save", { id: f.dataset.id || "", name, goal: goalRaw ? num(goalRaw) : "",
+        public: f.elements.public.checked, active: f.elements.active ? f.elements.active.checked : true });
+      if (r.ok) { await loadMe(); busy = false; closeForm(); notice = "w.saved"; render(); return; }
+      if (r.error === "session_expired") return logout("m.session_expired");
+      notice = "err." + r.error;
+    } catch (e) { notice = "m.error"; }
+    busy = false; render();
   }
 
   /* ---------- goals ---------- */
@@ -492,16 +558,17 @@
           ${[["fivoriana", "n.k_meeting"], ["hamonjy", "n.k_visit"], ["hafa", "n.k_other"]].map(([v, l]) =>
             `<label><input type="radio" name="kind" value="${v}" ${k === v ? "checked" : ""}> ${t(l)}</label>`).join("")}
         </div>
-        ${k === "hafa" ? `<div><label>${t("n.reason")}</label><input name="other" maxlength="80" value="${esc(bc.other || "")}" required></div>` : ""}
+        ${k === "hafa" ? `<div><label>${t("n.message")}</label><textarea name="message" rows="4" maxlength="450" required>${esc(bc.message || "")}</textarea>
+          <p class="hint">${t("n.message_hint")}</p></div>` : ""}
         ${k === "hamonjy" ? `<div class="row">
             <div><label>${t("n.male")}</label><textarea name="male" rows="2" maxlength="80">${esc(bc.male || "")}</textarea></div>
             <div><label>${t("n.female")}</label><textarea name="female" rows="2" maxlength="80">${esc(bc.female || "")}</textarea></div>
           </div>` : ""}
-        <div><label>${t("n.place")}</label><input name="place" maxlength="80" value="${esc(bc.place || "")}" required></div>
+        ${k !== "hafa" ? `<div><label>${t("n.place")}</label><input name="place" maxlength="80" value="${esc(bc.place || "")}" required></div>
         <div class="row">
           <div><label>${t("n.date")}</label><input name="date" type="date" value="${esc(bc.date || "")}" required></div>
           <div><label>${t("n.time")}</label><input name="time" type="time" value="${esc(bc.time || "")}" required></div>
-        </div>
+        </div>` : ""}
         ${bcMsg ? `<div class="alert alert--err">${t(bcMsg)}</div>` : ""}
         <button class="btn btn--gold" type="submit" ${busy ? "disabled" : ""}>📨 ${t("n.send")}</button>
       </form>`;
@@ -509,12 +576,12 @@
   function readBc(f) {
     const v = n => (f.elements[n] ? f.elements[n].value.trim() : "");
     bc = { kind: (f.querySelector("input[name=kind]:checked") || {}).value || "fivoriana",
-           other: v("other") || bc.other, male: v("male") || bc.male, female: v("female") || bc.female,
-           place: v("place"), date: v("date"), time: v("time") };
+           message: f.elements.message ? v("message") : bc.message, male: v("male") || bc.male, female: v("female") || bc.female,
+           place: f.elements.place ? v("place") : bc.place, date: f.elements.date ? v("date") : bc.date, time: f.elements.time ? v("time") : bc.time };
   }
   async function bcPreviewNow() {
     bcMsg = "";
-    if (!bc.place || !bc.date || !bc.time || (bc.kind === "hafa" && !bc.other)) { bcMsg = "err.missing_fields"; render(); return; }
+    if (bc.kind === "hafa" ? !bc.message : (!bc.place || !bc.date || !bc.time)) { bcMsg = "err.missing_fields"; render(); return; }
     busy = true; render();
     try {
       const r = await api("broadcast", Object.assign({ preview: true }, bc));
@@ -705,6 +772,7 @@
     });
     const ft = root.querySelector("#f-task"); if (ft) ft.addEventListener("submit", e => { e.preventDefault(); submitForm("task", ft); });
     const fg = root.querySelector("#f-goal"); if (fg) fg.addEventListener("submit", e => { e.preventDefault(); submitForm("goal", fg); });
+    const fw = root.querySelector("#f-wallet"); if (fw) fw.addEventListener("submit", e => { e.preventDefault(); saveWallet(fw); });
     document.body.classList.toggle("no-scroll", drawer);
   }
 

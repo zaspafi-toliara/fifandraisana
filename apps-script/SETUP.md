@@ -231,3 +231,29 @@ After replacing `Code.gs`: run **`setup`** once (it adds the Fikirana row below)
 - In the message: one line = one paragraph; `- ` at the start = list item; **⇥** = indented paragraph; `**word**` = bold.
 - The PDF is A4, always one page: spacing shrinks first, then the text (11 pt down to 8 pt). If it still does not fit, the page asks to shorten the message.
 - Nothing is stored on the server; the current draft stays on the device until **Taratasy vaovao**.
+
+### 5.15 Wallets (Kitapo), availability calendar, free SMS text, financial reports (update of November 2026, part 5)
+
+After replacing `Code.gs`: run **`setup`** once, then **Manage deployments → New version**.
+`setup` adds the tabs **Kitapo** and **Kalandrie**, new columns (*Kitapo* in **Vola** and **Fanomezana**, *Daty hanatanterahana* in **Fanasana**), creates the 5 wallets, and builds the reports.
+
+**Wallets – tab "Kitapo"** (or the members' page, *Ny volan'ny fikambanana* → *Kitapo vaovao* / *Hanova*, for the Birao and the Mpitahiry vola)
+- Columns: *Anarana*, *Tanjona* (empty = no goal), *Aseho* (Eny = shown on the public donation page), *Ambiny* (Eny only for **Fitsinjo**: it receives every rest), *Sata* (Tsy mavitrika = receives nothing more), *Daty namoronana*. *Vola ankehitriny* and *Isan-jato* are filled automatically.
+- Rules (whole Ariary, never decimals):
+  - Income without a wallet (fees, donations "Fampandrosoana amin'ny lafiny rehetra", entries *Zaraina*): divided equally between the active wallets **that are not full yet**; the rest of the division goes to Fitsinjo.
+  - Income for chosen wallets: divided equally between them; the rest to Fitsinjo.
+  - Expense for a wallet: taken from that wallet (the phone app warns if it holds less).
+  - Expense without a wallet (*Zaraina / hafa*): taken from every wallet in proportion to what it holds; none goes below zero.
+- The whole history is replayed with these rules, so the money already received is spread over the wallets. A wallet added later only shares income from its *Daty namoronana*.
+- Phone app → *Vola miditra / mivoaka*: new field **Kitapo**.
+- Donation page: visitors tick one or several public wallets, or *Fampandrosoana amin'ny lafiny rehetra* (= all wallets, public and private).
+
+**Reports in the Sheet** – rebuilt automatically after every money entry/confirmation, or with the menu **ZA SPaFi → Havaozina ny tatitra ara-bola sy ny kitapo** (use it after editing the Sheet by hand):
+- **Tatitra ara-bola**: Daty · Karazany · Antony · Kitapo · Vola niditra · Vola nivoaka · Ambiny (running total), with the totals on the last line.
+- **Kitapo - <name>**: one tab per wallet with the same columns. These tabs are rewritten each time: do not type in them.
+
+**Availability calendar – fanasana.html**
+- Shows the Sundays from this month to the end of next year. A Sunday is *Efa misy fandaharana* when an invitation for that date has Sata **Eken'ny Birao** or **Vita**, or when its date is written in the tab **Kalandrie** (the *Antony* column is never shown).
+- The form now asks for **Daty hanatanterahana**. A date that is not a Sunday is accepted, marked in *Fanamarihana* and in the SMS: the members must decide first.
+
+**SMS – Hafa**: now a free message (up to 450 characters; 160 = 1 SMS per person). *Fivoriana* and *Hamonjy antsam-panahy* are unchanged.

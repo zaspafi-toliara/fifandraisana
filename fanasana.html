@@ -21,6 +21,16 @@
     <div class="container"><h1 data-i18n="inv.title"></h1><p data-i18n="inv.intro"></p></div>
   </section>
   <section class="section">
+    <div class="container" style="max-width:1000px">
+      <div class="card cal-card" id="calendar">
+        <h2 data-i18n="cal.title"></h2>
+        <p class="muted" data-i18n="cal.intro"></p>
+        <div id="cal-app" data-needs-data><p class="muted" data-i18n="common.loading"></p></div>
+        <div class="note-box" data-i18n="cal.other_days"></div>
+      </div>
+    </div>
+  </section>
+  <section class="section section--tight-top">
     <div class="container" style="max-width:720px">
       <div id="invite-app" class="card">
         <form class="form" id="f-invite" novalidate>
@@ -31,6 +41,9 @@
             <div><label for="i-phone"><span data-i18n="inv.phone"></span> <span class="req">*</span></label><input id="i-phone" name="phone" type="tel" required autocomplete="tel"></div>
             <div><label for="i-email" data-i18n="inv.email"></label><input id="i-email" name="email" type="email" autocomplete="email"></div>
           </div>
+          <div><label for="i-date"><span data-i18n="inv.date"></span> <span class="req">*</span></label>
+            <input id="i-date" name="event_date" type="date" required>
+            <div id="i-date-note"></div></div>
           <div><label for="i-subject"><span data-i18n="inv.subject"></span> <span class="req">*</span></label>
             <textarea id="i-subject" name="subject" rows="3" maxlength="500" required></textarea>
             <p class="hint" data-i18n="inv.subject_hint"></p></div>

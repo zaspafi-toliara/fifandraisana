@@ -691,3 +691,42 @@ body[data-page="invite"] .page-head p { font-size: 1.05rem; }
 /* field to correct after a refused registration */
 .form .is-invalid { border-color: #c62828 !important; box-shadow: 0 0 0 3px rgba(198,40,40,.15); }
 fieldset.is-invalid { border-radius: 10px; padding: 6px 10px; }
+
+/* ---------- wallets (Kitapo) ---------- */
+.wallets { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-top: 10px; }
+.wallet { background: #fff; border: 1px solid var(--line, #e5dcc8); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.wallet__top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.wallet__name { font-size: 1.05rem; color: var(--navy, #1b3a8a); margin-right: auto; }
+.wallet__pct { font-weight: 700; color: var(--navy, #1b3a8a); }
+.wallet__bar { height: 14px; border-radius: 999px; background: #ece5d3; overflow: hidden; }
+.wallet__bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #c9962b, #e2b955); transition: width .6s ease; }
+.wallet__bar span.is-open { background: repeating-linear-gradient(45deg, #9fb3dd 0 10px, #b9c8e8 10px 20px); }
+.wallet.is-full .wallet__bar span { background: linear-gradient(90deg, #2e7d5b, #3f9e74); }
+.wallet.is-neg .wallet__nums span:first-child { color: #a12a2a; }
+.wallet__nums { display: flex; justify-content: space-between; gap: 8px; font-size: .92rem; flex-wrap: wrap; }
+.wallet__edit { font-size: .85rem; }
+.wallets-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.wallet-form { grid-column: 1 / -1; }
+.choice--all { padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px dashed var(--line, #e5dcc8); }
+.alert--warn { background: #fff4dd; color: #7a4b00; }
+
+/* ---------- availability calendar (fanasana.html) ---------- */
+.section--tight-top { padding-top: 0; }
+.cal-card h2 { margin-bottom: 4px; }
+.cal-head { display: flex; align-items: center; gap: 12px; margin: 14px 0; flex-wrap: wrap; }
+.cal-year { font-size: 1.4rem; color: var(--navy, #1b3a8a); }
+.cal-legend { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.cal-legend .cal-day { width: auto; padding: 0 10px; cursor: default; }
+.cal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.cal-month { background: #fff; border: 1px solid var(--line, #e5dcc8); border-radius: 12px; padding: 10px 12px; }
+.cal-month__name { font-weight: 700; color: var(--navy, #1b3a8a); margin-bottom: 8px; }
+.cal-days { display: flex; gap: 6px; flex-wrap: wrap; }
+.cal-day { min-width: 38px; height: 38px; border-radius: 10px; border: 2px solid transparent; font: inherit; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.cal-day.is-free { background: #e3f1e8; color: #1f5a37; border-color: #b9dcc6; }
+.cal-day.is-free:hover { border-color: #2e7d5b; }
+.cal-day.is-busy { background: #f6dcdc; color: #8a1f24; border-color: #ebbcbc; text-decoration: line-through; cursor: not-allowed; }
+.cal-legend .cal-day.is-busy { text-decoration: none; }
+.cal-day.is-past { background: #f1efe9; color: #b3ad9f; cursor: default; }
+.cal-day.is-sel { outline: 3px solid var(--navy, #1b3a8a); outline-offset: 1px; }
+.note-box { margin-top: 14px; background: #fff4dd; color: #5a3d00; border-radius: 12px; padding: 12px 14px; }
+.wallet__tags { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: -4px; }

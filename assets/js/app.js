@@ -316,9 +316,44 @@
     const done = () => { btn.textContent = t(okKey); setTimeout(() => { btn.textContent = t(backKey); }, 1800); };
     if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, done); else done();
   }
+  /* ---------- wallets (Kitapo): progress bar toward the goal ---------- */
+  function walletBar(w, extra) {
+    const goal = w.goal || 0, bal = Math.max(0, w.balance || 0);
+    const pct = goal ? Math.min(100, Math.floor(bal * 100 / goal)) : 0;
+    return `<div class="wallet${goal && bal >= goal ? " is-full" : ""}${w.balance < 0 ? " is-neg" : ""}">
+      <div class="wallet__top"><strong class="wallet__name">${esc(w.name)}</strong>
+        <span class="wallet__pct">${goal ? pct + "%" : ""}</span></div>
+      ${extra ? `<div class="wallet__tags">${extra}</div>` : ""}
+      <div class="wallet__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${goal ? pct : 0}"
+           aria-label="${esc(w.name)}"><span style="width:${goal ? pct : 100}%" class="${goal ? "" : "is-open"}"></span></div>
+      <div class="wallet__nums"><span>${money(w.balance || 0)}</span>
+        <span class="muted">${goal ? t("w.goal") + ": " + money(goal) : t("w.no_goal")}</span></div>
+    </div>`;
+  }
+  function renderPublicWallets() {
+    const box = $("#wallets-public"); if (!box) return;
+    const ws = (DATA && DATA.wallets) || [];
+    if (!ws.length) { box.innerHTML = ""; return; }
+    box.innerHTML = `<div class="card"><h2>${t("w.public_title")}</h2><p class="muted">${t("w.public_intro")}</p>
+      <div class="wallets">${ws.map(w => walletBar(w)).join("")}</div></div>`;
+  }
+  function initWalletChoice() {
+    const fs = $("#f-wallets"), list = $("#f-wallet-list");
+    const ws = (DATA && DATA.wallets) || [];
+    if (!fs || !list || !ws.length) return;
+    fs.hidden = false;
+    list.innerHTML = `<label class="choice choice--all"><input type="checkbox" name="wallet_all" checked> <strong>${t("w.all")}</strong></label>` +
+      ws.map(w => `<label class="choice"><input type="checkbox" name="wallet" value="${esc(w.id)}"> ${esc(w.name)}</label>`).join("");
+    const all = list.querySelector("[name=wallet_all]");
+    const each = Array.from(list.querySelectorAll("[name=wallet]"));
+    all.addEventListener("change", () => { if (all.checked) each.forEach(c => { c.checked = false; }); else if (!each.some(c => c.checked)) all.checked = true; });
+    each.forEach(c => c.addEventListener("change", () => { all.checked = !each.some(x => x.checked); }));
+  }
+
   function initDonationForm() {
     const form = $("#donation-form"); if (!form || form.dataset.ready) return;
     form.dataset.ready = "1";
+    initWalletChoice();
     const dateInput = $("#f-date");
     if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().slice(0, 10);
     form.addEventListener("submit", async e => {
@@ -333,7 +368,8 @@
         name: fd.get("name"), phone: fd.get("phone"), amount,
         operator: fd.get("operator"), reference: fd.get("reference"),
         date: fd.get("date"), show_name: fd.get("visibility") === "show",
-        message: fd.get("message")
+        message: fd.get("message"),
+        wallets: fd.get("wallet_all") ? [] : fd.getAll("wallet")   // [] = Fampandrosoana amin'ny lafiny rehetra
       };
       const btn = form.querySelector("button[type=submit]");
       btn.disabled = true; btn.textContent = t("form.sending");
@@ -348,6 +384,7 @@
           msg.innerHTML = `<div class="alert alert--ok">${t("form.success")}<br><small>${t("form.demo")}</small></div>`;
         }
         form.reset(); if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+        const allBox = form.querySelector("[name=wallet_all]"); if (allBox) allBox.checked = true;
       } catch (err) {
         msg.innerHTML = `<div class="alert alert--err">${t("form.error")}</div>`;
       } finally {
@@ -393,6 +430,7 @@
     renderDonorList();
     renderMobileMoney();
     renderAbout();
+    renderPublicWallets();
     initDonationForm();
     if (window.renderMembersPage) window.renderMembersPage();
     if (window.renderEntryPage) window.renderEntryPage();
@@ -403,7 +441,7 @@
 
   // helpers shared with members.js
   const num = v => Number(String(v == null ? "" : v).replace(/\D/g, "")) || 0;   // Ariary: whole numbers
-  window.ZA = { t, esc, money, fmtDate, fetchText, num, lang: () => LANG };
+  window.ZA = { t, esc, money, fmtDate, fetchText, num, lang: () => LANG, data: () => DATA, walletBar };
 
   async function init() {
     document.documentElement.lang = LANG;
@@ -412,7 +450,7 @@
     applyStrings();
     await loadVerses();
     // public data is not needed on the staff/members pages
-    const needsPublic = ["home", "about", "donate"].indexOf(PAGE) >= 0;
+    const needsPublic = ["home", "about", "donate", "invite"].indexOf(PAGE) >= 0;
     try { if (needsPublic) await loadData(); }
     catch (e) {
       console.error("data", e);

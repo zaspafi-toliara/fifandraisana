@@ -159,5 +159,32 @@
       "amount": 4000,
       "by": "Rahary Zo"
     }
+  ],
+  "wallets": [
+    {
+      "id": "KT1",
+      "name": "Ezaka sono",
+      "balance": 412000
+    },
+    {
+      "id": "KT2",
+      "name": "Isantaona",
+      "balance": 1350000
+    },
+    {
+      "id": "KT3",
+      "name": "Fitsinjo",
+      "balance": 286500
+    },
+    {
+      "id": "KT4",
+      "name": "Fanamiana",
+      "balance": 1530000
+    },
+    {
+      "id": "KT5",
+      "name": "Fampiofanana tanora",
+      "balance": 500000
+    }
   ]
 }

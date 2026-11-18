@@ -24,6 +24,7 @@
   <section class="section">
     <div class="container">
       <div class="verse-card" data-verse="donate"></div>
+      <div id="wallets-public" class="mt"></div>
     </div>
   </section>
 
@@ -72,6 +73,11 @@
             <label for="f-ref"><span data-i18n="form.reference"></span> <span class="req">*</span></label>
             <input id="f-ref" name="reference" required>
           </div>
+          <fieldset id="f-wallets" hidden>
+            <legend data-i18n="w.choose"></legend>
+            <div id="f-wallet-list"></div>
+            <p class="hint" data-i18n="w.choose_hint"></p>
+          </fieldset>
           <fieldset>
             <legend data-i18n="form.visibility"></legend>
             <label class="choice"><input type="radio" name="visibility" value="show" checked> <span data-i18n="form.visibility_show"></span></label>
