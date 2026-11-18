@@ -176,7 +176,7 @@
     busy = true; render();
     try {
       const r = await api(kind === "task" ? "add_task" : "add_goal", payload);
-      if (r.ok) { await loadMe(); notice = kind === "task" ? "m.task_added" : "m.goal_added"; form = null; history.back(); }
+      if (r.ok) { await loadMe(); notice = kind === "task" ? "m.task_added" : "m.goal_added"; if (kind === "task") showTasks = true; form = null; history.back(); }
       else if (r.error === "session_expired") return logout("m.session_expired");
       else notice = "err." + r.error;
     } catch (e) { notice = "m.error"; }
@@ -408,7 +408,12 @@
     const { t, esc } = Z();
     const fin = data.finance, can = (data.member.can || {}).wallets;
     const ws = (can ? fin.wallets_all : fin.wallets) || fin.wallets || [];
-    if (!ws.length && !can) return "";
+    if (!ws.length) {
+      // old Apps Script (no "wallets" in the answer) or setup not run yet: tell the Birao what to do
+      if (!data.member.is_office && !can) return "";
+      return `<div class="card mt"><h3>👛 ${t("w.title")}</h3>
+        <p class="alert alert--warn">${t(fin.wallets === undefined ? "w.need_deploy" : "w.need_setup")}</p></div>`;
+    }
     const editing = typeof form === "string" && form.indexOf("wallet:") === 0 ? form.slice(7) : null;
     const tags = w => (w.rest ? `<span class="badge">${t("w.rest")}</span>` : "") +
       (!w.public ? `<span class="badge badge--hidden">${t("m.hidden")}</span>` : "") +
@@ -621,6 +626,7 @@
   }
 
   /* ---------- commissions (Vaomiera): tasks per commission ---------- */
+  let showTasks = false;          // tasks stay folded until "Hijery" is pressed
   function commHTML() {
     const { t, esc } = Z();
     const comms = data.commissions || [];
@@ -633,7 +639,7 @@
     const groups = {};
     list.forEach(x => { const k = x.goal_id || "_"; (groups[k] = groups[k] || []).push(x); });
     const goalTitle = id => { const g = (data.goals || []).find(x => x.id === id); return g ? g.title : t("m.no_goal"); };
-    const body = list.length ? Object.keys(groups).map(k => `
+    const body = !showTasks ? "" : list.length ? Object.keys(groups).map(k => `
       <div class="comm-group">
         <div class="comm-group__title">🎯 ${esc(goalTitle(k))}</div>
         <ol class="steps steps--flat">${groups[k].sort((a, b) => (a.status === "done") - (b.status === "done") || ((a.due || "9") < (b.due || "9") ? -1 : 1)).map(stepHTML).join("")}</ol>
@@ -649,7 +655,9 @@
           ${canAdd && form !== "task" ? `<button class="btn btn--gold btn--small" data-form="task">＋ ${t("m.add_task")}</button>` : ""}
         </div>
         ${canAdd && form === "task" ? taskFormHTML() : noticeHTML("m.task_added")}
-        ${body}
+        ${list.length ? `<div class="list-actions list-actions--left"><button class="btn ${showTasks ? "btn--outline" : "btn--navy"} btn--small" data-toggle-tasks>
+          ${showTasks ? "▲ " + t("m.tasks_hide") : "▼ " + t("m.tasks_show", { n: list.length })}</button></div>` : ""}
+        ${body || (!list.length ? `<p class="muted">${t(comm === "mine" ? "m.tasks_empty" : "m.no_tasks_comm")}</p>` : "")}
       </div>`;
   }
 
@@ -754,8 +762,9 @@
     on("#fin-all", "click", loadFullFinance);
     on("#fin-less", "click", () => { fullFinance = null; render(); });
     on("[data-more]", "click", e => { const k = e.currentTarget.dataset.more; expanded.has(k) ? expanded.delete(k) : expanded.add(k); render(); });
-    on("[data-comm]", "click", e => { comm = e.currentTarget.dataset.comm; if (form === "task") closeForm(); notice = ""; render(); });
-    on("[data-comm-jump]", "click", e => { comm = e.currentTarget.dataset.commJump; render(); setTimeout(() => { const s = document.getElementById("m-comm"); if (s) s.scrollIntoView(); }, 0); });
+    on("[data-comm]", "click", e => { comm = e.currentTarget.dataset.comm; showTasks = false; if (form === "task") closeForm(); notice = ""; render(); });
+    on("[data-toggle-tasks]", "click", () => { showTasks = !showTasks; render(); });
+    on("[data-comm-jump]", "click", e => { comm = e.currentTarget.dataset.commJump; showTasks = true; render(); setTimeout(() => { const s = document.getElementById("m-comm"); if (s) s.scrollIntoView(); }, 0); });
     on("[data-form]", "click", e => openForm(e.currentTarget.dataset.form));
     on("[data-cancel-form]", "click", closeForm);
     on("[data-notify-task]", "click", e => notifyTask(e.currentTarget.dataset.notifyTask));

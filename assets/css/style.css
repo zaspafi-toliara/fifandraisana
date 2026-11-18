@@ -730,3 +730,4 @@ fieldset.is-invalid { border-radius: 10px; padding: 6px 10px; }
 .cal-day.is-sel { outline: 3px solid var(--navy, #1b3a8a); outline-offset: 1px; }
 .note-box { margin-top: 14px; background: #fff4dd; color: #5a3d00; border-radius: 12px; padding: 12px 14px; }
 .wallet__tags { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: -4px; }
+.list-actions--left { text-align: left; margin-top: 10px; }

@@ -475,3 +475,7 @@ w.over,{name} only holds {amount}: this expense will make it negative.,{amount} 
 err.wallet_exists,A wallet with this name already exists.,Efa misy kitapo mitondra io anarana io.,Une cagnotte porte déjà ce nom.,
 n.message,Message,Hafatra,Message,
 n.message_hint,Typed as it is. “ZA SPaFi:” is added at the start. Up to 160 characters = 1 SMS per person.,Alefa araka izay soratanao. Ampiana “ZA SPaFi:” eo am-piandohana. Hatramin'ny litera 160 = SMS 1 isaky ny olona.,Envoyé tel quel. « ZA SPaFi: » est ajouté au début. Jusqu'à 160 caractères = 1 SMS par personne.,
+m.tasks_show,Show the tasks ({n}),Hijery ny asa ({n}),Voir les tâches ({n}),
+m.tasks_hide,Hide the tasks,Afeno ny asa,Masquer les tâches,
+w.need_deploy,"The wallets are not active yet: in Apps Script paste the new Code.gs, run “setup”, then Manage deployments → New version.","Mbola tsy mandeha ny kitapo: ao amin'ny Apps Script, apetaho ny Code.gs vaovao, alefaso ny “setup”, avy eo Manage deployments → New version.","Les cagnottes ne sont pas encore actives : dans Apps Script, collez le nouveau Code.gs, lancez « setup », puis Manage deployments → New version.",
+w.need_setup,No wallet yet: run “setup” in Apps Script (it creates the 5 wallets) or add one with “Kitapo vaovao”.,Mbola tsy misy kitapo: alefaso ny “setup” ao amin'ny Apps Script (mamorona ireo kitapo 5) na ampio amin'ny “Kitapo vaovao”.,Aucune cagnotte : lancez « setup » dans Apps Script (il crée les 5 cagnottes) ou ajoutez-en une.,
