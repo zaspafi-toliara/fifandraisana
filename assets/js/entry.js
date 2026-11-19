@@ -23,7 +23,7 @@
   let view = { name: "home" };
   let syncing = false;
   let flash = "";            // short confirmation message
-  let loginMsg = "";
+  let loginMsg = "", serverDetail = "";
   let search = "";
   let scanner = null;        // Html5Qrcode instance
   let attendance = null;     // { items: [{ id, time, op_id }] } while in attendance mode
@@ -113,7 +113,11 @@
     loginMsg = ""; render();
     try {
       const r = await api("login", { identifier, pin, remember: true });
-      if (!r.ok) { loginMsg = r.error === "not_staff" ? "e.not_staff" : r.error === "locked" ? "m.locked" : "m.login_error"; render(); return; }
+      if (!r.ok) {
+        const known = { not_staff: "e.not_staff", locked: "m.locked", unknown_id: "m.login_unknown", inactive: "m.login_inactive", bad_credentials: "m.login_bad_pin", missing_fields: "m.login_error" };
+        if (known[r.error]) loginMsg = known[r.error]; else { loginMsg = "m.server_error"; serverDetail = r.detail || r.error || ""; }
+        render(); return;
+      }
       token = r.token; store.set(K.token, token);
       await refreshLists();
       view = { name: "home" }; history.replaceState({ za: 1, view }, "");
@@ -230,7 +234,7 @@
       <div class="card login-card">
         <h2>${t("e.title")}</h2>
         <p class="muted">${t("e.login_intro")}</p>
-        ${loginMsg ? `<div class="alert alert--err">${t(loginMsg)}</div>` : ""}
+        ${loginMsg ? `<div class="alert alert--err">${t(loginMsg)}${loginMsg === "m.server_error" && serverDetail ? `<br><small>${Z().esc(serverDetail)}</small>` : ""}</div>` : ""}
         <form class="form" id="e-login" novalidate>
           <div><label for="e-id">${t("m.identifier")}</label><input id="e-id" name="identifier" autocomplete="username" required></div>
           <div><label for="e-pin">${t("m.pin")}</label><input id="e-pin" name="pin" type="password" inputmode="numeric" autocomplete="current-password" required></div>

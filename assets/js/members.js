@@ -115,13 +115,15 @@
   function closeForm() { if (form) history.back(); }
 
   /* ---------- actions ---------- */
+  let serverDetail = "";
   async function login(identifier, pin) {
     lastIdent = identifier;
     busy = true; message = ""; render();
     try {
       const r = await api("login", { identifier, pin });
       if (r.ok) { token = r.token; saveToken(token); await loadMe(); }
-      else message = r.error === "locked" ? "m.locked" : "m.login_error";
+      else if (r.error === "server" || !["locked", "unknown_id", "inactive", "bad_credentials", "missing_fields"].includes(r.error)) { message = "m.server_error"; serverDetail = r.detail || r.error || ""; }
+      else message = { locked: "m.locked", unknown_id: "m.login_unknown", inactive: "m.login_inactive", bad_credentials: "m.login_bad_pin" }[r.error] || "m.login_error";
     } catch (e) { message = "m.error"; }
     busy = false; render();
   }
@@ -276,7 +278,7 @@
         <div class="login-card__logo"><img src="assets/img/logo-192.png" alt=""></div>
         <h2>${t("m.login_title")}</h2>
         <p class="muted">${t("m.login_intro")}</p>
-        ${message ? `<div class="alert ${message === "m.session_expired" ? "alert--ok" : "alert--err"}">${t(message)}</div>` : ""}
+        ${message ? `<div class="alert ${message === "m.session_expired" ? "alert--ok" : "alert--err"}">${t(message)}${message === "m.server_error" && serverDetail ? `<br><small>${Z().esc(serverDetail)}</small>` : ""}</div>` : ""}
         <form class="form" novalidate>
           <div><label for="m-id">${t("m.identifier")}</label>
             <input id="m-id" name="identifier" autocomplete="username" value="${Z().esc(lastIdent)}" required></div>

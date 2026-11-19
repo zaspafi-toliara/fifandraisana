@@ -266,7 +266,8 @@ function doGet(e) {
     if (action === "public") return json_(publicData_());
     return json_({ ok: false, error: "unknown_action" });
   } catch (err) {
-    return json_({ ok: false, error: String(err) });
+    console.error("request failed", err && err.stack || err);       // visible in Apps Script → Executions
+    return json_({ ok: false, error: "server", detail: String(err).slice(0, 300) });
   }
 }
 
@@ -300,7 +301,8 @@ function doPost(e) {
       default:            return json_({ ok: false, error: "unknown_action" });
     }
   } catch (err) {
-    return json_({ ok: false, error: String(err) });
+    console.error("request failed", err && err.stack || err);       // visible in Apps Script → Executions
+    return json_({ ok: false, error: "server", detail: String(err).slice(0, 300) });
   }
 }
 
@@ -360,41 +362,60 @@ function addDonation_(b) {
    ========================================================================== */
 function login_(b) {
   const ident = String(b.identifier || "").trim();
-  const pin = String(b.pin || "").trim();
+  const pin = pinText_(b.pin);
   if (!ident || !pin) return { ok: false, error: "missing_fields" };
 
   const cache = CacheService.getScriptCache();
-  const failKey = "fail_" + ident.toUpperCase().replace(/\s/g, "");
+  const failKey = "fail_" + idKey_(ident);
   const fails = Number(cache.get(failKey) || 0);
   if (fails >= 5) return { ok: false, error: "locked" };
 
-  const m = findMember_(ident);
-  if (!m || String(m["PIN"]).replace(/^'/, "").trim() !== pin || m["Sata"] === "Tsy mavitrika") {
+  // several members may share a phone number (family): the PIN decides which one
+  const found = findMembers_(ident);
+  const m = found.find(x => pinText_(x["PIN"]) === pin);
+  if (!m) {
     cache.put(failKey, String(fails + 1), 15 * 60);
-    return { ok: false, error: "bad_credentials" };
+    return { ok: false, error: found.length ? "bad_credentials" : "unknown_id" };
   }
+  if (m["Sata"] === "Tsy mavitrika") return { ok: false, error: "inactive" };
   cache.remove(failKey);
   const token = Utilities.getUuid();
   if (b.remember) {
     // long session for the entry app, only for people allowed to enter data
     if (!canAny_(m)) return { ok: false, error: "not_staff" };
     PropertiesService.getScriptProperties().setProperty("dev_" + token,
-      JSON.stringify({ id: String(m["ID"]), exp: Date.now() + DEVICE_DAYS * 86400000 }));
+      JSON.stringify({ id: String(m["ID"]).trim(), exp: Date.now() + DEVICE_DAYS * 86400000 }));
   } else {
-    cache.put("tok_" + token, String(m["ID"]), SESSION_SECONDS);
+    cache.put("tok_" + token, String(m["ID"]).trim(), SESSION_SECONDS);
   }
   return { ok: true, token };
 }
 
-function findMember_(ident) {
-  const up = ident.toUpperCase().replace(/\s/g, "");
-  const digits = ident.replace(/\D/g, "").slice(-9);
-  return rows_("members").find(m => {
-    if (String(m["ID"]).toUpperCase() === up) return true;
+/* "za 001", "ZA001", "ZA–001", " ZA-001 " -> "ZA-001" */
+function idKey_(v) {
+  const t = String(v || "").toUpperCase().replace(/[\s\u2010-\u2015_.]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  const m = t.match(/^([A-Z]+)-?0*(\d+)$/);
+  return m ? m[1] + "-" + m[2] : t;
+}
+/* PIN typed or stored as a number: "'0482", 482, "0482 " -> "0482" (4 digits) */
+function pinText_(v) {
+  const d = String(v == null ? "" : v).replace(/^'/, "").replace(/\.0+$/, "").replace(/\D/g, "");
+  if (!d) return "";
+  return d.length < 4 ? ("0000" + d).slice(-4) : d;
+}
+
+function findMembers_(ident) {
+  const key = idKey_(ident);
+  const digits = String(ident).replace(/\D/g, "").slice(-9);
+  const looksLikePhone = String(ident).replace(/\D/g, "").length >= 9;
+  return rows_("members").filter(m => {
+    if (!m["ID"]) return false;
+    if (idKey_(m["ID"]) === key) return true;
     const p = String(m["Finday"]).replace(/\D/g, "").slice(-9);
-    return digits.length === 9 && p === digits;
+    return looksLikePhone && p.length === 9 && p === digits;
   });
 }
+function findMember_(ident) { return findMembers_(ident)[0]; }
 
 function withMember_(b, fn) {
   let id = b.token ? CacheService.getScriptCache().get("tok_" + b.token) : null;
@@ -407,7 +428,7 @@ function withMember_(b, fn) {
     }
   }
   if (!id) return { ok: false, error: "session_expired" };
-  const m = rows_("members").find(r => String(r["ID"]) === id);
+  const m = rows_("members").find(r => String(r["ID"]).trim() === String(id).trim());
   if (!m) return { ok: false, error: "session_expired" };
   return fn(m, b);
 }
