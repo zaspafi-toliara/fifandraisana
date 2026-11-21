@@ -24,7 +24,7 @@
   let syncing = false;
   let flash = "";            // short confirmation message
   let loginMsg = "", serverDetail = "";
-  let infoErr = "";          // error on the phone / birth-date form of a member
+  let infoErr = "";          // error on the member details form
   let search = "";
   let scanner = null;        // Html5Qrcode instance
   let attendance = null;     // { items: [{ id, time, op_id }] } while in attendance mode
@@ -103,7 +103,14 @@
     if (type === "loan" && mat(d.material_id)) Object.assign(mat(d.material_id), { holder_id: d.member_id, holder_name: (mem(d.member_id) || {}).name || d.member_id, since: d.date });
     if (type === "return" && mat(d.material_id)) Object.assign(mat(d.material_id), { holder_id: "", holder_name: "", since: "" });
     if (type === "photo" && mem(d.member_id)) mem(d.member_id).photo_data = d.image;
-    if (type === "member_info" && mem(d.member_id)) { const x = mem(d.member_id); if (d.name) x.name = d.name; if (d.phone) x.phone = d.phone; if (d.birth) x.birth = d.birth; }
+    if (type === "member_info" && mem(d.member_id)) {
+      const x = mem(d.member_id);
+      const map = { name: "name", phone: "phone", birth: "birth", commission: "commission", category: "category", joined: "joined",
+                    birao: "birao", office_role: "role", right: "right", status: "status" };
+      Object.keys(map).forEach(k => { if (d[k] !== undefined) x[map[k]] = d[k]; });
+      if (d.office_role) x.birao = "Eny";
+      if (d.birao === "Tsia") x.role = "";
+    }
     if (type === "fee_status" && lists.pending_fees) lists.pending_fees = lists.pending_fees.filter(x => x.id !== d.id);
     if (type === "tx_status" && lists.pending_tx) lists.pending_tx = lists.pending_tx.filter(x => x.id !== d.id);
     if (type === "donation_status" && lists.pending_donations) lists.pending_donations = lists.pending_donations.filter(x => x.key !== d.key);
@@ -314,6 +321,12 @@
         <div class="member-meta"><span class="chip chip--small">${esc(m.id)}</span><span>${esc(m.commission)}</span>${m.role ? `<span>${esc(m.role)}</span>` : ""}</div></div>`;
     if (can.members_edit) {
       const max = today();
+      const ch = Object.assign({ commissions: (window.SITE_CONFIG || {}).COMMISSIONS || [], office_roles: [], rights: [], statuses: [], categories: ["Mpianatra", "Miasa"] }, lists.choices || {});
+      const self = lists.me && lists.me.id === m.id;
+      const pick = (name, opts, cur, emptyLabel, disabled) => {
+        const all = opts.indexOf(cur) < 0 && cur ? [cur].concat(opts) : opts;
+        return `<select name="${name}" ${disabled ? "disabled" : ""}>${all.map(o => `<option value="${esc(o)}" ${o === (cur || "") ? "selected" : ""}>${esc(o || emptyLabel || "–")}</option>`).join("")}</select>`;
+      };
       html += `
         <form class="card form mt" id="f-info" data-id="${esc(m.id)}">
           <h3>${t("e.info_title")}</h3>
@@ -322,6 +335,24 @@
             <div><label>${t("m.info_phone")}</label><input name="phone" type="tel" inputmode="tel" value="${esc(m.phone || "")}" placeholder="034 00 000 00"></div>
             <div><label>${t("m.info_birth")}</label><input name="birth" type="date" max="${max}" value="${esc(m.birth || "")}"></div>
           </div>
+          <div><label>${t("m.commission")}</label>${pick("commission", ch.commissions, m.commission)}</div>
+          ${can.members_admin ? `
+          <fieldset class="admin-box">
+            <legend>${t("e.admin_title")}</legend>
+            <div class="row">
+              <div><label>${t("e.nm_cat")}</label>${pick("category", ch.categories, m.category)}</div>
+              <div><label>${t("e.nm_joined")}</label><input name="joined" type="date" max="${max}" value="${esc(m.joined || "")}"></div>
+            </div>
+            <div class="row">
+              <div><label>${t("e.f_birao")}</label>${pick("birao", ["Eny", "Tsia"], m.birao || "Tsia")}</div>
+              <div><label>${t("e.f_role")}</label>${pick("office_role", [""].concat(ch.office_roles), m.role || "", "–")}</div>
+            </div>
+            <div class="row">
+              <div><label>${t("e.f_right")}</label>${pick("right", ch.rights, m.right || "Mpikambana", "", self)}</div>
+              <div><label>${t("e.f_status")}</label>${pick("status", ch.statuses, m.status || "Mavitrika", "", self)}</div>
+            </div>
+            ${self ? `<p class="hint">${t("e.admin_self")}</p>` : `<p class="hint">${t("e.admin_hint")}</p>`}
+          </fieldset>` : ""}
           ${infoErr ? `<div class="alert alert--err">${t(infoErr)}</div>` : ""}
           <button class="btn btn--navy btn--small" type="submit">${t("e.save")}</button>
         </form>`;
@@ -715,17 +746,25 @@
 
     // phone number / birth date of the scanned member (Birao, Mpandrindra)
     const finfo = root.querySelector("#f-info");
+    if (finfo && finfo.elements.office_role && finfo.elements.birao) {
+      finfo.elements.office_role.addEventListener("change", () => { if (finfo.elements.office_role.value) finfo.elements.birao.value = "Eny"; });
+      finfo.elements.birao.addEventListener("change", () => { if (finfo.elements.birao.value === "Tsia") finfo.elements.office_role.value = ""; });
+    }
     if (finfo) finfo.addEventListener("submit", e => {
       e.preventDefault();
       const id = finfo.dataset.id, m = lists.members.find(x => x.id === id) || {};
-      const phone = finfo.phone.value.trim(), birth = finfo.birth.value;
-      const name = finfo.elements.name.value.replace(/\s+/g, " ").trim();
-      const ch = { name: name !== (m.name || "") ? name : "", phone: phone !== (m.phone || "") ? phone : "", birth: birth !== (m.birth || "") ? birth : "" };
+      const val = n => finfo.elements[n] && !finfo.elements[n].disabled ? finfo.elements[n].value.replace(/\s+/g, " ").trim() : undefined;
+      // field name → current value of the member
+      const cur = { name: m.name, phone: m.phone, birth: m.birth, commission: m.commission, category: m.category, joined: m.joined,
+                    birao: m.birao || "Tsia", office_role: m.role || "", right: m.right || "Mpikambana", status: m.status || "Mavitrika" };
+      const ch = {};
+      Object.keys(cur).forEach(k => { const v = val(k); if (v !== undefined && v !== (cur[k] || "")) ch[k] = v; });
+      ["phone", "birth", "joined"].forEach(k => { if (ch[k] === "") delete ch[k]; });   // these cannot be emptied here
       infoErr = "";
-      if (!ch.name && !ch.phone && !ch.birth) { render(); return; }
-      if (name.length < 3) { infoErr = "err.bad_name"; render(); return; }
+      if (!Object.keys(ch).length) { render(); return; }
+      if (ch.name !== undefined && ch.name.length < 3) { infoErr = "err.bad_name"; render(); return; }
       if (ch.phone && ch.phone.replace(/\D/g, "").length < 9) { infoErr = "err.bad_phone"; render(); return; }
-      if (ch.birth && ch.birth > today()) { infoErr = "err.bad_date"; render(); return; }
+      if ((ch.birth && ch.birth > today()) || (ch.joined && ch.joined > today())) { infoErr = "err.bad_date"; render(); return; }
       enqueue("member_info", Object.assign({ member_id: id }, ch), `${t("e.info_title")}: ${ch.name || m.name || id}`);
       render();
     });

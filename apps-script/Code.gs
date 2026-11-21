@@ -295,7 +295,7 @@ function doPost(e) {
       case "staff_lists": return json_(withMember_(body, staffLists_));
       case "sync":        return json_(withMember_(body, sync_));
       case "my_info":     return json_(withMember_(body, (m, b) => {
-                            const res = memberInfo_(m, String(m["ID"]).trim(), b, "my_info");
+                            const res = memberInfo_(m, String(m["ID"]).trim(), { name: b.name, phone: b.phone, birth: b.birth }, "my_info", "self");
                             return res.ok ? Object.assign(res, { member: { name: res.name, phone: res.phone, birth: res.birth } }) : res;
                           }));
       case "my_photo":    return json_(withMember_(body, (m, b) => {
@@ -469,7 +469,8 @@ function rights_(m) {
     cards: office,
     tasks_admin: office,
     members_add: office,                                              // register new members (phone app)
-    members_edit: office,                                             // change a member's phone / birth date (phone app)
+    members_edit: office,                                             // change a member's name, phone, birth date, Vaomiera (phone app)
+    members_admin: m["Zo"] === "Mpandrindra",                         // change everything: Birao, Andraikitra, Zo, Sata, Sokajy…
     broadcast: m["Vaomiera"] === "Fifandraisana" || m["Zo"] === "Mpandrindra",  // SMS announcement to everyone
     letters: office || m["Vaomiera"] === "Fifandraisana",                      // official letters (taratasy.html)
     wallets: office || treasurer                                                // add / edit the wallets (Kitapo)
@@ -829,11 +830,14 @@ function staffLists_(m) {
     year: feeYear_(now).label,
     fee_months: feeYear_(now).keys,
     members: members.map(x => Object.assign(r.members_edit ? { phone: String(x["Finday"] || "").replace(/^'/, ""), birth: iso_(x["Daty nahaterahana"]) } : {},
+                               r.members_admin ? { birao: x["Birao"] || "Tsia", status: x["Sata"] || "Mavitrika", right: x["Zo"] || "Mpikambana",
+                                                   joined: iso_(x["Daty niditra"]) } : {},
                                { id: String(x["ID"]), name: x["Anarana feno"], commission: x["Vaomiera"] || "",
                                  role: x["Andraikitra Birao"] || "", photo: String(x["Sary"] || ""),
                                  category: x["Sokajy"] || "", fee: feeFor_(x, set),
                                  paid: paid[String(x["ID"])] || [] })),
     materials,
+    choices: { commissions: V.commissions, office_roles: V.officeRoles, rights: V.rights, statuses: V.memberStatus, categories: V.feeCategory },
     wallets: walletState_().wallets.filter(w => w.active).map(w => ({ id: w.id, name: w.name, balance: w.balance }))
   };
   if (r.confirm) {
@@ -1011,7 +1015,7 @@ function applyOp_(m, type, d) {
     }
     case "member_info": {
       if (!r.members_edit) return { ok: false, error: "forbidden" };
-      return memberInfo_(m, d.member_id, d, "member_info");
+      return memberInfo_(m, d.member_id, d, "member_info", r.members_admin ? "admin" : "office");
     }
     case "photo": {
       if (!r.cards) return { ok: false, error: "forbidden" };
@@ -1377,9 +1381,11 @@ function addMember_(m, b) {
   let sms = "none";
   if (phone) {
     const url = membersUrl_(b.site);
-    // kept under 160 characters when possible (1 SMS)
-    const text = "Tongasoa, " + safe_(name, 30) + "! ZA SPaFi Toliara" + (url ? ": " + url : "") +
-                 " ID: " + id + " PIN: " + pin + " (aza zaraina)";
+    const text = "Tongasoa atao amin'ny fikambanana ZA SPaFi Toliara " + String(name).slice(0, 60) + ",\n" +
+                 (url ? "Ity ny rohy idiranao amin'ny tranokalantsika (siteweb): " + url + "\n" : "") +
+                 "Ity no ID sy PIN hidiranao amin'ny pejy natokana ho an'ny mpikambana (aza zaraina)\n" +
+                 "ID: " + id + "\n" +
+                 "PIN: " + pin;
     const res = smsSend_([phone], text);
     sms = res.ok ? "sent" : "failed";
     sheet_("log").appendRow([new Date(), m["Anarana feno"], "sms_welcome", id + (res.ok ? " ok" : " " + res.error), "smsw|" + id]);
@@ -1667,32 +1673,80 @@ function checkLogin() {
    Mpandrindra from the phone app. Empty field = unchanged. A phone number may
    be shared (family): the login then tells people apart by their PIN.
    ========================================================================== */
-function memberInfo_(by, memberId, b, what) {
-  const phone = String(b.phone == null ? "" : b.phone).trim();
-  const birth = String(b.birth == null ? "" : b.birth).trim();
-  const name = String(b.name == null ? "" : b.name).replace(/\s+/g, " ").trim();
-  if (!phone && !birth && !name) return { ok: false, error: "missing_fields" };
-  if (name && (name.length < 3 || name.length > 120)) return { ok: false, error: "bad_name" };
-  if (phone && !phoneIntl_(phone)) return { ok: false, error: "bad_phone" };
-  if (birth) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(birth)) return { ok: false, error: "bad_date" };
-    const d = dateFrom_(birth), y = d.getFullYear();
-    if (y < 1920 || d > new Date()) return { ok: false, error: "bad_date" };
+/* level: "self" (name, phone, birth), "office" (+ Vaomiera), "admin" = Mpandrindra (everything) */
+const MEMBER_FIELDS = {
+  name:        { col: "Anarana feno",       level: "self" },
+  phone:       { col: "Finday",             level: "self" },
+  birth:       { col: "Daty nahaterahana",  level: "self" },
+  commission:  { col: "Vaomiera",           level: "office", list: () => V.commissions },
+  category:    { col: "Sokajy",             level: "admin",  list: () => V.feeCategory },
+  joined:      { col: "Daty niditra",       level: "admin" },
+  birao:       { col: "Birao",              level: "admin",  list: () => V.yesNo },
+  office_role: { col: "Andraikitra Birao",  level: "admin",  list: () => [""].concat(V.officeRoles) },
+  right:       { col: "Zo",                 level: "admin",  list: () => V.rights },
+  status:      { col: "Sata",               level: "admin",  list: () => V.memberStatus }
+};
+const FIELD_LEVELS = { self: ["self"], office: ["self", "office"], admin: ["self", "office", "admin"] };
+
+function memberInfo_(by, memberId, b, what, level) {
+  level = level || "self";
+  const allowed = FIELD_LEVELS[level];
+  const ch = {};
+  Object.keys(MEMBER_FIELDS).forEach(k => {
+    if (b[k] === undefined || b[k] === null) return;
+    const v = String(b[k]).replace(/\s+/g, " ").trim();
+    if (v === "" && k !== "office_role") return;               // empty = unchanged (a role can be cleared)
+    if (k === "office_role" && v === "" && b[k] !== "") return;
+    ch[k] = v;
+  });
+  if (!Object.keys(ch).length) return { ok: false, error: "missing_fields" };
+  for (const k of Object.keys(ch)) {
+    if (allowed.indexOf(MEMBER_FIELDS[k].level) < 0) return { ok: false, error: "forbidden" };
+    const f = MEMBER_FIELDS[k];
+    if (f.list && f.list().indexOf(ch[k]) < 0) return { ok: false, error: "bad_value", field: k };
   }
+  if (ch.name !== undefined && (ch.name.length < 3 || ch.name.length > 120)) return { ok: false, error: "bad_name" };
+  if (ch.phone !== undefined && !phoneIntl_(ch.phone)) return { ok: false, error: "bad_phone" };
+  for (const k of ["birth", "joined"]) {
+    if (ch[k] === undefined) continue;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(ch[k])) return { ok: false, error: "bad_date" };
+    const d = dateFrom_(ch[k]);
+    if (d.getFullYear() < 1920 || d > new Date()) return { ok: false, error: "bad_date" };
+  }
+  // a Mpandrindra cannot remove their own right or deactivate themself (no lock-out)
+  if (String(memberId).trim() === String(by["ID"]).trim() && ((ch.right && ch.right !== by["Zo"]) || ch.status === "Tsy mavitrika"))
+    return { ok: false, error: "not_self" };
+  // Andraikitra Birao and Birao go together
+  if (ch.office_role) ch.birao = "Eny";
+  if (ch.birao === "Tsia") ch.office_role = "";
+
   const sh = sheet_("members");
   const data = sh.getDataRange().getValues(); const h = data[0].map(String);
-  const cId = h.indexOf("ID"), cPh = h.indexOf("Finday"), cBi = h.indexOf("Daty nahaterahana"), cNa = h.indexOf("Anarana feno");
-  if (cId < 0 || cPh < 0 || cBi < 0 || cNa < 0) return { ok: false, error: "server", detail: "Mpikambana: lohateny ID / Anarana feno / Finday / Daty nahaterahana tsy hita" };
+  const cId = h.indexOf("ID");
+  const missing = Object.keys(ch).map(k => MEMBER_FIELDS[k].col).filter(c => h.indexOf(c) < 0);
+  if (cId < 0 || missing.length) return { ok: false, error: "server", detail: "Mpikambana: lohateny tsy hita: " + (cId < 0 ? "ID " : "") + missing.join(", ") };
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][cId]).trim() !== String(memberId).trim()) continue;
-    const before = [String(data[i][cPh] || "").replace(/^'/, ""), iso_(data[i][cBi]), String(data[i][cNa] || "")];
-    if (phone) sh.getRange(i + 1, cPh + 1).setValue("'" + phone.slice(0, 30));
-    if (birth) sh.getRange(i + 1, cBi + 1).setValue(dateFrom_(birth));
-    if (name) sh.getRange(i + 1, cNa + 1).setValue(safe_(name, 120));
-    sheet_("log").appendRow([new Date(), by["Anarana feno"], what,
-      memberId + (name ? " anarana: " + before[2] + " → " + name : "") + (phone ? " finday: " + before[0] + " → " + phone : "") +
-      (birth ? " daty: " + before[1] + " → " + birth : ""), "inf|" + Utilities.getUuid()]);
-    return { ok: true, name: name || before[2], phone: phone || before[0], birth: birth || before[1] };
+    const changes = [], out = {};
+    Object.keys(ch).forEach(k => {
+      const c = h.indexOf(MEMBER_FIELDS[k].col);
+      const old = k === "birth" || k === "joined" ? iso_(data[i][c]) : String(data[i][c] == null ? "" : data[i][c]).replace(/^'/, "");
+      const val = ch[k];
+      out[k] = val;
+      if (old === val) return;
+      let cell = val;
+      if (k === "phone") cell = "'" + val.slice(0, 30);
+      else if (k === "birth" || k === "joined") cell = dateFrom_(val);
+      else if (k === "name") cell = safe_(val, 120);
+      sh.getRange(i + 1, c + 1).setValue(cell);
+      changes.push(MEMBER_FIELDS[k].col + ": " + (old || "–") + " → " + (val || "–"));
+    });
+    if (changes.length) sheet_("log").appendRow([new Date(), by["Anarana feno"], what, memberId + " · " + changes.join(" · ").slice(0, 400), "inf|" + Utilities.getUuid()]);
+    const now = {}; ["name", "phone", "birth"].forEach(k => {
+      const c = h.indexOf(MEMBER_FIELDS[k].col);
+      now[k] = out[k] !== undefined ? out[k] : (k === "birth" ? iso_(data[i][c]) : String(data[i][c] || "").replace(/^'/, ""));
+    });
+    return Object.assign({ ok: true, changed: changes.length }, now, out);
   }
   return { ok: false, error: "unknown_member" };
 }

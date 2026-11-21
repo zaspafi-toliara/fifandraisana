@@ -265,3 +265,17 @@ After replacing `Code.gs`: **Manage deployments → New version** (no setup need
 - **Birao and Mpandrindra**: phone app → scan (or search) a member → card **Anarana, finday ary daty nahaterahana** → **Tehirizina**. Works offline; sent with the other entries.
 - Changes are written to the **Mpikambana** tab and recorded in **Tantara** (old → new value).
 - The ID and PIN do not change. A phone number may be shared by several members (family): they log in with their own PIN.
+
+### 5.17 Member details by role (update of November 2026, part 7)
+
+After replacing `Code.gs`: **Manage deployments → New version**.
+Phone app → scan or search a member → card **Mombamomba ny mpikambana**:
+- **Birao and Mpandrindra**: name, phone number, birth date, **Vaomiera**.
+- **Mpandrindra only** (Zo = Mpandrindra), extra box *Ho an'ny Mpandrindra ihany*: Sokajy, Daty niditra, Birao, Andraikitra Birao, Zo, Sata.
+  - Choosing an Andraikitra Birao sets Birao = Eny; Birao = Tsia removes the Andraikitra.
+  - A Mpandrindra cannot change their own Zo or Sata (to avoid locking themself out). Another Mpandrindra, or the Sheet, can.
+  - Members set to *Tsy mavitrika* disappear from the app lists; to make one active again, change Sata in the **Mpikambana** tab.
+- Members themselves (profile) can still change only their name, phone number and birth date.
+- Every change is written in **Tantara** (old → new).
+
+Welcome SMS for new members now reads: "Tongasoa atao amin'ny fikambanana ZA SPaFi Toliara {anarana}, / Ity ny rohy idiranao amin'ny tranokalantsika (siteweb): {rohy} / Ity no ID sy PIN hidiranao amin'ny pejy natokana ho an'ny mpikambana (aza zaraina) / ID: … / PIN: …".

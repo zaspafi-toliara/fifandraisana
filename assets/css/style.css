@@ -734,3 +734,5 @@ fieldset.is-invalid { border-radius: 10px; padding: 6px 10px; }
 .info-list { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 6px 0 12px; }
 .info-list dt { color: #666; }
 .info-list dd { margin: 0; font-weight: 600; }
+.admin-box { border: 1.5px dashed #b9a06a; border-radius: 12px; padding: 10px 14px 4px; margin-top: 6px; display: grid; gap: 10px; }
+.admin-box legend { font-weight: 700; color: #7a4b00; padding: 0 6px; }

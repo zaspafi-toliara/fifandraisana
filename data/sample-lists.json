@@ -15,7 +15,8 @@
       "tasks_admin": true,
       "members_add": true,
       "letters": true,
-      "members_edit": true
+      "members_edit": true,
+      "members_admin": true
     }
   },
   "year": "2026–2027",
@@ -31,7 +32,11 @@
       "category": "Miasa",
       "fee": 2000,
       "phone": "034 11 222 30",
-      "birth": "1999-05-10"
+      "birth": "1999-05-10",
+      "birao": "Eny",
+      "status": "Mavitrika",
+      "right": "Mpikambana",
+      "joined": "2024-01-14"
     },
     {
       "id": "ZA-002",
@@ -44,7 +49,11 @@
       "category": "Mpianatra",
       "fee": 1000,
       "phone": "034 11 222 31",
-      "birth": ""
+      "birth": "",
+      "birao": "Tsia",
+      "status": "Mavitrika",
+      "right": "Mpikambana",
+      "joined": "2024-01-14"
     },
     {
       "id": "ZA-003",
@@ -55,7 +64,11 @@
       "category": "Miasa",
       "fee": 2000,
       "phone": "034 11 222 32",
-      "birth": "1999-05-12"
+      "birth": "1999-05-12",
+      "birao": "Eny",
+      "status": "Mavitrika",
+      "right": "Mpikambana",
+      "joined": "2024-01-14"
     },
     {
       "id": "ZA-004",
@@ -68,7 +81,11 @@
       "category": "Mpianatra",
       "fee": 1000,
       "phone": "034 11 222 33",
-      "birth": ""
+      "birth": "",
+      "birao": "Tsia",
+      "status": "Mavitrika",
+      "right": "Mpikambana",
+      "joined": "2024-01-14"
     },
     {
       "id": "ZA-005",
@@ -79,7 +96,11 @@
       "category": "Miasa",
       "fee": 2000,
       "phone": "034 11 222 34",
-      "birth": "1999-05-14"
+      "birth": "1999-05-14",
+      "birao": "Eny",
+      "status": "Mavitrika",
+      "right": "Mpikambana",
+      "joined": "2024-01-14"
     }
   ],
   "materials": [
@@ -197,5 +218,37 @@
       "name": "Fampiofanana tanora",
       "balance": 500000
     }
-  ]
+  ],
+  "choices": {
+    "commissions": [
+      "Soratra Masina",
+      "Fifandraisana",
+      "Fitaovana",
+      "Fampandrosoana",
+      "Hira sy mozika"
+    ],
+    "office_roles": [
+      "Filoha",
+      "Filoha lefitra",
+      "Sekretera voalohany",
+      "Sekretera faharoa",
+      "Mpitahiry vola",
+      "Mpanolon-tsaina"
+    ],
+    "rights": [
+      "Mpikambana",
+      "Sekretera",
+      "Mpitahiry vola",
+      "Mpandrindra",
+      "Mpandray fahatongavana"
+    ],
+    "statuses": [
+      "Mavitrika",
+      "Tsy mavitrika"
+    ],
+    "categories": [
+      "Mpianatra",
+      "Miasa"
+    ]
+  }
 }

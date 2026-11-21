@@ -2,7 +2,7 @@
    Keeps the site's own files on the phone so the entry app opens offline.
    Network first (always the latest version when online), cache as fallback.
    Requests to Google (Apps Script, fonts) are not touched. */
-const CACHE = "zaspafi-v16";
+const CACHE = "zaspafi-v17";
 const SHELL = [
   "fampidirana.html", "karatra.html", "mpikambana.html", "index.html",
   "assets/css/style.css",
