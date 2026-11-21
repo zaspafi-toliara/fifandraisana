@@ -731,3 +731,6 @@ fieldset.is-invalid { border-radius: 10px; padding: 6px 10px; }
 .note-box { margin-top: 14px; background: #fff4dd; color: #5a3d00; border-radius: 12px; padding: 12px 14px; }
 .wallet__tags { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: -4px; }
 .list-actions--left { text-align: left; margin-top: 10px; }
+.info-list { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 6px 0 12px; }
+.info-list dt { color: #666; }
+.info-list dd { margin: 0; font-weight: 600; }

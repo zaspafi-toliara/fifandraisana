@@ -257,3 +257,11 @@ After replacing `Code.gs`: run **`setup`** once, then **Manage deployments → N
 - The form now asks for **Daty hanatanterahana**. A date that is not a Sunday is accepted, marked in *Fanamarihana* and in the SMS: the members must decide first.
 
 **SMS – Hafa**: now a free message (up to 450 characters; 160 = 1 SMS per person). *Fivoriana* and *Hamonjy antsam-panahy* are unchanged.
+
+### 5.16 Name, phone number and birth date (update of November 2026, part 6)
+
+After replacing `Code.gs`: **Manage deployments → New version** (no setup needed).
+- **Every member**: members' page → *Ny momba ahy* → card **Ny mombamomba ahy** → **Hanova**: full name, phone number, birth date.
+- **Birao and Mpandrindra**: phone app → scan (or search) a member → card **Anarana, finday ary daty nahaterahana** → **Tehirizina**. Works offline; sent with the other entries.
+- Changes are written to the **Mpikambana** tab and recorded in **Tantara** (old → new value).
+- The ID and PIN do not change. A phone number may be shared by several members (family): they log in with their own PIN.

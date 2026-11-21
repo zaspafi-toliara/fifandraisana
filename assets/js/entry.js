@@ -24,6 +24,7 @@
   let syncing = false;
   let flash = "";            // short confirmation message
   let loginMsg = "", serverDetail = "";
+  let infoErr = "";          // error on the phone / birth-date form of a member
   let search = "";
   let scanner = null;        // Html5Qrcode instance
   let attendance = null;     // { items: [{ id, time, op_id }] } while in attendance mode
@@ -102,6 +103,7 @@
     if (type === "loan" && mat(d.material_id)) Object.assign(mat(d.material_id), { holder_id: d.member_id, holder_name: (mem(d.member_id) || {}).name || d.member_id, since: d.date });
     if (type === "return" && mat(d.material_id)) Object.assign(mat(d.material_id), { holder_id: "", holder_name: "", since: "" });
     if (type === "photo" && mem(d.member_id)) mem(d.member_id).photo_data = d.image;
+    if (type === "member_info" && mem(d.member_id)) { const x = mem(d.member_id); if (d.name) x.name = d.name; if (d.phone) x.phone = d.phone; if (d.birth) x.birth = d.birth; }
     if (type === "fee_status" && lists.pending_fees) lists.pending_fees = lists.pending_fees.filter(x => x.id !== d.id);
     if (type === "tx_status" && lists.pending_tx) lists.pending_tx = lists.pending_tx.filter(x => x.id !== d.id);
     if (type === "donation_status" && lists.pending_donations) lists.pending_donations = lists.pending_donations.filter(x => x.key !== d.key);
@@ -149,6 +151,7 @@
     if (box && !box.hidden) { closeScanner(); }
     view = (e.state && e.state.view) || { name: "home" };
     if (view.name !== "attendance") attendance = null;
+    infoErr = "";
     if (view.name !== "newmember") { newMember = null; nmError = ""; nmDraft = {}; nmBad = ""; }
     render();
   });
@@ -309,6 +312,20 @@
     let html = backHTML() + `
       <div class="card e-head"><h2>${esc(m.name)}</h2>
         <div class="member-meta"><span class="chip chip--small">${esc(m.id)}</span><span>${esc(m.commission)}</span>${m.role ? `<span>${esc(m.role)}</span>` : ""}</div></div>`;
+    if (can.members_edit) {
+      const max = today();
+      html += `
+        <form class="card form mt" id="f-info" data-id="${esc(m.id)}">
+          <h3>${t("e.info_title")}</h3>
+          <div><label>${t("m.info_name")}</label><input name="name" maxlength="120" value="${esc(m.name || "")}"></div>
+          <div class="row">
+            <div><label>${t("m.info_phone")}</label><input name="phone" type="tel" inputmode="tel" value="${esc(m.phone || "")}" placeholder="034 00 000 00"></div>
+            <div><label>${t("m.info_birth")}</label><input name="birth" type="date" max="${max}" value="${esc(m.birth || "")}"></div>
+          </div>
+          ${infoErr ? `<div class="alert alert--err">${t(infoErr)}</div>` : ""}
+          <button class="btn btn--navy btn--small" type="submit">${t("e.save")}</button>
+        </form>`;
+    }
     if (can.cards && window.ZACard) {
       const pending = newPhoto && newPhoto.id === m.id;
       const shown = pending ? Object.assign({}, m, { photo_data: newPhoto.data }) : m;
@@ -694,6 +711,23 @@
       const m = lists.members.find(x => x.id === newPhoto.id);
       enqueue("photo", { member_id: newPhoto.id, image: newPhoto.data }, `${t("e.photo")}: ${m ? m.name : newPhoto.id}`);
       newPhoto = null; render();
+    });
+
+    // phone number / birth date of the scanned member (Birao, Mpandrindra)
+    const finfo = root.querySelector("#f-info");
+    if (finfo) finfo.addEventListener("submit", e => {
+      e.preventDefault();
+      const id = finfo.dataset.id, m = lists.members.find(x => x.id === id) || {};
+      const phone = finfo.phone.value.trim(), birth = finfo.birth.value;
+      const name = finfo.elements.name.value.replace(/\s+/g, " ").trim();
+      const ch = { name: name !== (m.name || "") ? name : "", phone: phone !== (m.phone || "") ? phone : "", birth: birth !== (m.birth || "") ? birth : "" };
+      infoErr = "";
+      if (!ch.name && !ch.phone && !ch.birth) { render(); return; }
+      if (name.length < 3) { infoErr = "err.bad_name"; render(); return; }
+      if (ch.phone && ch.phone.replace(/\D/g, "").length < 9) { infoErr = "err.bad_phone"; render(); return; }
+      if (ch.birth && ch.birth > today()) { infoErr = "err.bad_date"; render(); return; }
+      enqueue("member_info", Object.assign({ member_id: id }, ch), `${t("e.info_title")}: ${ch.name || m.name || id}`);
+      render();
     });
 
     // money

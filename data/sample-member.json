@@ -18,8 +18,11 @@
       "tasks_admin": true,
       "broadcast": true,
       "letters": true,
-      "wallets": true
-    }
+      "wallets": true,
+      "members_edit": true
+    },
+    "phone": "034 11 222 33",
+    "birth": ""
   },
   "fees": {
     "year": "2026–2027",

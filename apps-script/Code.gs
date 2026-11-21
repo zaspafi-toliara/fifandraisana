@@ -148,6 +148,7 @@ function onOpen() {
     .addItem("Hamorona ny takelaka (setup)", "setup")
     .addItem("Hameno ID sy PIN tsy ampy", "fillIdsAndPins")
     .addItem("Havaozina ny tatitra ara-bola sy ny kitapo", "rebuildReports")
+    .addItem("Hamarino ny fidirana (ID / PIN)", "checkLogin")
     .addSeparator()
     .addItem("SMS: ampidiro ny kaonty SMS Gateway", "smsSetCredentials")
     .addItem("SMS: andramo (alefa SMS iray)", "smsTest")
@@ -293,6 +294,10 @@ function doPost(e) {
       case "wallet_save": return json_(withMember_(body, walletSave_));
       case "staff_lists": return json_(withMember_(body, staffLists_));
       case "sync":        return json_(withMember_(body, sync_));
+      case "my_info":     return json_(withMember_(body, (m, b) => {
+                            const res = memberInfo_(m, String(m["ID"]).trim(), b, "my_info");
+                            return res.ok ? Object.assign(res, { member: { name: res.name, phone: res.phone, birth: res.birth } }) : res;
+                          }));
       case "my_photo":    return json_(withMember_(body, (m, b) => {
                             const id = savePhoto_(m["ID"], b.image);
                             return id ? { ok: true, photo: id } : { ok: false, error: "bad_image" };
@@ -464,6 +469,7 @@ function rights_(m) {
     cards: office,
     tasks_admin: office,
     members_add: office,                                              // register new members (phone app)
+    members_edit: office,                                             // change a member's phone / birth date (phone app)
     broadcast: m["Vaomiera"] === "Fifandraisana" || m["Zo"] === "Mpandrindra",  // SMS announcement to everyone
     letters: office || m["Vaomiera"] === "Fifandraisana",                      // official letters (taratasy.html)
     wallets: office || treasurer                                                // add / edit the wallets (Kitapo)
@@ -529,6 +535,7 @@ function me_(m) {
   const out = {
     ok: true,
     member: { id: m["ID"], name: m["Anarana feno"], commission: m["Vaomiera"], office_role: m["Andraikitra Birao"] || "",
+              phone: String(m["Finday"] || "").replace(/^'/, ""), birth: iso_(m["Daty nahaterahana"]),
               is_office: isOffice_(m), can: rights_(m), photo: String(m["Sary"] || "") },
     fees: { year: fy.label, monthly_amount: feeFor_(m, set), category: m["Sokajy"] || "", months },
     attendance: attendanceStats_(m["ID"], att),
@@ -821,7 +828,8 @@ function staffLists_(m) {
     me: { id: m["ID"], name: m["Anarana feno"], can: r },
     year: feeYear_(now).label,
     fee_months: feeYear_(now).keys,
-    members: members.map(x => ({ id: String(x["ID"]), name: x["Anarana feno"], commission: x["Vaomiera"] || "",
+    members: members.map(x => Object.assign(r.members_edit ? { phone: String(x["Finday"] || "").replace(/^'/, ""), birth: iso_(x["Daty nahaterahana"]) } : {},
+                               { id: String(x["ID"]), name: x["Anarana feno"], commission: x["Vaomiera"] || "",
                                  role: x["Andraikitra Birao"] || "", photo: String(x["Sary"] || ""),
                                  category: x["Sokajy"] || "", fee: feeFor_(x, set),
                                  paid: paid[String(x["ID"])] || [] })),
@@ -1000,6 +1008,10 @@ function applyOp_(m, type, d) {
         }
       }
       return { ok: false, error: "not_found" };
+    }
+    case "member_info": {
+      if (!r.members_edit) return { ok: false, error: "forbidden" };
+      return memberInfo_(m, d.member_id, d, "member_info");
     }
     case "photo": {
       if (!r.cards) return { ok: false, error: "forbidden" };
@@ -1617,4 +1629,70 @@ function rebuildReports_() {
     wsh.getRange(i + 1, cBal + 1).setValue(w.balance);
     wsh.getRange(i + 1, cPct + 1).setValue(w.goal ? Math.floor(Math.max(0, w.balance) * 100 / w.goal) + "%" : "–");
   }
+}
+
+
+/* Menu: shows what the login sees for one ID or phone number (to find why "Tsy hita" / "Diso ny PIN") */
+function checkLogin() {
+  const ui = SpreadsheetApp.getUi();
+  const r = ui.prompt("Hamarino ny fidirana", "ID na laharana finday (oh: ZA-001):", ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  const ident = r.getResponseText();
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName(S.members.name);
+  const lines = ["Takelaka: " + ss.getName()];
+  if (!sh) { ui.alert(lines.concat(["Tsy hita ny tab \"" + S.members.name + "\""]).join("\n")); return; }
+  const values = sh.getDataRange().getValues();
+  const head = values[0].map(String);
+  const missing = S.members.headers.filter(h => head.indexOf(h) < 0);
+  lines.push("Andalana voalohany (lohateny): " + head.slice(0, 13).join(" | "));
+  if (missing.length) lines.push("⚠ Lohateny tsy hita: " + missing.join(", ") + "  ← ilaina ny manamboatra ny andalana 1");
+  const rows = rows_("members");
+  lines.push("Mpikambana voaisa: " + rows.length + " (misy ID: " + rows.filter(x => x["ID"]).length + ")");
+  lines.push("ID/laharana nampidirina: \"" + ident + "\" → " + idKey_(ident));
+  const found = findMembers_(ident);
+  if (!found.length) {
+    const near = rows.filter(x => x["ID"]).slice(0, 5).map(x => "\"" + x["ID"] + "\"").join(", ");
+    lines.push("✗ Tsy hita. ID 5 voalohany ao amin'ny takelaka: " + (near || "(tsy misy)"));
+  } else {
+    found.forEach(x => lines.push("✓ Hita: " + x["ID"] + " – " + x["Anarana feno"] + " · Finday: " + x["Finday"] +
+      " · PIN ao amin'ny takelaka: \"" + x["PIN"] + "\" (raisina ho " + pinText_(x["PIN"]) + ") · Sata: " + (x["Sata"] || "–")));
+  }
+  ui.alert("Fidirana", lines.join("\n"), ui.ButtonSet.OK);
+}
+
+
+/* ==========================================================================
+   Name, phone number and birth date: the member on the profile, or the Birao /
+   Mpandrindra from the phone app. Empty field = unchanged. A phone number may
+   be shared (family): the login then tells people apart by their PIN.
+   ========================================================================== */
+function memberInfo_(by, memberId, b, what) {
+  const phone = String(b.phone == null ? "" : b.phone).trim();
+  const birth = String(b.birth == null ? "" : b.birth).trim();
+  const name = String(b.name == null ? "" : b.name).replace(/\s+/g, " ").trim();
+  if (!phone && !birth && !name) return { ok: false, error: "missing_fields" };
+  if (name && (name.length < 3 || name.length > 120)) return { ok: false, error: "bad_name" };
+  if (phone && !phoneIntl_(phone)) return { ok: false, error: "bad_phone" };
+  if (birth) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(birth)) return { ok: false, error: "bad_date" };
+    const d = dateFrom_(birth), y = d.getFullYear();
+    if (y < 1920 || d > new Date()) return { ok: false, error: "bad_date" };
+  }
+  const sh = sheet_("members");
+  const data = sh.getDataRange().getValues(); const h = data[0].map(String);
+  const cId = h.indexOf("ID"), cPh = h.indexOf("Finday"), cBi = h.indexOf("Daty nahaterahana"), cNa = h.indexOf("Anarana feno");
+  if (cId < 0 || cPh < 0 || cBi < 0 || cNa < 0) return { ok: false, error: "server", detail: "Mpikambana: lohateny ID / Anarana feno / Finday / Daty nahaterahana tsy hita" };
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][cId]).trim() !== String(memberId).trim()) continue;
+    const before = [String(data[i][cPh] || "").replace(/^'/, ""), iso_(data[i][cBi]), String(data[i][cNa] || "")];
+    if (phone) sh.getRange(i + 1, cPh + 1).setValue("'" + phone.slice(0, 30));
+    if (birth) sh.getRange(i + 1, cBi + 1).setValue(dateFrom_(birth));
+    if (name) sh.getRange(i + 1, cNa + 1).setValue(safe_(name, 120));
+    sheet_("log").appendRow([new Date(), by["Anarana feno"], what,
+      memberId + (name ? " anarana: " + before[2] + " → " + name : "") + (phone ? " finday: " + before[0] + " → " + phone : "") +
+      (birth ? " daty: " + before[1] + " → " + birth : ""), "inf|" + Utilities.getUuid()]);
+    return { ok: true, name: name || before[2], phone: phone || before[0], birth: birth || before[1] };
+  }
+  return { ok: false, error: "unknown_member" };
 }

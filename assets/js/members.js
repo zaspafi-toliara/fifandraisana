@@ -77,6 +77,13 @@
         demoData.goals.push({ id: "T" + Date.now(), title: b.title, description: b.description || "", target_date: b.due || "", visible: b.visible !== false, steps: [] });
         return { ok: true };
       case "my_photo": return { ok: true, photo: "" };
+      case "my_info": {
+        if (b.birth && b.birth > new Date().toISOString().slice(0, 10)) return { ok: false, error: "bad_date" };
+        if (b.phone) demoData.member.phone = b.phone;
+        if (b.name) demoData.member.name = b.name;
+        if (b.birth) demoData.member.birth = b.birth;
+        return { ok: true, member: { name: demoData.member.name, phone: demoData.member.phone || "", birth: demoData.member.birth || "" } };
+      }
       case "broadcast": {
         if (b.kind === "hafa") {
           if (!b.message) return { ok: false, error: "missing_fields" };
@@ -106,7 +113,7 @@
   /* ---------- phone back button: close the panel / form first ---------- */
   function pushNav(state) { try { history.pushState(Object.assign({ za: true }, state), ""); } catch (e) { /* ignore */ } }
   window.addEventListener("popstate", () => {
-    if (drawer) { drawer = false; render(); return; }
+    if (drawer) { drawer = false; infoEdit = false; infoMsg = ""; render(); return; }
     if (form) { form = null; render(); }
   });
   function openDrawer() { drawer = true; pushNav({ drawer: true }); render(); }
@@ -304,6 +311,53 @@
       `<span><i class="dot dot--${s}"></i>${t(STATUS_KEY[s])}</span>`).join("")}</div>`;
   }
 
+  /* Phone number and birth date: the member can fill or change them */
+  let infoEdit = false, infoMsg = "";
+  function myInfoHTML() {
+    const { t, esc, fmtDate } = Z();
+    const m = data.member;
+    if (!infoEdit) return `
+      <div class="card my-info">
+        <h3>${t("m.info_title")}</h3>
+        <dl class="info-list">
+          <dt>${t("m.info_name")}</dt><dd>${esc(m.name)}</dd>
+          <dt>${t("m.info_phone")}</dt><dd>${m.phone ? esc(m.phone) : `<span class="muted">${t("m.info_none")}</span>`}</dd>
+          <dt>${t("m.info_birth")}</dt><dd>${m.birth ? fmtDate(m.birth) : `<span class="muted">${t("m.info_none")}</span>`}</dd>
+        </dl>
+        ${infoMsg === "m.info_saved" ? `<div class="alert alert--ok">${t(infoMsg)}</div>` : ""}
+        <button class="btn btn--outline btn--small" data-info="edit">✎ ${t("m.info_edit")}</button>
+      </div>`;
+    const today = new Date().toISOString().slice(0, 10);
+    return `
+      <form class="card form my-info" id="f-info">
+        <h3>${t("m.info_title")}</h3>
+        <div><label>${t("m.info_name")}</label><input name="name" maxlength="120" value="${esc(m.name || "")}" autocomplete="name"></div>
+        <div><label>${t("m.info_phone")}</label><input name="phone" type="tel" inputmode="tel" value="${esc(m.phone || "")}" placeholder="034 00 000 00"></div>
+        <div><label>${t("m.info_birth")}</label><input name="birth" type="date" max="${today}" value="${esc(m.birth || "")}"></div>
+        <p class="hint">${t("m.info_hint")}</p>
+        ${infoMsg && infoMsg !== "m.info_saved" ? `<div class="alert alert--err">${t(infoMsg)}</div>` : ""}
+        <div class="inline"><button class="btn btn--gold btn--small" type="submit" ${busy ? "disabled" : ""}>${t("e.save")}</button>
+          <button class="btn btn--outline btn--small" type="button" data-info="cancel">${t("m.confirm_no")}</button></div>
+      </form>`;
+  }
+  async function saveInfo(f) {
+    const phone = f.elements.phone.value.trim(), birth = f.elements.birth.value;
+    const name = f.elements.name.value.replace(/\s+/g, " ").trim();
+    const m = data.member;
+    if (phone === (m.phone || "") && birth === (m.birth || "") && name === (m.name || "")) { infoEdit = false; infoMsg = ""; render(); return; }
+    if (name.length < 3) { infoMsg = "err.bad_name"; render(); return; }
+    if (phone && phone.replace(/\D/g, "").length < 9) { infoMsg = "err.bad_phone"; render(); return; }
+    busy = true; infoMsg = ""; render();
+    try {
+      const r = await api("my_info", { name: name !== (m.name || "") ? name : "",
+        phone: phone !== (m.phone || "") ? phone : "", birth: birth !== (m.birth || "") ? birth : "" });
+      if (r.ok) { Object.assign(data.member, r.member || {}); infoEdit = false; infoMsg = "m.info_saved"; }
+      else if (r.error === "session_expired") { busy = false; return logout("m.session_expired"); }
+      else infoMsg = { bad_phone: "err.bad_phone", bad_date: "err.bad_date", bad_name: "err.bad_name", missing_fields: "err.missing_fields" }[r.error] || "m.error";
+    } catch (e) { infoMsg = "m.error"; }
+    busy = false; render();
+  }
+
   function profileHTML() {
     const { t, esc, money, fmtDate } = Z();
     const m = data.member, f = data.fees;
@@ -334,6 +388,7 @@
           ${photoMsg ? `<div class="alert ${photoMsg === "m.photo_saved" ? "alert--ok" : "alert--err"}">${t(photoMsg)}</div>` : ""}
         </div>
       </div>` : ""}
+      ${myInfoHTML()}
       <div class="card">
         <h3>${t("m.fees_title", { year: f.year })}</h3>
         <p class="muted small">${t("m.fees_summary", { paid, amount: money(f.monthly_amount) })}</p>
@@ -784,6 +839,8 @@
     const ft = root.querySelector("#f-task"); if (ft) ft.addEventListener("submit", e => { e.preventDefault(); submitForm("task", ft); });
     const fg = root.querySelector("#f-goal"); if (fg) fg.addEventListener("submit", e => { e.preventDefault(); submitForm("goal", fg); });
     const fw = root.querySelector("#f-wallet"); if (fw) fw.addEventListener("submit", e => { e.preventDefault(); saveWallet(fw); });
+    on("[data-info]", "click", e => { infoEdit = e.currentTarget.dataset.info === "edit"; infoMsg = ""; render(); });
+    const fi = root.querySelector("#f-info"); if (fi) fi.addEventListener("submit", e => { e.preventDefault(); saveInfo(fi); });
     document.body.classList.toggle("no-scroll", drawer);
   }
 
